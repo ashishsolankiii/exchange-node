@@ -49,8 +49,18 @@ const updateStake = async (req, res) => {
     message: "Stake Updated",
   });
 };
+
+const getUserStakes = async (req, res) => {
+  const { user } = req;
+
+  const stakes = await userStakeService.fetchUserStakes(user._id);
+
+  res.status(200).json({ success: true, data: { details: stakes } });
+};
+
 export default {
   getStakeById,
   createStake,
   updateStake,
+  getUserStakes,
 };

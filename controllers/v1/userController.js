@@ -135,15 +135,14 @@ const getUserTransactionCode = async (req, res) => {
 };
 
 const getHydratedUser = async (req, res) => {
+  console.log(req.body);
   const { _id = null } = req.body;
+  const { user } = req;
 
-  if (!_id) {
-    throw new ErrorResponse("_id is required!").status(401);
-  }
+  const userId = _id || user._id;
+  const refreshedUser = await userService.fetchHydratedUser(userId);
 
-  const user = await userService.fetchHydratedUser(_id);
-
-  res.status(200).json({ success: true, data: { details: user } });
+  res.status(200).json({ success: true, data: { details: refreshedUser } });
 };
 
 const getUserActivity = async (req, res) => {
