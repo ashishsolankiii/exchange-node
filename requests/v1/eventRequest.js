@@ -74,6 +74,7 @@ async function createEventRequest(req) {
     matchTime: Yup.string()
       .required("Match Time is required!")
       .test("matchTime", "Invalid matchTime!", (v) => isValidTime(v, "HH:mm")),
+    isFavourite: Yup.boolean().nullable(true),
   });
 
   await validationSchema.validate(req.body);
@@ -102,6 +103,7 @@ async function updateEventRequest(req) {
     betDeleted: Yup.boolean(),
     completed: Yup.boolean(),
     isActive: Yup.boolean(),
+    isFavourite: Yup.boolean().required(),
   });
 
   await validationSchema.validate(req.body);

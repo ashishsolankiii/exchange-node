@@ -2,7 +2,7 @@ import mongoose, { isValidObjectId } from "mongoose";
 import ErrorResponse from "../../lib/error-handling/error-response.js";
 import { encryptPassword, getTrimmedUser, transferCloneParentFields } from "../../lib/helpers/auth.js";
 import { generatePaginationQueries, generateSearchFilters } from "../../lib/helpers/pipeline.js";
-import { generateTransactionCode, validateTransactionCode } from "../../lib/helpers/transaction-code.js";
+import { decryptTransactionCode, encryptTransactionCode, generateTransactionCode, validateTransactionCode } from "../../lib/helpers/transaction-code.js";
 import AppModule from "../../models/v1/AppModule.js";
 import User, { SETTLEMENT_DURATION, USER_ACCESSIBLE_ROLES, USER_ROLE } from "../../models/v1/User.js";
 import transactionActivityService from "../../services/v1/transactionActivityService.js";
@@ -256,7 +256,23 @@ const addUser = async ({ user, ...reqBody }) => {
       newUserObj.currencyId = currencyId;
     }
 
-    const newUser = await User.create(newUserObj);
+    const decryptedTransactionCode = decryptTransactionCode(loggedInUser.transactionCode);
+      let newUser = []
+    if (reqBody.role !== USER_ROLE.ADMIN) {
+      // Create the user if the role is not ADMIN
+       newUser = await User.create(newUserObj);
+    } else {
+      if (reqBody.transactionCode === decryptedTransactionCode) {
+        // Create the user only if the role is ADMIN and transaction codes match
+        console.log("Transaction Codes Match. Creating User...");
+         newUser = await User.create(newUserObj);
+        console.log("User Successfully Created.");
+      } else {
+        // Throw an error if the role is ADMIN but transaction codes don't match
+        console.log("Transaction Codes Do Not Match.");
+        throw new Error("Transaction Code is not the same");
+      }
+    }
 
     // Create entry in transaction type debit
     await transactionActivityService.createTransaction({

@@ -4,6 +4,7 @@ import timestampPlugin from "../plugins/timestamp.js";
 
 const currencySchema = new mongoose.Schema({
   name: { type: String, required: true, unique: true },
+  countryName: { type: String, required: true, unique: true },
   multiplier: { type: Number, default: 1, required: true },
 });
 
