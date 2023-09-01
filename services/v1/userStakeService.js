@@ -26,6 +26,16 @@ const addStake = async ({ userId, stakeType, inputValues }) => {
       stakeType: stakeType,
       inputValues: inputValues,
     };
+
+    const existingStake = await UserStake.findOne({
+      userId: new mongoose.Types.ObjectId(userId),
+      stakeType: stakeType,
+    });
+
+    if (existingStake) {
+      throw new Error("Stake already exists.");
+    }
+
     const newstake = await UserStake.create(newStakeObj);
 
     return newstake;
@@ -57,8 +67,23 @@ const modifyStake = async ({ _id, inputValues }) => {
     throw new ErrorResponse(e.message).status(200);
   }
 };
+
+const fetchUserStakes = async (user_id) => {
+  try {
+    const stakes = await UserStake.find({ userId: new mongoose.Types.ObjectId(user_id) }).select([
+      "stakeType",
+      "inputValues",
+    ]);
+
+    return stakes;
+  } catch (e) {
+    throw new Error(e);
+  }
+};
+
 export default {
   fetchStakeById,
   addStake,
   modifyStake,
+  fetchUserStakes,
 };
