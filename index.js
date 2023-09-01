@@ -5,6 +5,7 @@ import { createServer } from "http";
 import moment from "moment";
 import { appConfig } from "./config/app.js";
 import dbConnection from "./database/connect.js";
+import apiThrottling from "./lib/api-lifecycle/api-throttling.js";
 import corsMiddleware from "./middlewares/corsMiddleware.js";
 import apiRoutes from "./routes/apiRoutes.js";
 import { initSocket } from "./socket/index.js";
@@ -15,6 +16,9 @@ const server = createServer(app);
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
+app.use(corsMiddleware);
+app.use(apiThrottling);
+
 app.use(
   fileUpload({
     safeFileNames: true,
@@ -22,8 +26,6 @@ app.use(
     parseNested: true,
   })
 );
-
-app.use(corsMiddleware);
 
 app.use("/api", apiRoutes);
 
