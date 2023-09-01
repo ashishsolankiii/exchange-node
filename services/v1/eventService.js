@@ -180,6 +180,7 @@ const addEvent = async ({ ...reqBody }) => {
     betDelay,
     minStakeSession,
     maxStakeSession,
+    isFavourite
   } = reqBody;
 
   try {
@@ -198,6 +199,7 @@ const addEvent = async ({ ...reqBody }) => {
       maxStakeSession,
       isActive: true,
       isManual: true,
+      isFavourite
     };
 
     const newEvent = await Event.create(newEventObj);
@@ -235,7 +237,7 @@ const modifyEvent = async ({ ...reqBody }) => {
     event.isActive = reqBody.isActive;
     event.completed = reqBody.completed;
     event.betDeleted = reqBody.betDeleted;
-
+    event.isFavourite = reqBody.isFavourite;
     await event.save();
 
     return event;
@@ -285,16 +287,45 @@ const activeEvent = async ({ eventIds, competitionId }) => {
 
 const upcomingEvents = async () => {
   try {
-    const event = await Event.find(
+    const event = await Event.aggregate([
       {
-        matchDate: {
-          $gt: new Date(),
+        $match: {
+          matchDate: {
+            $gt: new Date(),
+          }
         },
       },
-      { name: 1, matchDate: 1 }
-    )
-      .sort({ matchDate: 1 })
-      .limit(10);
+      {
+        $lookup: {
+          from: "sports",
+          localField: "sportId",
+          foreignField: "_id",
+          as: "sport",
+          pipeline: [
+            {
+              $project: { name: 1 },
+            },
+          ],
+        },
+      },
+      {
+        $unwind: {
+          path: "$sport",
+          preserveNullAndEmptyArrays: true,
+        },
+      },
+      {
+        $set: {
+          sportsName: "$sport.name",
+        },
+      },
+      {
+        $unset: ["sport"],
+      },
+      { $limit: 10 },
+      { $sort: { matchDate: 1 } },
+      { $project: { name: 1, matchDate: 1, sportId: 1, sportsName: 1 } }
+    ]);
 
     return event;
   } catch (e) {

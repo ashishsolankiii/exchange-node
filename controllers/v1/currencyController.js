@@ -38,6 +38,7 @@ const getCurrencyById = async (req, res) => {
 const createCurrency = async (req, res) => {
   const name = req.body?.name ? req.body.name.trim() : null;
   const multiplier = req.body?.multiplier ? Number(req.body.multiplier) : null;
+  const countryName = req.body?.countryName ? req.body.countryName.trim() : null;
 
   if (!name) {
     throw new Error("name is required!");
@@ -49,6 +50,7 @@ const createCurrency = async (req, res) => {
   const newcurrency = await currencyService.addCurrency({
     name: name,
     multiplier: multiplier,
+    countryName: countryName
   });
 
   res.status(201).json({
@@ -63,6 +65,7 @@ const updateCurrency = async (req, res) => {
   const _id = req.body?._id || null;
   const name = req.body?.name ? req.body.name : null;
   const multiplier = req.body?.multiplier ? Number(req.body.multiplier) : null;
+  const countryName = req.body?.countryName ? req.body.countryName : null;
 
   if (!_id) {
     throw new Error("_id is required!");
@@ -75,6 +78,7 @@ const updateCurrency = async (req, res) => {
     _id,
     name,
     multiplier,
+    countryName
   });
 
   res.status(200).json({

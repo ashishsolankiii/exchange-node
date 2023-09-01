@@ -22,7 +22,7 @@ const sportsList = async () => {
       for (var j = 0; j < getAllCompetition.length; j++) {
         const getAllEvent = await Event.find(
           { isActive: true, isDeleted: false, competitionId: getAllCompetition[j]._id },
-          { _id: 1, name: 1 }
+          { _id: 1, name: 1, isFavourite: 1 }
         );
         competitionEvent.push({
           _id: getAllCompetition[j].id,

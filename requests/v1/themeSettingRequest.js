@@ -26,7 +26,7 @@ async function updateThemeSettingRequest(req) {
 
 async function getThemeSettingByCurrencyAndDomainRequest(req) {
   const validationSchema = Yup.object().shape({
-    currency: Yup.string(),
+    countryName: Yup.string(),
     domainUrl: Yup.string(),
   });
 

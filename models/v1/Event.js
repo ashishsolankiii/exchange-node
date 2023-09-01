@@ -80,6 +80,9 @@ const eventSchema = new mongoose.Schema({
 
   // Indicates if the event is visible to players
   betLock: { type: Boolean, default: false },
+
+  // Indicates if any favourite event
+  isFavourite: { type: Boolean, default: false },
 });
 
 eventSchema.plugin(timestampPlugin);
