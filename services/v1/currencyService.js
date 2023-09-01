@@ -66,7 +66,7 @@ const fetchCurrencyId = async (_id) => {
 /**
  * create Currency in the database
  */
-const addCurrency = async ({ name, multiplier }) => {
+const addCurrency = async ({ name, multiplier, countryName }) => {
   try {
     const existingCurrency = await Currency.findOne({ name: name });
     if (existingCurrency) {
@@ -76,6 +76,7 @@ const addCurrency = async ({ name, multiplier }) => {
     const newCurrencyObj = {
       name: name.toLowerCase(),
       multiplier: multiplier,
+      countryName: countryName
     };
     const newcurrency = await Currency.create(newCurrencyObj);
 
@@ -88,7 +89,7 @@ const addCurrency = async ({ name, multiplier }) => {
 /**
  * update Currency in the database
  */
-const modifyCurrency = async ({ _id, name, multiplier }) => {
+const modifyCurrency = async ({ _id, name, multiplier, countryName }) => {
   try {
     const existing = await Currency.findOne({ name: name.toLowerCase(), _id: { $ne: _id } });
     if (existing) {
@@ -99,6 +100,7 @@ const modifyCurrency = async ({ _id, name, multiplier }) => {
 
     currency.name = name.toLowerCase();
     currency.multiplier = multiplier;
+    currency.countryName = countryName;
     await currency.save();
 
     return currency;
