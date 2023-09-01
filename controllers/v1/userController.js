@@ -135,7 +135,6 @@ const getUserTransactionCode = async (req, res) => {
 };
 
 const getHydratedUser = async (req, res) => {
-  console.log(req.body);
   const { _id = null } = req.body;
   const { user } = req;
 
