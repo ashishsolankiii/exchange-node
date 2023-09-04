@@ -191,10 +191,10 @@ const addUser = async ({ user, ...reqBody }) => {
   try {
     const loggedInUser = await User.findById(user._id);
     // Check transaction code
-    const decryptedTransactionCode = decryptTransactionCode(loggedInUser.transactionCode);
     if (role != USER_ROLE.SYSTEM_OWNER) {
-      if (transactionCode != decryptedTransactionCode) {
-        throw new Error("Invalid transaction code!");
+      const isValidCode = validateTransactionCode(transactionCode, loggedInUser.transactionCode);
+      if (!isValidCode) {
+        throw new Error("Invalid transactionCode!");
       }
     }
     const newUserObj = {
@@ -361,13 +361,14 @@ const modifyUser = async ({ user, ...reqBody }) => {
     if (currentUser.role === USER_ROLE.SYSTEM_OWNER) {
       throw new Error("Failed to update user!");
     }
+
     const loggedInUser = await User.findById(user._id);
 
     // Check transaction code
-    const decryptedTransactionCode = decryptTransactionCode(loggedInUser.transactionCode);
     if (currentUser.role != USER_ROLE.SYSTEM_OWNER) {
-      if (reqBody.transactionCode != decryptedTransactionCode) {
-        throw new Error("Invalid transaction code!");
+      const isValidCode = validateTransactionCode(reqBody.transactionCode, loggedInUser.transactionCode);
+      if (!isValidCode) {
+        throw new Error("Invalid transactionCode!");
       }
     }
 
