@@ -185,11 +185,18 @@ const addUser = async ({ user, ...reqBody }) => {
     availableSports,
     isCasinoAvailable,
     isAutoSettlement,
+    transactionCode
   } = reqBody;
 
   try {
     const loggedInUser = await User.findById(user._id);
-
+    // Check transaction code
+    const decryptedTransactionCode = decryptTransactionCode(loggedInUser.transactionCode);
+    if (role != USER_ROLE.SYSTEM_OWNER) {
+      if (transactionCode != decryptedTransactionCode) {
+        throw new Error("Invalid transaction code!");
+      }
+    }
     const newUserObj = {
       fullName,
       username,
@@ -256,23 +263,8 @@ const addUser = async ({ user, ...reqBody }) => {
       newUserObj.currencyId = currencyId;
     }
 
-    const decryptedTransactionCode = decryptTransactionCode(loggedInUser.transactionCode);
-      let newUser = []
-    if (reqBody.role !== USER_ROLE.ADMIN) {
-      // Create the user if the role is not ADMIN
-       newUser = await User.create(newUserObj);
-    } else {
-      if (reqBody.transactionCode === decryptedTransactionCode) {
-        // Create the user only if the role is ADMIN and transaction codes match
-        console.log("Transaction Codes Match. Creating User...");
-         newUser = await User.create(newUserObj);
-        console.log("User Successfully Created.");
-      } else {
-        // Throw an error if the role is ADMIN but transaction codes don't match
-        console.log("Transaction Codes Do Not Match.");
-        throw new Error("Transaction Code is not the same");
-      }
-    }
+    let newUser = []
+    newUser = await User.create(newUserObj);
 
     // Create entry in transaction type debit
     await transactionActivityService.createTransaction({
@@ -369,13 +361,13 @@ const modifyUser = async ({ user, ...reqBody }) => {
     if (currentUser.role === USER_ROLE.SYSTEM_OWNER) {
       throw new Error("Failed to update user!");
     }
-
     const loggedInUser = await User.findById(user._id);
 
-    if (reqBody?.isTransactionCode === true || reqBody.transactionCode) {
-      const isValidCode = validateTransactionCode(reqBody.transactionCode, loggedInUser.transactionCode);
-      if (!isValidCode) {
-        throw new Error("Invalid transactionCode!");
+    // Check transaction code
+    const decryptedTransactionCode = decryptTransactionCode(loggedInUser.transactionCode);
+    if (currentUser.role != USER_ROLE.SYSTEM_OWNER) {
+      if (reqBody.transactionCode != decryptedTransactionCode) {
+        throw new Error("Invalid transaction code!");
       }
     }
 
