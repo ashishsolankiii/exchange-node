@@ -8,6 +8,7 @@ import dbConnection from "./database/connect.js";
 import corsMiddleware from "./middlewares/corsMiddleware.js";
 import apiRoutes from "./routes/apiRoutes.js";
 import { initSocket } from "./socket/index.js";
+import encryptResponseInterceptor from "./middlewares/encryptionMiddleware.js";
 
 const app = express();
 const server = createServer(app);
@@ -24,6 +25,8 @@ app.use(
 );
 
 app.use(corsMiddleware);
+
+app.use(encryptResponseInterceptor);
 
 app.use("/api", apiRoutes);
 
