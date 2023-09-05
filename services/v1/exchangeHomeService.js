@@ -18,6 +18,12 @@ const sportsList = async () => {
         { isActive: true, isDeleted: false, sportId: allSports[i]._id },
         { _id: 1, name: 1 }
       );
+      const getAllActiveEvent = await Event.count(
+        { isActive: true, sportId: allSports[i]._id, isDeleted: false }
+      );
+      const getAllEvent = await Event.count(
+        { isDeleted: false, sportId: allSports[i]._id }
+      );
       let competitionEvent = [];
       for (var j = 0; j < getAllCompetition.length; j++) {
         const getAllEvent = await Event.find(
@@ -33,6 +39,8 @@ const sportsList = async () => {
       data.push({
         _id: allSports[i]._id,
         name: allSports[i].name,
+        activeEventCount: getAllActiveEvent,
+        allEventCount: getAllEvent,
         competition: competitionEvent,
       });
     }
