@@ -1,28 +1,30 @@
-import { decryptResponse, encryptResponse, validateJwtToken } from "../lib/helpers/auth.js";
+import { decryptRequest, encryptResponse } from "../lib/helpers/io-encryption.js";
 
 /**
- * Middleware that performs authentication using a crypto.
+ * Middleware for encrypting response data and decrypting request data.
  *
- * @async
- * @function encrptionMiddleware
- * @param {Object} req - The Express request object.
- * @param {Object} res - The Express response object.
- * @param {Function} next - The next middleware function.
- * @returns {void}
+ * @param {import('express').Request} req - Express request object.
+ * @param {import('express').Response} res - Express response object.
+ * @param {import('express').NextFunction} next - Express next middleware function.
+ * @throws {Error} If there's an issue with encryption or decryption.
  */
-export default async function encryptResponseInterceptor(req, res, next) {
+export default function encryptResponseInterceptor(req, res, next) {
+  try {
+    //  Encrypt response
+    const originalSend = res.json;
+    res.json = function (data) {
+      const encrypted = encryptResponse(data);
+      originalSend.call(this, encrypted);
+    };
 
-  //  Encrypt response
-  const originalSend = res.send;
-  res.send = async function () {
-    console.log(arguments);
-    arguments[0] = await encryptResponse(arguments[0]);
-    originalSend.apply(res, arguments);
-  };
+    //  Decrypt request
+    if (req.body && req.body.message) {
+      req.body = decryptRequest(req.body.message);
+    }
 
-  //  Decrypt response
-  if (req.body && req.body.message) {
-    req.body = JSON.parse(await decryptResponse(req.body.message));
+    next();
+  } catch (e) {
+    const encrypted = encryptResponse(e.message);
+    res.status(500).json(encrypted);
   }
-  next();
 }
