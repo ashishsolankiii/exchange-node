@@ -103,8 +103,10 @@ const getEventMatchData = async (req, res) => {
 
 const getEventMatchDataFront = async (req, res) => {
   const { eventId } = req.body;
+  const user = req.user;
   const GetEventMatchData = await eventService.getEventMatchDataFront({
-    eventId
+    eventId,
+    user
   });
 
   res.status(200).json({ success: true, data: { details: GetEventMatchData } });

@@ -5,6 +5,7 @@ import { generatePaginationQueries, generateSearchFilters } from "../../lib/help
 import Event from "../../models/v1/Event.js";
 import Market from "../../models/v1/Market.js";
 import commonService from "./commonService.js";
+import User, { USER_ROLE } from "../../models/v1/User.js";
 
 // Fetch all event from the database
 const fetchAllEvent = async ({ ...reqBody }) => {
@@ -430,7 +431,20 @@ const getEventMatchData = async ({ eventId }) => {
   }
 };
 
-const getEventMatchDataFront = async ({ eventId }) => {
+async function getBetLock(userId) {
+  let findUser = await User.findOne({ _id: userId });
+  if (findUser.isBetLock == true) {
+    return true;
+  }
+
+  if (findUser.role != USER_ROLE.SUPER_ADMIN) {
+    return await getBetLock(findUser.parentId);
+  } else {
+    return false;
+  }
+}
+
+const getEventMatchDataFront = async ({ eventId, user }) => {
   try {
     const event = await Event.aggregate([
       {
@@ -512,6 +526,16 @@ const getEventMatchDataFront = async ({ eventId }) => {
         $unset: ["sport", "competition"],
       },
     ]);
+    let betLock = false;
+    let findUser = await User.findOne({ _id: user._id }, { role: 1 });
+    if (findUser.role == USER_ROLE.USER) {
+      if (event[0].betLock == true) {
+        betLock = true;
+      }
+      else {
+        betLock = await getBetLock(user._id);
+      }
+    }
 
     for (var i = 0; i < event[0].market.length; i++) {
       if (event[0].market[i].minStake == 0) {
@@ -523,6 +547,7 @@ const getEventMatchDataFront = async ({ eventId }) => {
       if (event[0].market[i].betDelay == 0) {
         event[0].market[i].betDelay = event[0].betDelay;
       }
+      event[0].market[i].betLock = betLock;
       var marketUrl = `${appConfig.BASE_URL}?action=matchodds&market_id=${event[0].market[i].marketId}`;
       const { statusCode, data } = await commonService.fetchData(marketUrl);
       if (statusCode === 200) {
