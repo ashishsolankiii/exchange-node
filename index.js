@@ -43,11 +43,18 @@ dbConnection();
 
 initSocket(server);
 
-// Cron Job
+// Cron Job for sync market
 cron.schedule("0 2 * * *", async function () {
 
   // For market sync data
   await cronController.syncDetail();
+});
+
+// Cron Job for live event
+cron.schedule("* * * * *", async function () {
+
+  // For market sync data
+  await cronController.getLiveEvent();
 });
 
 server.listen(appConfig.PORT, () => {

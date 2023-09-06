@@ -68,6 +68,13 @@ const getRunnerPls = async (req, res) => {
   res.status(201).json({ success: true, data: { details: getRunnerPls } });
 };
 
+const getCurrentBetsUserwise = async (req, res) => {
+  const { body } = await betRequest.getCurrentBetsUserwise(req);
+  const getCurrentBet = await betService.getCurrentBetsUserwise({ ...body });
+
+  res.status(201).json({ success: true, data: { details: getCurrentBet } });
+};
+
 export default {
   createBet,
   getAllBet,
@@ -76,4 +83,5 @@ export default {
   settlement,
   getChildUserData,
   getRunnerPls,
+  getCurrentBetsUserwise
 };

@@ -11,5 +11,6 @@ route(router, "post", "/betComplete", betController.betComplete);
 route(router, "post", "/settlement", betController.settlement);
 route(router, "post", "/getChildUserData", betController.getChildUserData);
 route(router, "post", "/getRunnerPls", betController.getRunnerPls);
+route(router, "post", "/getCurrentBetsUserwise", betController.getCurrentBetsUserwise);
 
 export default router;

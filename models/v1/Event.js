@@ -83,6 +83,9 @@ const eventSchema = new mongoose.Schema({
 
   // Indicates if any favourite event
   isFavourite: { type: Boolean, default: false },
+
+  // Check event is live
+  isLive: { type: Boolean, default: false },
 });
 
 eventSchema.plugin(timestampPlugin);
