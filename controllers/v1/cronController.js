@@ -279,6 +279,37 @@ async function syncMarket(eventApiIds) {
   return marketIdsArray;
 }
 
+// Live Event
+const getLiveEvent = async (req, res) => {
+  try {
+    const startOfDay = new Date(
+      new Date().setUTCHours(0, 0, 0, 0)
+    ).toISOString();
+
+    const endOfDay = new Date(new Date()).toISOString();
+
+    const findEvent = await Event.find({
+      matchDate: {
+        $gte: startOfDay,
+        $lt: endOfDay,
+      },
+      completed: false, isLive: false
+    });
+
+    for (var i = 0; i < findEvent.length; i++) {
+      const updatedUser = await Event.findByIdAndUpdate(findEvent[i]._id, { isLive: true }, {
+        new: true,
+      });
+    }
+
+    res.status(200).json({ message: "Live event updated." });
+
+  } catch (e) {
+    throw new Error(e);
+  }
+}
+
 export default {
   syncDetail,
+  getLiveEvent
 };

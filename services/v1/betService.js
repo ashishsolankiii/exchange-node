@@ -564,6 +564,164 @@ const getChildUserData = async ({ userId, filterUserId }) => {
   }
 };
 
+const getCurrentBetsUserwise = async ({ ...reqBody }) => {
+  try {
+    const { loginUserId, page,
+      perPage,
+      sortBy,
+      direction, betType } = reqBody;
+
+    const startOfDay = new Date(
+      new Date().setUTCHours(0, 0, 0, 0)
+    ).toISOString();
+    const endOfDay = new Date(
+      new Date().setUTCHours(23, 59, 59, 999)
+    ).toISOString();
+
+    // Pagination and Sorting
+    const sortDirection = direction === "asc" ? 1 : -1;
+    const paginationQueries = generatePaginationQueries(page, perPage);
+
+    let filters = {
+      userId: new mongoose.Types.ObjectId(loginUserId), "market.startDate": {
+        $gte: new Date(startOfDay),
+        $lt: new Date(endOfDay),
+      }
+    };
+
+    if (betType) {
+      if (betType == "back") {
+        filters.isBack = true;
+      } else if (betType == "lay") {
+        filters.isBack = false;
+      }
+    }
+    const bet = await Bet.aggregate([
+      {
+        $lookup: {
+          from: "events",
+          localField: "eventId",
+          foreignField: "_id",
+          as: "event",
+          pipeline: [{ $project: { name: 1, sportId: 1 } }],
+        },
+      },
+      {
+        $unwind: { path: "$event", preserveNullAndEmptyArrays: true },
+      },
+      {
+        $lookup: {
+          from: "sports",
+          localField: "event.sportId",
+          foreignField: "_id",
+          as: "sport",
+          pipeline: [{ $project: { name: 1 } }],
+        },
+      },
+      {
+        $unwind: { path: "$sport", preserveNullAndEmptyArrays: true },
+      },
+      {
+        $lookup: {
+          from: "market_runners",
+          localField: "runnerId",
+          foreignField: "_id",
+          as: "marketRunner",
+          pipeline: [{ $project: { runnerName: 1 } }],
+        },
+      },
+      { $unwind: "$marketRunner" },
+      {
+        $lookup: {
+          from: "markets",
+          localField: "marketId",
+          foreignField: "_id",
+          as: "market",
+          pipeline: [{ $project: { name: 1, startDate: 1 } }],
+        },
+      },
+      {
+        $unwind: {
+          path: "$market",
+          preserveNullAndEmptyArrays: true,
+        },
+      },
+      {
+        $match: filters
+      },
+      {
+        $set: {
+          eventName: "$event.name",
+          marketName: "$market.name",
+          runnerName: "$marketRunner.runnerName",
+          sportName: "$sport.name",
+        },
+      },
+      {
+        $unset: ["event", "market", "marketRunner", "sport"],
+      },
+      {
+        $facet: {
+          totalRecords: [{ $count: "count" }],
+          paginatedResults: [
+            {
+              $sort: { [sortBy]: sortDirection },
+            },
+            ...paginationQueries,
+          ],
+        },
+      },
+    ]);
+
+    const totalAmount = await Bet.aggregate([
+      {
+        $lookup: {
+          from: "markets",
+          localField: "marketId",
+          foreignField: "_id",
+          as: "market",
+          pipeline: [{ $project: { name: 1, startDate: 1 } }],
+        },
+      },
+      {
+        $unwind: {
+          path: "$market",
+          preserveNullAndEmptyArrays: true,
+        },
+      },
+      {
+        $match: filters
+      },
+      {
+        $unset: ["market"],
+      },
+      {
+        "$group": {
+          _id: null,
+          total: {
+            $sum: "$stake"
+          }
+        }
+      }
+    ]);
+    const data = {
+      records: [],
+      totalRecords: 0,
+      totalAmount: totalAmount[0].total
+    };
+
+    if (bet?.length) {
+      data.records = bet[0]?.paginatedResults || [];
+      data.totalRecords = bet[0]?.totalRecords?.length ? bet[0]?.totalRecords[0].count : 0;
+    }
+
+    return data;
+
+  } catch (e) {
+    throw new Error(e);
+  }
+};
+
 export default {
   fetchRunnerPls,
   addBet,
@@ -572,4 +730,5 @@ export default {
   completeBet,
   settlement,
   getChildUserData,
+  getCurrentBetsUserwise
 };
