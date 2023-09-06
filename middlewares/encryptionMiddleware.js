@@ -18,8 +18,8 @@ export default function encryptResponseInterceptor(req, res, next) {
     };
 
     //  Decrypt request
-    if (req.body && req.body.message) {
-      req.body = decryptRequest(req.body.message);
+    if (req.body && req.body.payload) {
+      req.body = decryptRequest(req.body.payload);
     }
 
     next();
