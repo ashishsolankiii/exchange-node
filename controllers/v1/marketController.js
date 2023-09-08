@@ -19,7 +19,20 @@ const updateMarket = async (req, res) => {
   res.status(200).json({ success: true, data: { details: updatedMarket } });
 };
 
+//  Pass eventId and sync Matchodds, Bookmaker and Fancy
+const syncMarketByEvent = async (req, res) => {
+  const { eventId } = req.body;
+  if (!eventId) {
+    throw new ErrorResponse("Event Id is required").status(401);
+  }
+
+  const syncMarketByEventId = await marketService.syncMarketByEventId({ eventId });
+
+  res.status(200).json({ success: true, data: { details: syncMarketByEventId } });
+};
+
 export default {
   createMarket,
-  updateMarket
+  updateMarket,
+  syncMarketByEvent
 };
