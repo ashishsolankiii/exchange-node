@@ -342,7 +342,7 @@ async function syncMarketBookmakers(eventApiIds) {
       // Iterate through each event data for the current competition
       for (const market of data) {
         var type_id = "";
-        if (market.marketName === "Bookmaker") {
+        if (market.marketName === "Bookmaker" || market.marketName === "Tied Match") {
           type_id = betCategoryIdMap[DEFAULT_CATEGORIES[1]];
         }
 
