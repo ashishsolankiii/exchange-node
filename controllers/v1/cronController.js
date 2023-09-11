@@ -33,6 +33,10 @@ const syncDetail = async (req, res) => {
   await syncMarketBookmakers(eventApiIds);
   console.log("All Markets bookmakers has been synced");
 
+  // Call the syncMarket fancy function to sync Market data
+  await syncMarketFancy(eventApiIds);
+  console.log("All Markets bookmakers has been synced");
+
   // Respond with a 200 status code and success message
   res.status(200).json({ message: "All data has been synced!" });
   // } catch (e) {
@@ -403,9 +407,88 @@ async function syncMarketBookmakers(eventApiIds) {
   return marketIdsArray;
 }
 
+//Sync All Market Fancy
+async function syncMarketFancy(eventApiIds) {
+  var runnerSelectionIdsArray = [];
+
+  //Get Bet Categories
+  var betCategories = await BetCategory.find({ name: { $in: DEFAULT_CATEGORIES } });
+  const betCategoryIdMap = betCategories.reduce((acc, betCategory) => {
+    acc[betCategory.name] = betCategory._id;
+    return acc;
+  }, {});
+
+  //Get all events information
+  var allEvents = await Event.find({ apiEventId: { $in: eventApiIds } });
+
+  // Iterate through each competition to fetch events for it
+  for (const eventApiId of eventApiIds) {
+    var eventDetail = allEvents.find((event) => event.apiEventId == eventApiId);
+
+    // Construct the URL to fetch events data for the current competition
+    var marketUrl = `${appConfig.BASE_URL}?action=fancy&event_id=${eventApiId}`;
+    // Fetch market data from the API for the current event
+    const { statusCode, data } = await commonService.fetchData(marketUrl);
+    // Check if the API request was successful (status code 200)
+    if (statusCode === 200 && Array.isArray(data)) {
+      var type_id = betCategoryIdMap[DEFAULT_CATEGORIES[2]];
+
+      //Add or Upsert market in DB
+      const marketObj = {
+        name: "Normal",
+        typeId: type_id,
+        // marketId: eventDetail.marketId,
+        apiEventId: eventDetail.apiEventId,
+        eventId: eventDetail._id,
+        apiCompetitionId: eventDetail.apiCompetitionId,
+        competitionId: eventDetail.competitionId,
+        apiSportId: eventDetail.apiSportId,
+        sportId: eventDetail.sportId,
+        startDate: eventDetail.matchDate,
+      };
+
+      //Market Create Or Update
+      var marketQuery = {
+        apiSportId: eventDetail.apiSportId,
+        apiCompetitionId: eventDetail.apiCompetitionId,
+        apiEventId: eventDetail.apiEventId,
+      };
+
+      var marketData = await Market.findOneAndUpdate(marketQuery, { $set: marketObj }, { upsert: true, new: true });
+      // Iterate through each event data for the current competition
+      for (const market of data) {
+        //Save Market Runners data in DB
+        var marketRunnerObj = {
+          marketId: marketData._id,
+          selectionId: market.SelectionId,
+          runnerName: market.RunnerName,
+        };
+
+        //Market Runner Create Or Update
+        var marketRunnerQuery = {
+          marketId: marketData._id,
+          selectionId: market.selectionId,
+        };
+
+        await MarketRunner.findOneAndUpdate(
+          marketRunnerQuery,
+          { $set: marketRunnerObj },
+          { upsert: true, new: true }
+        );
+
+        //Push selectionid in array
+        runnerSelectionIdsArray.push(market.SelectionId);
+      }
+    }
+  }
+
+  return runnerSelectionIdsArray;
+}
+
 export default {
   syncDetail,
   getLiveEvent,
   syncMarket,
-  syncMarketBookmakers
+  syncMarketBookmakers,
+  syncMarketFancy
 };
