@@ -199,6 +199,11 @@ const addUser = async ({ user, ...reqBody }) => {
       }
     }
 
+    const existingUsername = await User.findOne({ username: username }, { _id: 1 });
+    if (existingUsername) {
+      throw new Error("Username already exists. Please choose a different username.");
+    }
+
     const newUserObj = {
       fullName,
       username,
@@ -351,14 +356,18 @@ const calculateUserPointBalance = async (currentUser, userReq) => {
  */
 const modifyUser = async ({ user, ...reqBody }) => {
   try {
-    const exisitngUsername = await User.findOne({
-      username: reqBody.username,
-      _id: { $ne: reqBody._id },
-    });
-
+    // Existing username check
+    const exisitngUsername = await User.findOne(
+      {
+        username: reqBody.username,
+        _id: { $ne: reqBody._id },
+      },
+      { _id: 1 }
+    );
     if (exisitngUsername) {
-      throw new Error("Username already exists!");
+      throw new Error("Username already exists. Please choose a different username.");
     }
+
     const currentUser = await User.findById(reqBody._id);
     if (currentUser.role === USER_ROLE.SYSTEM_OWNER) {
       throw new Error("Failed to update user!");
