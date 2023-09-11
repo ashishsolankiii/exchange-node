@@ -342,60 +342,60 @@ async function syncMarketBookmakers(eventApiIds) {
       // Iterate through each event data for the current competition
       for (const market of data) {
         var type_id = "";
-        if (market.marketName === "Bookmaker" || market.marketName === "Tied Match") {
+        if (market.marketName === "Bookmaker") {
           type_id = betCategoryIdMap[DEFAULT_CATEGORIES[1]];
-        }
 
-        //Add or Upsert market in DB
-        const marketObj = {
-          name: market.marketName,
-          typeId: type_id,
-          marketId: market.marketId,
-          apiEventId: eventDetail.apiEventId,
-          eventId: eventDetail._id,
-          apiCompetitionId: eventDetail.apiCompetitionId,
-          competitionId: eventDetail.competitionId,
-          apiSportId: eventDetail.apiSportId,
-          sportId: eventDetail.sportId,
-          startDate: market.marketStartTime,
-        };
-
-        //Market Create Or Update
-        var marketQuery = {
-          marketId: market.marketId,
-          apiSportId: eventDetail.apiSportId,
-          apiCompetitionId: eventDetail.apiCompetitionId,
-          apiEventId: eventDetail.apiEventId,
-        };
-
-        var marketData = await Market.findOneAndUpdate(marketQuery, { $set: marketObj }, { upsert: true, new: true });
-
-        //Save Market Runners data in DB
-        for (const runner of market.runners) {
-          var marketRunnerObj = {
-            apiMarketId: market.marketId,
-            marketId: marketData._id,
-            selectionId: runner.selectionId,
-            runnerName: runner.runnerName,
-            handicap: runner.handicap,
-            priority: runner.priority,
+          //Add or Upsert market in DB
+          const marketObj = {
+            name: market.marketName,
+            typeId: type_id,
+            marketId: market.marketId,
+            apiEventId: eventDetail.apiEventId,
+            eventId: eventDetail._id,
+            apiCompetitionId: eventDetail.apiCompetitionId,
+            competitionId: eventDetail.competitionId,
+            apiSportId: eventDetail.apiSportId,
+            sportId: eventDetail.sportId,
+            startDate: market.marketStartTime,
           };
 
-          //Market Runner Create Or Update
-          var marketRunnerQuery = {
-            apiMarketId: market.marketId,
-            selectionId: runner.selectionId,
+          //Market Create Or Update
+          var marketQuery = {
+            marketId: market.marketId,
+            apiSportId: eventDetail.apiSportId,
+            apiCompetitionId: eventDetail.apiCompetitionId,
+            apiEventId: eventDetail.apiEventId,
           };
 
-          await MarketRunner.findOneAndUpdate(
-            marketRunnerQuery,
-            { $set: marketRunnerObj },
-            { upsert: true, new: true }
-          );
-        }
+          var marketData = await Market.findOneAndUpdate(marketQuery, { $set: marketObj }, { upsert: true, new: true });
 
-        //Push marketId in array
-        marketIdsArray.push(market.marketId);
+          //Save Market Runners data in DB
+          for (const runner of market.runners) {
+            var marketRunnerObj = {
+              apiMarketId: market.marketId,
+              marketId: marketData._id,
+              selectionId: runner.selectionId,
+              runnerName: runner.runnerName,
+              handicap: runner.handicap,
+              priority: runner.priority,
+            };
+
+            //Market Runner Create Or Update
+            var marketRunnerQuery = {
+              apiMarketId: market.marketId,
+              selectionId: runner.selectionId,
+            };
+
+            await MarketRunner.findOneAndUpdate(
+              marketRunnerQuery,
+              { $set: marketRunnerObj },
+              { upsert: true, new: true }
+            );
+          }
+
+          //Push marketId in array
+          marketIdsArray.push(market.marketId);
+        }
       }
     }
   }
