@@ -2,7 +2,7 @@ import mongoose, { isValidObjectId } from "mongoose";
 import ErrorResponse from "../../lib/error-handling/error-response.js";
 import { encryptPassword, getTrimmedUser, transferCloneParentFields } from "../../lib/helpers/auth.js";
 import { generatePaginationQueries, generateSearchFilters } from "../../lib/helpers/pipeline.js";
-import { decryptTransactionCode, encryptTransactionCode, generateTransactionCode, validateTransactionCode } from "../../lib/helpers/transaction-code.js";
+import { generateTransactionCode, validateTransactionCode } from "../../lib/helpers/transaction-code.js";
 import AppModule from "../../models/v1/AppModule.js";
 import User, { SETTLEMENT_DURATION, USER_ACCESSIBLE_ROLES, USER_ROLE } from "../../models/v1/User.js";
 import transactionActivityService from "../../services/v1/transactionActivityService.js";
@@ -185,18 +185,25 @@ const addUser = async ({ user, ...reqBody }) => {
     availableSports,
     isCasinoAvailable,
     isAutoSettlement,
-    transactionCode
+    transactionCode,
   } = reqBody;
 
   try {
     const loggedInUser = await User.findById(user._id);
+
     // Check transaction code
-    if (role != USER_ROLE.SYSTEM_OWNER) {
+    if (loggedInUser.role !== USER_ROLE.SYSTEM_OWNER) {
       const isValidCode = validateTransactionCode(transactionCode, loggedInUser.transactionCode);
       if (!isValidCode) {
         throw new Error("Invalid transactionCode!");
       }
     }
+
+    const existingUsername = await User.findOne({ username: username }, { _id: 1 });
+    if (existingUsername) {
+      throw new Error("Username already exists. Please choose a different username.");
+    }
+
     const newUserObj = {
       fullName,
       username,
@@ -263,7 +270,7 @@ const addUser = async ({ user, ...reqBody }) => {
       newUserObj.currencyId = currencyId;
     }
 
-    let newUser = []
+    let newUser = [];
     newUser = await User.create(newUserObj);
 
     // Create entry in transaction type debit
@@ -349,14 +356,18 @@ const calculateUserPointBalance = async (currentUser, userReq) => {
  */
 const modifyUser = async ({ user, ...reqBody }) => {
   try {
-    const exisitngUsername = await User.findOne({
-      username: reqBody.username,
-      _id: { $ne: reqBody._id },
-    });
-
+    // Existing username check
+    const exisitngUsername = await User.findOne(
+      {
+        username: reqBody.username,
+        _id: { $ne: reqBody._id },
+      },
+      { _id: 1 }
+    );
     if (exisitngUsername) {
-      throw new Error("Username already exists!");
+      throw new Error("Username already exists. Please choose a different username.");
     }
+
     const currentUser = await User.findById(reqBody._id);
     if (currentUser.role === USER_ROLE.SYSTEM_OWNER) {
       throw new Error("Failed to update user!");
@@ -365,7 +376,7 @@ const modifyUser = async ({ user, ...reqBody }) => {
     const loggedInUser = await User.findById(user._id);
 
     // Check transaction code
-    if (currentUser.role != USER_ROLE.SYSTEM_OWNER) {
+    if (loggedInUser.role !== USER_ROLE.SYSTEM_OWNER) {
       const isValidCode = validateTransactionCode(reqBody.transactionCode, loggedInUser.transactionCode);
       if (!isValidCode) {
         throw new Error("Invalid transactionCode!");

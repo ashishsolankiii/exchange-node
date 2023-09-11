@@ -227,7 +227,7 @@ const fetchUserPermissions = async ({ userId }) => {
 
 const fetchUserActivePermissions = async ({ userId }) => {
   try {
-    const user = await User.findById(userId, { cloneParentId: 1, role: 1 });
+    const user = await User.findById(userId, { username: 1, cloneParentId: 1, role: 1 });
     if (!user) {
       throw new Error("User not found!");
     }
@@ -251,6 +251,8 @@ const fetchUserActivePermissions = async ({ userId }) => {
       });
     }
 
+    let availableModules = activePermissions;
+
     const staticPermissions = defaultStaticPermissions
       .filter((permission) => permission.userRoles.includes(user.role))
       .filter((permission) => !activePermissions.includes(permission.key))
@@ -270,7 +272,9 @@ const fetchUserActivePermissions = async ({ userId }) => {
       APP_MODULES.THEME_USER_DELETE,
     ];
 
-    let availableModules = [...activePermissions, ...staticPermissions];
+    if (!user.cloneParentId) {
+      availableModules.push(...staticPermissions);
+    }
 
     if (![USER_ROLE.MASTER].includes(user.role)) {
       availableModules = availableModules.filter((module) => !masterModules.includes(module));

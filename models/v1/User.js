@@ -188,7 +188,7 @@ const userSchema = new mongoose.Schema({
   availableSports: [{ type: mongoose.Schema.Types.ObjectId, ref: "sport" }],
 
   // Settlement Duration Type
-  settlementDurationType: { type: "string", enum: Object.values(SETTLEMENT_DURATION) },
+  settlementDurationType: { type: "string", enum: [...Object.values(SETTLEMENT_DURATION), null], default: null },
 
   // Settlement Date
   settlementDate: { type: String, format: Date, default: null },
