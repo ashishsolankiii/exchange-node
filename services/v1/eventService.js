@@ -6,6 +6,7 @@ import Event from "../../models/v1/Event.js";
 import Market from "../../models/v1/Market.js";
 import commonService from "./commonService.js";
 import User, { USER_ROLE } from "../../models/v1/User.js";
+import { DEFAULT_CATEGORIES } from "../../models/v1/BetCategory.js";
 
 // Fetch all event from the database
 const fetchAllEvent = async ({ ...reqBody }) => {
@@ -513,7 +514,33 @@ const getEventMatchDataFront = async ({ eventId, user }) => {
                 ],
               },
             },
+            {
+              $lookup: {
+                from: "bet_categories",
+                localField: "typeId",
+                foreignField: "_id",
+                as: "bet_category",
+                pipeline: [
+                  {
+                    $project: { name: 1 },
+                  },
+                ],
+              },
+            },
+            {
+              $unwind: {
+                path: "$bet_category",
+                preserveNullAndEmptyArrays: true,
+              },
+            },
           ],
+        },
+      },
+
+      {
+        $unwind: {
+          path: "$bet_category",
+          preserveNullAndEmptyArrays: true,
         },
       },
       {
@@ -548,32 +575,64 @@ const getEventMatchDataFront = async ({ eventId, user }) => {
         event[0].market[i].betDelay = event[0].betDelay;
       }
       event[0].market[i].betLock = betLock;
-      var marketUrl = `${appConfig.BASE_URL}?action=matchodds&market_id=${event[0].market[i].marketId}`;
-      const { statusCode, data } = await commonService.fetchData(marketUrl);
-      if (statusCode === 200) {
-        const market = data;
-        let odds;
-        if (market.length > 0 && market[0]["runners"]) {
-          odds = market[0]["runners"].map(function (item) {
-            delete item.ex;
-            delete item.status;
-            delete item.lastPriceTraded;
-            delete item.selectionId;
-            delete item.removalDate;
-            return item;
-          });
-        } else {
-          odds = [];
-        }
-        for (var j = 0; j < event[0].market[i].market_runner.length; j++) {
-          if (odds.length > 0) {
-            let filterdata = odds.filter(function (item) {
-              return item.runner == event[0].market[i].market_runner[j].runnerName;
+      if (event[0].market[i].bet_category.name == DEFAULT_CATEGORIES[0]) {
+        var marketUrl = `${appConfig.BASE_URL}?action=matchodds&market_id=${event[0].market[i].marketId}`;
+        const { statusCode, data } = await commonService.fetchData(marketUrl);
+        if (statusCode === 200) {
+          const market = data;
+          let odds;
+          if (market.length > 0 && market[0]["runners"]) {
+            odds = market[0]["runners"].map(function (item) {
+              delete item.ex;
+              delete item.status;
+              delete item.lastPriceTraded;
+              delete item.selectionId;
+              delete item.removalDate;
+              return item;
             });
-            event[0].market[i].market_runner[j].matchOdds = filterdata[0];
-            delete event[0].market[i].market_runner[j].matchOdds.runner;
           } else {
-            event[0].market[i].market_runner[j].matchOdds = {};
+            odds = [];
+          }
+          for (var j = 0; j < event[0].market[i].market_runner.length; j++) {
+            if (odds.length > 0) {
+              let filterdata = odds.filter(function (item) {
+                return item.runner == event[0].market[i].market_runner[j].runnerName;
+              });
+              event[0].market[i].market_runner[j].matchOdds = filterdata[0];
+              delete event[0].market[i].market_runner[j].matchOdds.runner;
+            } else {
+              event[0].market[i].market_runner[j].matchOdds = {};
+            }
+          }
+        }
+      }
+      else if (event[0].market[i].bet_category.name == DEFAULT_CATEGORIES[1]) {
+        var marketUrl = `${appConfig.BASE_URL}?action=bookmakermatchodds&market_id=${event[0].market[i].marketId}`;
+        const { statusCode, data } = await commonService.fetchData(marketUrl);
+        if (statusCode === 200) {
+          const market = data;
+          let odds;
+          if (market.length > 0 && market[0]["runners"]) {
+            odds = market[0]["runners"].map(function (item) {
+              delete item.ex;
+              delete item.status;
+              delete item.lastPriceTraded;
+              delete item.selectionId;
+              return item;
+            });
+          } else {
+            odds = [];
+          }
+          for (var j = 0; j < event[0].market[i].market_runner.length; j++) {
+            if (odds.length > 0) {
+              let filterdata = odds.filter(function (item) {
+                return item.runnerName == event[0].market[i].market_runner[j].runnerName;
+              });
+              event[0].market[i].market_runner[j].matchOdds = filterdata[0];
+              delete event[0].market[i].market_runner[j].matchOdds.runner;
+            } else {
+              event[0].market[i].market_runner[j].matchOdds = {};
+            }
           }
         }
       }

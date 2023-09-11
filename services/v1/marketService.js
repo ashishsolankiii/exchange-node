@@ -6,6 +6,7 @@ import Market from "../../models/v1/Market.js";
 import Sport from "../../models/v1/Sport.js";
 import commonService from "./commonService.js";
 import ErrorResponse from "../../lib/error-handling/error-response.js";
+import cronController from "../../controllers/v1/cronController.js";
 
 const syncMarkets = async (data) => {
   //Get Bet Categories
@@ -208,9 +209,26 @@ const modifyMarket = async ({ ...reqBody }) => {
   }
 };
 
+
+/**
+ * sync market by event id in the database
+ */
+const syncMarketByEventId = async ({ eventId }) => {
+  try {
+    const mongoEventId = await Event.findById(eventId);
+    let apiEventId = [];
+    apiEventId.push(mongoEventId.apiEventId)
+    await cronController.syncMarket(apiEventId);
+    await cronController.syncMarketBookmakers(apiEventId);
+    return eventId;
+  } catch (e) {
+    throw new ErrorResponse(e.message).status(200);
+  }
+};
 export default {
   syncMarkets,
   getMatchOdds,
   addMarket,
-  modifyMarket
+  modifyMarket,
+  syncMarketByEventId
 };

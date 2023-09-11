@@ -110,6 +110,32 @@ async function getRunnerPlsRequest(req) {
 
   return req;
 }
+async function getCurrentBetsUserwise(req) {
+  req.body.page = req.body?.page ? Number(req.body.page) : null;
+  req.body.perPage = req.body?.perPage ? Number(req.body.perPage) : 10;
+  req.body.sortBy = req.body?.sortBy ? req.body.sortBy : "createdAt";
+  req.body.direction = req.body?.direction ? req.body.direction : "asc";
+  req.body.betType = req.body.betType || null;
+
+  const validationSchema = Yup.object().shape({
+    page: Yup.number().nullable(true),
+
+    perPage: Yup.number(),
+
+    sortBy: Yup.string().oneOf(Object.keys(Bet.schema.paths), "Invalid sortBy key."),
+
+    direction: Yup.string().oneOf(["asc", "desc", null], "Invalid direction use 'asc' or 'desc'.").nullable(true),
+
+    loginUserId: Yup.string()
+      .nullable(true)
+      .test("userId", "Invalid userId!", (v) => !v || isValidObjectId),
+    betType: Yup.string().nullable(true),
+  });
+
+  await validationSchema.validate(req.body);
+
+  return req;
+}
 
 export default {
   createBetRequest,
@@ -117,4 +143,5 @@ export default {
   betCompleteRequest,
   settlementRequest,
   getRunnerPlsRequest,
+  getCurrentBetsUserwise,
 };

@@ -29,6 +29,10 @@ const syncDetail = async (req, res) => {
   await syncMarket(eventApiIds);
   console.log("All Markets has been synced");
 
+  // Call the syncMarket bookmaker function to sync Market data
+  await syncMarketBookmakers(eventApiIds);
+  console.log("All Markets bookmakers has been synced");
+
   // Respond with a 200 status code and success message
   res.status(200).json({ message: "All data has been synced!" });
   // } catch (e) {
@@ -279,6 +283,129 @@ async function syncMarket(eventApiIds) {
   return marketIdsArray;
 }
 
+// Live Event
+const getLiveEvent = async (req, res) => {
+  try {
+    const startOfDay = new Date(
+      new Date().setUTCHours(0, 0, 0, 0)
+    ).toISOString();
+
+    const endOfDay = new Date(new Date()).toISOString();
+
+    const findEvent = await Event.find({
+      matchDate: {
+        $gte: startOfDay,
+        $lt: endOfDay,
+      },
+      completed: false, isLive: false
+    });
+
+    for (var i = 0; i < findEvent.length; i++) {
+      const updatedUser = await Event.findByIdAndUpdate(findEvent[i]._id, { isLive: true }, {
+        new: true,
+      });
+    }
+
+    res.status(200).json({ message: "Live event updated." });
+
+  } catch (e) {
+    throw new Error(e);
+  }
+}
+
+//Sync All Market Bookmakers
+async function syncMarketBookmakers(eventApiIds) {
+  var marketIdsArray = [];
+
+  //Get Bet Categories
+  var betCategories = await BetCategory.find({ name: { $in: DEFAULT_CATEGORIES } });
+  const betCategoryIdMap = betCategories.reduce((acc, betCategory) => {
+    acc[betCategory.name] = betCategory._id;
+    return acc;
+  }, {});
+
+  //Get all events information
+  var allEvents = await Event.find({ apiEventId: { $in: eventApiIds } });
+
+  // Iterate through each competition to fetch events for it
+  for (const eventApiId of eventApiIds) {
+    var eventDetail = allEvents.find((event) => event.apiEventId == eventApiId);
+
+    // Construct the URL to fetch events data for the current competition
+    var marketUrl = `${appConfig.BASE_URL}?action=bookmaker&event_id=${eventApiId}`;
+
+    // Fetch market data from the API for the current event
+    const { statusCode, data } = await commonService.fetchData(marketUrl);
+
+    // Check if the API request was successful (status code 200)
+    if (statusCode === 200) {
+      // Iterate through each event data for the current competition
+      for (const market of data) {
+        var type_id = "";
+        if (market.marketName === "Bookmaker") {
+          type_id = betCategoryIdMap[DEFAULT_CATEGORIES[1]];
+
+          //Add or Upsert market in DB
+          const marketObj = {
+            name: market.marketName,
+            typeId: type_id,
+            marketId: market.marketId,
+            apiEventId: eventDetail.apiEventId,
+            eventId: eventDetail._id,
+            apiCompetitionId: eventDetail.apiCompetitionId,
+            competitionId: eventDetail.competitionId,
+            apiSportId: eventDetail.apiSportId,
+            sportId: eventDetail.sportId,
+            startDate: market.marketStartTime,
+          };
+
+          //Market Create Or Update
+          var marketQuery = {
+            marketId: market.marketId,
+            apiSportId: eventDetail.apiSportId,
+            apiCompetitionId: eventDetail.apiCompetitionId,
+            apiEventId: eventDetail.apiEventId,
+          };
+
+          var marketData = await Market.findOneAndUpdate(marketQuery, { $set: marketObj }, { upsert: true, new: true });
+
+          //Save Market Runners data in DB
+          for (const runner of market.runners) {
+            var marketRunnerObj = {
+              apiMarketId: market.marketId,
+              marketId: marketData._id,
+              selectionId: runner.selectionId,
+              runnerName: runner.runnerName,
+              handicap: runner.handicap,
+              priority: runner.priority,
+            };
+
+            //Market Runner Create Or Update
+            var marketRunnerQuery = {
+              apiMarketId: market.marketId,
+              selectionId: runner.selectionId,
+            };
+
+            await MarketRunner.findOneAndUpdate(
+              marketRunnerQuery,
+              { $set: marketRunnerObj },
+              { upsert: true, new: true }
+            );
+          }
+
+          //Push marketId in array
+          marketIdsArray.push(market.marketId);
+        }
+      }
+    }
+  }
+
+  return marketIdsArray;
+}
+
 export default {
   syncDetail,
+  getLiveEvent,
+  syncMarket,
+  syncMarketBookmakers
 };
