@@ -103,12 +103,9 @@ const userCreateUpdateCommonSchema = {
 async function createUserRequest(req) {
   req.body.username = req.body.username?.trim();
   req.body.password = req.body.password?.toString()?.trim();
-
-  if (req.body.settlementDurationType === "") {
-    req.body.settlementDurationType = null;
-    req.body.settlementDate = null;
-    req.body.settlementDay = null;
-  }
+  req.body.settlementDurationType = req.body.settlementDurationType || null;
+  req.body.settlementDate = req.body.settlementDate || null;
+  req.body.settlementDay = req.body.settlementDay || null;
 
   const user = await User.findById(req.user._id, { role: 1 });
 
@@ -144,11 +141,9 @@ async function createUserRequest(req) {
 }
 
 async function updateUserRequest(req) {
-  if (req.body.settlementDurationType === "") {
-    req.body.settlementDurationType = null;
-    req.body.settlementDate = null;
-    req.body.settlementDay = null;
-  }
+  req.body.settlementDurationType = req.body.settlementDurationType || null;
+  req.body.settlementDate = req.body.settlementDate || null;
+  req.body.settlementDay = req.body.settlementDay || null;
 
   const schemaObj = {
     // Keep this on top so that
