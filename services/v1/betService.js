@@ -673,7 +673,7 @@ const getCurrentBetsUserwise = async ({ ...reqBody }) => {
       },
     ]);
 
-    const totalAmount = await Bet.aggregate([
+    let totalAmount = await Bet.aggregate([
       {
         $lookup: {
           from: "markets",
@@ -704,10 +704,17 @@ const getCurrentBetsUserwise = async ({ ...reqBody }) => {
         }
       }
     ]);
+
+    if (totalAmount.length > 0) {
+      totalAmount = totalAmount[0].total;
+    }
+    else {
+      totalAmount = 0;
+    }
     const data = {
       records: [],
       totalRecords: 0,
-      totalAmount: totalAmount[0].total
+      totalAmount: totalAmount
     };
 
     if (bet?.length) {
