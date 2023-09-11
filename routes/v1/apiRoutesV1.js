@@ -2,13 +2,17 @@ import express from "express";
 import authRoutes from "./routes/authRoutes.js";
 import betCategoryRoutes from "./routes/betCategoryRoutes.js";
 import betRoutes from "./routes/betRoutes.js";
+import casinoGameRoutes from "./routes/casinoGameRoutes.js";
+import casinoRoutes from "./routes/casinoRoutes.js";
 import competitionRoutes from "./routes/competitionRoutes.js";
 import cronRoutes from "./routes/cronRoutes.js";
 import currencyRoutes from "./routes/currencyRoutes.js";
 import dashboardRoutes from "./routes/dashboardRoutes.js";
 import eventRoutes from "./routes/eventRoutes.js";
 import exchangeHomeRoutes from "./routes/exchangeHomeRoutes.js";
+import marketRoutes from "./routes/marketRoutes.js";
 import permissionRoutes from "./routes/permissionRoutes.js";
+import scriptRoutes from "./routes/scriptRoutes.js";
 import sportRoutes from "./routes/sportRoutes.js";
 import sportsBetCategoryRoutes from "./routes/sportsBetCategoryRoutes.js";
 import themeSettingRoutes from "./routes/themeSettingRoutes.js";
@@ -20,10 +24,6 @@ import transferTypeRoutes from "./routes/transferTypeRoutes.js";
 import userRoutes from "./routes/userRoutes.js";
 import userstakeRoutes from "./routes/userStakeRoutes.js";
 import withdrawGroupRoutes from "./routes/withdrawGroupRoutes.js";
-import scriptRoutes from "./routes/scriptRoutes.js";
-import casinoRoutes from "./routes/casinoRoutes.js";
-import casinoGameRoutes from "./routes/casinoGameRoutes.js";
-import marketRoutes from "./routes/marketRoutes.js";
 
 const app = express();
 

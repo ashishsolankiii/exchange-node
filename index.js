@@ -5,7 +5,9 @@ import { createServer } from "http";
 import moment from "moment";
 import { appConfig } from "./config/app.js";
 import dbConnection from "./database/connect.js";
+import { settleHandshake } from "./lib/helpers/io-encryption.js";
 import corsMiddleware from "./middlewares/corsMiddleware.js";
+import encryptResponseInterceptor from "./middlewares/encryptionMiddleware.js";
 import apiRoutes from "./routes/apiRoutes.js";
 import { initSocket } from "./socket/index.js";
 import cron from "node-cron";
@@ -27,7 +29,9 @@ app.use(
 
 app.use(corsMiddleware);
 
-app.use("/api", apiRoutes);
+app.use("/handshake", settleHandshake);
+
+app.use("/api", encryptResponseInterceptor, apiRoutes);
 
 app.get("/", (req, res) => {
   res.json({
