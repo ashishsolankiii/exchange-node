@@ -22,6 +22,8 @@ const marketRunnerSchema = new mongoose.Schema({
   handicap: { type: Boolean, default: true },
 
   priority: { type: Number, default: 0 },
+
+  status: { type: String, default: null },
 });
 
 marketRunnerSchema.plugin(timestampPlugin);
