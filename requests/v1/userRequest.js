@@ -1,7 +1,7 @@
 import { isValidObjectId } from "mongoose";
 import Yup from "yup";
 import { isValidCountryCode, isValidObjectIdArray, isValidUrl } from "../../lib/helpers/validation.js";
-import User, { USER_ACCESSIBLE_ROLES } from "../../models/v1/User.js";
+import User, { SETTLEMENT_DAY, SETTLEMENT_DURATION, USER_ACCESSIBLE_ROLES } from "../../models/v1/User.js";
 import UserActivity from "../../models/v1/UserActivity.js";
 
 async function userListingRequest(req) {
@@ -78,6 +78,18 @@ const userCreateUpdateCommonSchema = {
 
   maxStake: Yup.number().min(0).nullable(true),
 
+  settlementDurationType: Yup.string()
+    .oneOf([...Object.values(SETTLEMENT_DURATION), null], "Invalid settlement duration type!")
+    .nullable(true),
+
+  settlementDate: Yup.number().min(1).max(31).nullable(true),
+
+  settlementDay: Yup.string()
+    .oneOf([...Object.values(SETTLEMENT_DAY), null], "Invalid settlement day!")
+    .nullable(true),
+
+  settlementTime: Yup.string().nullable(true),
+
   // Only for SUPER_ADMIN
   contactEmail: Yup.string().email().nullable(true),
   domainUrl: Yup.string().test("domainUrl", "Invalid URL format", (value) => !value || isValidUrl(value)),
@@ -92,9 +104,15 @@ async function createUserRequest(req) {
   req.body.username = req.body.username?.trim();
   req.body.password = req.body.password?.toString()?.trim();
 
+  if (req.body.settlementDurationType === "") {
+    req.body.settlementDurationType = null;
+    req.body.settlementDate = null;
+    req.body.settlementDay = null;
+  }
+
   const user = await User.findById(req.user._id, { role: 1 });
 
-  const validationSchema = Yup.object().shape({
+  const schemaObj = {
     // Keep this on top so that
     // we can override any field if required
     ...userCreateUpdateCommonSchema,
@@ -116,7 +134,9 @@ async function createUserRequest(req) {
     isAutoSettlement: Yup.boolean().nullable(true),
 
     forcePasswordChange: Yup.boolean(),
-  });
+  };
+
+  const validationSchema = Yup.object().shape(schemaObj);
 
   await validationSchema.validate(req.body);
 
@@ -124,6 +144,12 @@ async function createUserRequest(req) {
 }
 
 async function updateUserRequest(req) {
+  if (req.body.settlementDurationType === "") {
+    req.body.settlementDurationType = null;
+    req.body.settlementDate = null;
+    req.body.settlementDay = null;
+  }
+
   const schemaObj = {
     // Keep this on top so that
     // we can override any field if required

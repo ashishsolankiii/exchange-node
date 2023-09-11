@@ -2,7 +2,7 @@ import mongoose, { isValidObjectId } from "mongoose";
 import ErrorResponse from "../../lib/error-handling/error-response.js";
 import { encryptPassword, getTrimmedUser, transferCloneParentFields } from "../../lib/helpers/auth.js";
 import { generatePaginationQueries, generateSearchFilters } from "../../lib/helpers/pipeline.js";
-import { decryptTransactionCode, encryptTransactionCode, generateTransactionCode, validateTransactionCode } from "../../lib/helpers/transaction-code.js";
+import { generateTransactionCode, validateTransactionCode } from "../../lib/helpers/transaction-code.js";
 import AppModule from "../../models/v1/AppModule.js";
 import User, { SETTLEMENT_DURATION, USER_ACCESSIBLE_ROLES, USER_ROLE } from "../../models/v1/User.js";
 import transactionActivityService from "../../services/v1/transactionActivityService.js";
@@ -185,18 +185,20 @@ const addUser = async ({ user, ...reqBody }) => {
     availableSports,
     isCasinoAvailable,
     isAutoSettlement,
-    transactionCode
+    transactionCode,
   } = reqBody;
 
   try {
     const loggedInUser = await User.findById(user._id);
+
     // Check transaction code
-    if (role != USER_ROLE.SYSTEM_OWNER) {
+    if (loggedInUser.role !== USER_ROLE.SYSTEM_OWNER) {
       const isValidCode = validateTransactionCode(transactionCode, loggedInUser.transactionCode);
       if (!isValidCode) {
         throw new Error("Invalid transactionCode!");
       }
     }
+
     const newUserObj = {
       fullName,
       username,
@@ -263,7 +265,7 @@ const addUser = async ({ user, ...reqBody }) => {
       newUserObj.currencyId = currencyId;
     }
 
-    let newUser = []
+    let newUser = [];
     newUser = await User.create(newUserObj);
 
     // Create entry in transaction type debit
@@ -365,7 +367,7 @@ const modifyUser = async ({ user, ...reqBody }) => {
     const loggedInUser = await User.findById(user._id);
 
     // Check transaction code
-    if (currentUser.role != USER_ROLE.SYSTEM_OWNER) {
+    if (loggedInUser.role !== USER_ROLE.SYSTEM_OWNER) {
       const isValidCode = validateTransactionCode(reqBody.transactionCode, loggedInUser.transactionCode);
       if (!isValidCode) {
         throw new Error("Invalid transactionCode!");
