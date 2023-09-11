@@ -220,6 +220,7 @@ const syncMarketByEventId = async ({ eventId }) => {
     apiEventId.push(mongoEventId.apiEventId)
     await cronController.syncMarket(apiEventId);
     await cronController.syncMarketBookmakers(apiEventId);
+    await cronController.syncMarketFancy(apiEventId);
     return eventId;
   } catch (e) {
     throw new ErrorResponse(e.message).status(200);
