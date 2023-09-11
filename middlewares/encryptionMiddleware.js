@@ -1,12 +1,10 @@
 import { decryptRequest, encryptResponse } from "../lib/helpers/io-encryption.js";
 
 /**
- * Middleware for encrypting response data and decrypting request data.
- *
- * @param {import('express').Request} req - Express request object.
- * @param {import('express').Response} res - Express response object.
- * @param {import('express').NextFunction} next - Express next middleware function.
- * @throws {Error} If there's an issue with encryption or decryption.
+ * Middleware function to encrypt response and decrypt request payload
+ * @param {Object} req - Express request object
+ * @param {Object} res - Express response object
+ * @param {Function} next - Express next middleware function
  */
 export default function encryptResponseInterceptor(req, res, next) {
   try {
