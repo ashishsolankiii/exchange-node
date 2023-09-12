@@ -19,7 +19,7 @@ const marketRunnerSchema = new mongoose.Schema({
 
   runnerName: { type: String, default: null },
 
-  handicap: { type: Boolean, default: true },
+  handicap: { type: String, default: true },
 
   priority: { type: Number, default: 0 },
 

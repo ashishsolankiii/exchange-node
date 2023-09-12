@@ -226,10 +226,55 @@ const syncMarketByEventId = async ({ eventId }) => {
     throw new ErrorResponse(e.message).status(200);
   }
 };
+
+const getFencyPrice = async (eventId) => {
+  try {
+    var marketUrl = `${appConfig.BASE_URL}?action=fancy&event_id=${eventId}`;
+    const { statusCode, data } = await commonService.fetchData(marketUrl);
+    if (statusCode === 200) {
+      return data;
+    }
+  } catch (e) {
+    return e;
+  }
+};
+
+const getBookmakerPrice = async (markeId) => {
+  try {
+    let allMarketId = markeId.toString().replace(/["']/g, "");
+    var marketUrl = `${appConfig.BASE_URL}?action=bookmakermatchodds&market_id=${allMarketId}`;
+    const { statusCode, data } = await commonService.fetchData(marketUrl);
+    let allData = [];
+    if (statusCode === 200) {
+      for (const market of data) {
+        if (market["runners"]) {
+          allData.push({
+            marketId: market["marketId"],
+            matchOdds: market["runners"].map(function (item) {
+              delete item.ex;
+              return item;
+            }),
+          });
+        } else {
+          allData.push({
+            marketId: market["marketId"],
+            matchOdds: {},
+          });
+        }
+      }
+    }
+    return allData;
+  } catch (e) {
+    return e;
+  }
+};
+
 export default {
   syncMarkets,
   getMatchOdds,
   addMarket,
   modifyMarket,
-  syncMarketByEventId
+  syncMarketByEventId,
+  getFencyPrice,
+  getBookmakerPrice
 };
