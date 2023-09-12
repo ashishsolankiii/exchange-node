@@ -76,6 +76,7 @@ const existingUserPermissions = async ({ userId }) => {
       },
       {
         $addFields: {
+          "subModules._id": "$subModules.moduleId",
           "subModules.key": "$subModules.appModule.key",
           "subModules.name": "$subModules.appModule.name",
         },
@@ -326,8 +327,7 @@ const setUserPermissions = async ({ userId, moduleIds }) => {
 
     if (newPermissions.length) {
       if (existingPermissions) {
-        existingPermissions.modules = newPermissions;
-        await existingPermissions.save();
+        await Permission.findOneAndUpdate({ userId }, { modules: newPermissions });
       } else {
         await Permission.create({ userId, modules: newPermissions });
       }
