@@ -6,7 +6,6 @@ import { decryptRequest, encryptResponse } from "../lib/helpers/io-encryption.js
  * @param {Object} res - Express response object
  * @param {Function} next - Express next middleware function
  */
-
 export default function encryptResponseInterceptor(req, res, next) {
   try {
     const isBypassed = req.get("X-Bypass-Res-Enc") === "true";
