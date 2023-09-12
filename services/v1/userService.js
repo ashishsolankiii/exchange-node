@@ -192,12 +192,12 @@ const addUser = async ({ user, ...reqBody }) => {
     const loggedInUser = await User.findById(user._id);
 
     // Check transaction code
-    if (loggedInUser.role !== USER_ROLE.SYSTEM_OWNER) {
-      const isValidCode = validateTransactionCode(transactionCode, loggedInUser.transactionCode);
-      if (!isValidCode) {
-        throw new Error("Invalid transactionCode!");
-      }
+    // if (loggedInUser.role !== USER_ROLE.SYSTEM_OWNER) {
+    const isValidCode = validateTransactionCode(transactionCode, loggedInUser.transactionCode);
+    if (!isValidCode) {
+      throw new Error("Invalid transactionCode!");
     }
+    // }
 
     const existingUsername = await User.findOne({ username: username }, { _id: 1 });
     if (existingUsername) {
@@ -376,12 +376,12 @@ const modifyUser = async ({ user, ...reqBody }) => {
     const loggedInUser = await User.findById(user._id);
 
     // Check transaction code
-    if (loggedInUser.role !== USER_ROLE.SYSTEM_OWNER) {
-      const isValidCode = validateTransactionCode(reqBody.transactionCode, loggedInUser.transactionCode);
-      if (!isValidCode) {
-        throw new Error("Invalid transactionCode!");
-      }
+    // if (loggedInUser.role !== USER_ROLE.SYSTEM_OWNER) {
+    const isValidCode = validateTransactionCode(reqBody.transactionCode, loggedInUser.transactionCode);
+    if (!isValidCode) {
+      throw new Error("Invalid transactionCode!");
     }
+    // }
 
     if (currentUser?.cloneParentId) {
       // If user is cloned user, then logged in user should be the parent of the cloned user

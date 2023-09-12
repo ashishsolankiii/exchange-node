@@ -165,7 +165,7 @@ async function updateUserRequest(req) {
     isAutoSettlement: Yup.boolean().nullable(true),
   };
   if (req.body.transactionCode) {
-    schemaObj.isTransactionCode = Yup.string().required("isTransactioncode flag is required.");
+    schemaObj.isTransactionCode = Yup.string().required("isTransactionCode flag is required.");
   }
 
   if (req.body.password) {
