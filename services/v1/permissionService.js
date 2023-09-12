@@ -276,7 +276,6 @@ const fetchUserActivePermissions = async ({ userId }) => {
       const clonedUserStaticPermissions = defaultStaticPermissions
         .filter((permission) => permission.allowClonedUser === true)
         .map((permission) => permission.key);
-      console.log(clonedUserStaticPermissions);
       availableModules.push(...clonedUserStaticPermissions);
     } else {
       availableModules.push(...staticPermissions);
