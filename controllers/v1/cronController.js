@@ -35,7 +35,7 @@ const syncDetail = async (req, res) => {
 
   // Call the syncMarket fancy function to sync Market data
   await syncMarketFancy(eventApiIds);
-  console.log("All Markets bookmakers has been synced");
+  console.log("All Markets Fancy has been synced");
 
   // Respond with a 200 status code and success message
   res.status(200).json({ message: "All data has been synced!" });
