@@ -272,7 +272,13 @@ const fetchUserActivePermissions = async ({ userId }) => {
       APP_MODULES.THEME_USER_DELETE,
     ];
 
-    if (!user.cloneParentId) {
+    if (user.cloneParentId) {
+      const clonedUserStaticPermissions = defaultStaticPermissions
+        .filter((permission) => permission.allowClonedUser === true)
+        .map((permission) => permission.key);
+      console.log(clonedUserStaticPermissions);
+      availableModules.push(...clonedUserStaticPermissions);
+    } else {
       availableModules.push(...staticPermissions);
     }
 
