@@ -60,6 +60,7 @@ async function createCompetitionRequest(req) {
   const validationSchema = Yup.object().shape({
     name: Yup.string().required(),
     sportId: Yup.string().required().test("sportId", "Invalid sportId!", isValidObjectId),
+    betDelay: Yup.number().positive().nullable(true)
   });
 
   await validationSchema.validate(req.body);
@@ -74,6 +75,7 @@ async function updateCompetitionRequest(req) {
     name: Yup.string().required(),
 
     sportId: Yup.string().required().test("sportId", "Invalid sportId!", isValidObjectId),
+    betDelay: Yup.number().positive().nullable(true)
   });
 
   await validationSchema.validate(req.body);

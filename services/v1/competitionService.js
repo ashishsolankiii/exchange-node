@@ -62,18 +62,13 @@ const fetchAllCompetition = async ({ ...reqBody }) => {
     }
 
     if (fromDate && toDate) {
-      filters = {
-        matchDate: { $gte: new Date(fromDate), $lte: new Date(toDate) },
-      };
+      filters.startDate = { $gte: new Date(fromDate) };
+      filters.endDate = { $lte: new Date(toDate) };
     } else {
       if (fromDate) {
-        filters = {
-          matchDate: { $gte: new Date(fromDate) },
-        };
+        filters.startDate = { $gte: new Date(fromDate) };
       } else if (toDate) {
-        filters = {
-          matchDate: { $gte: new Date(), $lte: new Date(toDate) },
-        };
+        filters.endDate = { $gte: new Date(), $lte: new Date(toDate) };
       }
     }
 
@@ -82,6 +77,7 @@ const fetchAllCompetition = async ({ ...reqBody }) => {
       filters.$or = generateSearchFilters(searchQuery, fields);
     }
 
+    console.log(filters);
     const competition = await Competition.aggregate([
       {
         $match: filters,
