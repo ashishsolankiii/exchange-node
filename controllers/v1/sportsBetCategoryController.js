@@ -6,9 +6,7 @@ const getAllSportsBetCategory = async (req, res) => {
   const perPage = req.body?.perPage ? Number(req.body.perPage) : null;
   const sortBy = req.body?.sortBy ? req.body.sortBy : "createdAt";
   const direction = req.body?.direction ? req.body.direction : "desc";
-  const showDeleted = req.body?.showDeleted
-    ? req.body.showDeleted === true || req.body.showDeleted === "true"
-    : false;
+  const showDeleted = req.body?.showDeleted ? req.body.showDeleted === true || req.body.showDeleted === "true" : false;
   const searchQuery = req.body?.searchQuery || null;
   const sportId = req.body?.sportId || null;
   if (!sportId) {
@@ -21,7 +19,7 @@ const getAllSportsBetCategory = async (req, res) => {
     direction,
     showDeleted,
     searchQuery,
-    sportId
+    sportId,
   });
 
   return res.status(200).json({ success: true, data: sportsBetCategory });
@@ -42,7 +40,6 @@ const getSportsBetCategoryById = async (req, res) => {
 
 // Create a new sports-bet-category
 const createSportsBetCategory = async (req, res) => {
-
   const sportsId = req.body?.sportsId ? req.body.sportsId.trim() : null;
   const betCatId = req.body?.betCatId ? req.body.betCatId.trim() : null;
   const maxBet = req.body?.maxBet ? req.body.maxBet : null;
@@ -64,7 +61,7 @@ const createSportsBetCategory = async (req, res) => {
     minBet,
     notes,
     isActive,
-    betDelay
+    betDelay,
   });
 
   res.status(201).json({ success: true, data: { details: newSportsBetCategory } });
@@ -93,7 +90,7 @@ const updateSportsBetCategory = async (req, res) => {
     minBet,
     notes,
     isActive,
-    betDelay
+    betDelay,
   });
 
   res.status(200).json({ success: true, data: { details: updatedSportsBetCategory } });
