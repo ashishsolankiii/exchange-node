@@ -77,7 +77,6 @@ const fetchAllCompetition = async ({ ...reqBody }) => {
       filters.$or = generateSearchFilters(searchQuery, fields);
     }
 
-    console.log(filters);
     const competition = await Competition.aggregate([
       {
         $match: filters,

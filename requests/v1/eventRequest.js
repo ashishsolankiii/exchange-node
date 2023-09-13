@@ -62,14 +62,26 @@ async function createEventRequest(req) {
     name: Yup.string().required(),
     sportId: Yup.string().required().test("sportId", "Invalid sportId!", isValidObjectId),
     competitionId: Yup.string().required().test("competitionId", "Invalid competitionId!", isValidObjectId),
-    oddsLimit: Yup.number(),
-    volumeLimit: Yup.number(),
-    minStake: Yup.number(),
-    maxStake: Yup.number(),
-    minStakeSession: Yup.number(),
-    maxStakeSession: Yup.number(),
+    oddsLimit: Yup.number().min(0),
+    volumeLimit: Yup.number().min(0),
+    minStake: Yup.number().min(0),
+    maxStake: Yup.number().when("minStake", (minStake, schema) =>
+      schema.test({
+        test: (maxStake) => !maxStake || maxStake >= minStake,
+        message: "Max stake must be greater than or equal to min stake",
+      })
+    ),
+    minStakeSession: Yup.number().min(0),
+    maxStakeSession: Yup.number()
+      .min(0)
+      .when("minStakeSession", (minStakeSession, schema) =>
+        schema.test({
+          test: (maxStakeSession) => !maxStakeSession || maxStakeSession >= minStakeSession,
+          message: "Max stake session must be greater than or equal to min stake session",
+        })
+      ),
     betLock: Yup.boolean(),
-    betDelay: Yup.number(),
+    betDelay: Yup.number().min(0),
     matchDate: Yup.date().required("Match Date is required!"),
     matchTime: Yup.string()
       .required("Match Time is required!")
@@ -92,18 +104,32 @@ async function updateEventRequest(req) {
     matchTime: Yup.string()
       .required("Match Time is required!")
       .test("matchTime", "Invalid matchTime!", (v) => isValidTime(v, "HH:mm")),
-    oddsLimit: Yup.number(),
+    oddsLimit: Yup.number().min(0),
     betLock: Yup.boolean(),
-    betDelay: Yup.number(),
-    volumeLimit: Yup.number(),
-    minStake: Yup.number(),
-    maxStake: Yup.number(),
-    minStakeSession: Yup.number(),
-    maxStakeSession: Yup.number(),
+    betDelay: Yup.number().min(0),
+    volumeLimit: Yup.number().min(0),
+    minStake: Yup.number().min(0),
+    maxStake: Yup.number()
+      .min(0)
+      .when("minStake", (minStake, schema) =>
+        schema.test({
+          test: (maxStake) => !maxStake || maxStake >= minStake,
+          message: "Max stake must be greater than or equal to min stake",
+        })
+      ),
+    minStakeSession: Yup.number().min(0),
+    maxStakeSession: Yup.number()
+      .min(0)
+      .when("minStakeSession", (minStakeSession, schema) =>
+        schema.test({
+          test: (maxStakeSession) => !maxStakeSession || maxStakeSession >= minStakeSession,
+          message: "Max stake session must be greater than or equal to min stake session",
+        })
+      ),
     betDeleted: Yup.boolean(),
     completed: Yup.boolean(),
     isActive: Yup.boolean(),
-    isFavourite: Yup.boolean().required(),
+    isFavourite: Yup.boolean().nullable(true),
   });
 
   await validationSchema.validate(req.body);
