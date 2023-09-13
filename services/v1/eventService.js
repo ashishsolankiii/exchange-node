@@ -182,7 +182,8 @@ const addEvent = async ({ ...reqBody }) => {
     betDelay,
     minStakeSession,
     maxStakeSession,
-    isFavourite
+    isFavourite,
+    matchTime
   } = reqBody;
 
   try {
@@ -201,7 +202,8 @@ const addEvent = async ({ ...reqBody }) => {
       maxStakeSession,
       isActive: true,
       isManual: true,
-      isFavourite
+      isFavourite,
+      matchTime
     };
 
     const newEvent = await Event.create(newEventObj);
