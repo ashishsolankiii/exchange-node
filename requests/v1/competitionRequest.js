@@ -62,6 +62,8 @@ async function createCompetitionRequest(req) {
     sportId: Yup.string().required().test("sportId", "Invalid sportId!", isValidObjectId),
     betDelay: Yup.number().min(0).nullable(true),
     isActive: Yup.boolean().required(),
+    startDate: Yup.string().required(),
+    endDate: Yup.string().required(),
   });
 
   await validationSchema.validate(req.body);
@@ -76,6 +78,8 @@ async function updateCompetitionRequest(req) {
     sportId: Yup.string().required().test("sportId", "Invalid sportId!", isValidObjectId),
     betDelay: Yup.number().min(0).nullable(true),
     isActive: Yup.boolean().required(),
+    startDate: Yup.string().required(),
+    endDate: Yup.string().required(),
   });
 
   await validationSchema.validate(req.body);
