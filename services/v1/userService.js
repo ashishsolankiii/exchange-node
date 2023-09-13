@@ -203,6 +203,11 @@ const addUser = async ({ user, ...reqBody }) => {
     if (existingUsername) {
       throw new Error("Username already exists. Please choose a different username.");
     }
+    // Existing mobile number
+    const existingMobile = await User.findOne({ mobileNumber: reqBody.mobileNumber }, { _id: 1 });
+    if (existingMobile) {
+      throw new Error("Mobile number already in use. Please choose a different mobile number.");
+    }
 
     const newUserObj = {
       fullName,
@@ -357,15 +362,18 @@ const calculateUserPointBalance = async (currentUser, userReq) => {
 const modifyUser = async ({ user, ...reqBody }) => {
   try {
     // Existing username check
-    const exisitngUsername = await User.findOne(
-      {
-        username: reqBody.username,
-        _id: { $ne: reqBody._id },
-      },
-      { _id: 1 }
-    );
+    const exisitngUsername = await User.findOne({ username: reqBody.username, _id: { $ne: reqBody._id } }, { _id: 1 });
     if (exisitngUsername) {
       throw new Error("Username already exists. Please choose a different username.");
+    }
+
+    // Existing mobile number
+    const existingMobile = await User.findOne(
+      { mobileNumber: reqBody.mobileNumber, _id: { $ne: reqBody._id } },
+      { _id: 1 }
+    );
+    if (existingMobile) {
+      throw new Error("Mobile number already in use. Please choose a different mobile number.");
     }
 
     const currentUser = await User.findById(reqBody._id);
