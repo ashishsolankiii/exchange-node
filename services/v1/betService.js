@@ -139,9 +139,9 @@ async function matchOddsBet(loggedInUser, reqBody) {
   }
 
   const oddPrices = reqBody.isBack ? runner.back.map((o) => o.price) : runner.lay.map((o) => o.price);
-  // if (!oddPrices.includes(Number(reqBody.odds))) {
-  //   throw new Error("Bet not confirmed, Odds changed!");
-  // }
+  if (!oddPrices.includes(Number(reqBody.odds))) {
+    throw new Error("Bet not confirmed, Odds changed!");
+  }
 
   // User Validation
   const user = await User.findById(loggedInUser._id);
