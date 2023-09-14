@@ -449,6 +449,7 @@ async function syncMarketFancy(eventApiIds) {
 
       //Market Create Or Update
       var marketQuery = {
+        typeId: type_id,
         apiSportId: eventDetail.apiSportId,
         apiCompetitionId: eventDetail.apiCompetitionId,
         apiEventId: eventDetail.apiEventId,
