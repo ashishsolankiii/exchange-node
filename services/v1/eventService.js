@@ -617,7 +617,6 @@ const getEventMatchDataFront = async ({ eventId, user }) => {
           if (market.length > 0 && market[0]["runners"]) {
             odds = market[0]["runners"].map(function (item) {
               delete item.ex;
-              delete item.status;
               delete item.lastPriceTraded;
               delete item.selectionId;
               return item;
