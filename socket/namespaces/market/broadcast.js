@@ -12,7 +12,13 @@ export const emitMarketData = async (socket, market) => {
   const getter = marketGetters.get(market.type);
   if (getter) {
     const result = await getter(market.id);
-    const data = result[0];
+    let data;
+    if (market.type == "fancy") {
+      data = result;
+    }
+    else {
+      data = result[0];
+    }
     if (!data) {
       clearInterval(marketEmitters.get(market.id));
       marketEmitters.delete(market.id);
