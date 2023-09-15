@@ -637,6 +637,30 @@ const getEventMatchDataFront = async ({ eventId, user }) => {
           }
         }
       }
+      else if (event[0].market[i].bet_category.name == DEFAULT_CATEGORIES[2]) {
+        var marketUrl = `${appConfig.BASE_URL}?action=fancy&event_id=${event[0].market[i].apiEventId}`;
+        const { statusCode, data } = await commonService.fetchData(marketUrl);
+        if (statusCode === 200) {
+          const market = data;
+          for (var j = 0; j < event[0].market[i].market_runner.length; j++) {
+            if (market.length > 0) {
+              let filterdata = market.filter(function (item) {
+                return item.RunnerName == event[0].market[i].market_runner[j].runnerName;
+              });
+              if (filterdata.length > 0) {
+                event[0].market[i].market_runner[j].matchOdds = filterdata[0];
+                delete event[0].market[i].market_runner[j].matchOdds.RunnerName;
+                delete event[0].market[i].market_runner[j].matchOdds.SelectionId;
+              }
+              else {
+                event[0].market[i].market_runner[j].matchOdds = {};
+              }
+            } else {
+              event[0].market[i].market_runner[j].matchOdds = {};
+            }
+          }
+        }
+      }
     }
     return event[0];
   } catch (e) {
