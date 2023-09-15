@@ -86,7 +86,6 @@ const activeAllEvent = async (req, res) => {
 };
 
 const upcomingEvent = async (req, res) => {
-
   const UpcomingEvent = await eventService.upcomingEvents();
 
   res.status(200).json({ success: true, data: { details: UpcomingEvent } });
@@ -95,7 +94,7 @@ const upcomingEvent = async (req, res) => {
 const getEventMatchData = async (req, res) => {
   const { eventId } = req.body;
   const GetEventMatchData = await eventService.getEventMatchData({
-    eventId
+    eventId,
   });
 
   res.status(200).json({ success: true, data: { details: GetEventMatchData } });
@@ -106,7 +105,7 @@ const getEventMatchDataFront = async (req, res) => {
   const user = req.user;
   const GetEventMatchData = await eventService.getEventMatchDataFront({
     eventId,
-    user
+    user,
   });
 
   res.status(200).json({ success: true, data: { details: GetEventMatchData } });
@@ -122,5 +121,5 @@ export default {
   activeAllEvent,
   upcomingEvent,
   getEventMatchData,
-  getEventMatchDataFront
+  getEventMatchDataFront,
 };

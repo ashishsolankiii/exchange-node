@@ -116,8 +116,6 @@ const getAllCompetitionList = async (req, res) => {
 };
 
 const getAllActiveCompetitionEvents = async (req, res) => {
-  const { user } = req;
-
   const competitionEvents = await competitionService.fetchAllActiveCompetitionEvents();
 
   return res.status(200).json({ success: true, data: competitionEvents });

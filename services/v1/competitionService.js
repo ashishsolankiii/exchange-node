@@ -77,7 +77,6 @@ const fetchAllCompetition = async ({ ...reqBody }) => {
       filters.$or = generateSearchFilters(searchQuery, fields);
     }
 
-    console.log(filters);
     const competition = await Competition.aggregate([
       {
         $match: filters,
@@ -276,6 +275,7 @@ const addCometition = async ({ ...reqBody }) => {
     startDate,
     endDate,
     visibleToPlayer,
+    isActive,
     isCustomised = false,
   } = reqBody;
 
@@ -296,7 +296,7 @@ const addCometition = async ({ ...reqBody }) => {
       endDate,
       visibleToPlayer,
       createdOn: new Date(),
-      isActive: true,
+      isActive,
       isManual: true,
       isCustomised,
     };
@@ -328,6 +328,7 @@ const modifyCompetition = async ({ ...reqBody }) => {
     competition.endDate = reqBody.endDate;
     competition.visibleToPlayer = reqBody.visibleToPlayer;
     competition.isCustomised = reqBody.isCustomised;
+    competition.isActive = reqBody.isActive;
     await competition.save();
 
     return competition;
