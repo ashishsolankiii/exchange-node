@@ -7,6 +7,7 @@ import Market from "../../models/v1/Market.js";
 import commonService from "./commonService.js";
 import User, { USER_ROLE } from "../../models/v1/User.js";
 import { DEFAULT_CATEGORIES } from "../../models/v1/BetCategory.js";
+import { RUNNER_STATUS } from "../../models/v1/MarketRunner.js";
 
 // Fetch all event from the database
 const fetchAllEvent = async ({ ...reqBody }) => {
@@ -512,7 +513,7 @@ const getEventMatchDataFront = async ({ eventId, user }) => {
                 pipeline: [
                   {
                     $match: {
-                      status: { $ne: "In Active" }
+                      status: { $ne: RUNNER_STATUS.IN_ACTIVE }
                     }
                   },
                   {

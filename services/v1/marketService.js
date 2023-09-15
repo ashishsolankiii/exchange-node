@@ -7,7 +7,7 @@ import Sport from "../../models/v1/Sport.js";
 import commonService from "./commonService.js";
 import ErrorResponse from "../../lib/error-handling/error-response.js";
 import cronController from "../../controllers/v1/cronController.js";
-import MarketRunner from "../../models/v1/MarketRunner.js";
+import MarketRunner, { RUNNER_STATUS } from "../../models/v1/MarketRunner.js";
 import mongoose from "mongoose";
 
 const syncMarkets = async (data) => {
@@ -235,7 +235,7 @@ const getFencyPrice = async (eventId) => {
     var marketUrl = `${appConfig.BASE_URL}?action=fancy&event_id=${eventId}`;
     const { statusCode, data } = await commonService.fetchData(marketUrl);
     if (findMarket) {
-      let findMarketRunners = await MarketRunner.find({ marketId: findMarket._id, status: { $ne: "In Active" } })
+      let findMarketRunners = await MarketRunner.find({ marketId: findMarket._id, status: { $ne: RUNNER_STATUS.IN_ACTIVE } })
       if (statusCode === 200) {
         var newMarketRunnersAdd = data.filter(function (obj) {
           return !findMarketRunners.some(function (obj2) {
@@ -252,7 +252,7 @@ const getFencyPrice = async (eventId) => {
           let findRunner = await MarketRunner.findOne(
             { selectionId: oldMarketRunnersRemove[i].selectionId, marketId: new mongoose.Types.ObjectId(oldMarketRunnersRemove[i].marketId) },
           );
-          findRunner.status = "In Active";
+          findRunner.status = RUNNER_STATUS.IN_ACTIVE;
           findRunner.save();
         }
 
