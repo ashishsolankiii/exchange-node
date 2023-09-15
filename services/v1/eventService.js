@@ -511,6 +511,11 @@ const getEventMatchDataFront = async ({ eventId, user }) => {
                 as: "market_runner",
                 pipeline: [
                   {
+                    $match: {
+                      status: { $ne: "In Active" }
+                    }
+                  },
+                  {
                     $project: { runnerName: 1, priority: 1, selectionId: 1 },
                   },
                 ],

@@ -7,6 +7,8 @@ import Sport from "../../models/v1/Sport.js";
 import commonService from "./commonService.js";
 import ErrorResponse from "../../lib/error-handling/error-response.js";
 import cronController from "../../controllers/v1/cronController.js";
+import MarketRunner from "../../models/v1/MarketRunner.js";
+import mongoose from "mongoose";
 
 const syncMarkets = async (data) => {
   //Get Bet Categories
@@ -229,11 +231,50 @@ const syncMarketByEventId = async ({ eventId }) => {
 
 const getFencyPrice = async (eventId) => {
   try {
+    let findMarket = await Market.findOne({ apiEventId: eventId, name: "Normal" })
     var marketUrl = `${appConfig.BASE_URL}?action=fancy&event_id=${eventId}`;
     const { statusCode, data } = await commonService.fetchData(marketUrl);
-    if (statusCode === 200) {
-      return data;
+    if (findMarket) {
+      let findMarketRunners = await MarketRunner.find({ marketId: findMarket._id, status: { $ne: "In Active" } })
+      if (statusCode === 200) {
+        var newMarketRunnersAdd = data.filter(function (obj) {
+          return !findMarketRunners.some(function (obj2) {
+            return obj.SelectionId == obj2.selectionId;
+          });
+        });
+
+        var oldMarketRunnersRemove = findMarketRunners.filter(function (obj) {
+          return !data.some(function (obj2) {
+            return obj.selectionId == obj2.SelectionId;
+          });
+        });
+        for (var i = 0; i < oldMarketRunnersRemove.length; i++) {
+          let findRunner = await MarketRunner.findOne(
+            { selectionId: oldMarketRunnersRemove[i].selectionId, marketId: new mongoose.Types.ObjectId(oldMarketRunnersRemove[i].marketId) },
+          );
+          findRunner.status = "In Active";
+          findRunner.save();
+        }
+
+        for (var j = 0; j < newMarketRunnersAdd.length; j++) {
+          const marketRunnerObj = {
+            marketId: findMarket._id,
+            selectionId: newMarketRunnersAdd[j].SelectionId,
+            runnerName: newMarketRunnersAdd[j].RunnerName,
+          };
+
+          await MarketRunner.create(marketRunnerObj);
+        }
+      }
+      for (var k = 0; k < data.length; k++) {
+        let filterdata = findMarketRunners.filter(function (item) {
+          return item.selectionId == data[k].SelectionId;
+        });
+        data[k].runnerId = filterdata[0]._id;
+        data[k].marketId = filterdata[0].marketId;
+      }
     }
+    return data;
   } catch (e) {
     return e;
   }
