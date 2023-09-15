@@ -121,7 +121,7 @@ const fetchAllUsers = async ({ user, ...reqBody }) => {
     // User permissions
     if (withPermissions) {
       for (const user of data.records) {
-        const permissions = await permissionService.fetchUserActivePermissions({ userId: user._id });
+        const permissions = await permissionService.fetchUserPermissions({ userId: user._id });
         user.permissions = permissions || null;
       }
     }
