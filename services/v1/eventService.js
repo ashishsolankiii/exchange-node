@@ -7,6 +7,7 @@ import Market from "../../models/v1/Market.js";
 import commonService from "./commonService.js";
 import User, { USER_ROLE } from "../../models/v1/User.js";
 import { DEFAULT_CATEGORIES } from "../../models/v1/BetCategory.js";
+import { RUNNER_STATUS } from "../../models/v1/MarketRunner.js";
 
 // Fetch all event from the database
 const fetchAllEvent = async ({ ...reqBody }) => {
@@ -511,6 +512,11 @@ const getEventMatchDataFront = async ({ eventId, user }) => {
                 as: "market_runner",
                 pipeline: [
                   {
+                    $match: {
+                      status: { $ne: RUNNER_STATUS.IN_ACTIVE }
+                    }
+                  },
+                  {
                     $project: { runnerName: 1, priority: 1, selectionId: 1 },
                   },
                 ],
@@ -617,7 +623,6 @@ const getEventMatchDataFront = async ({ eventId, user }) => {
           if (market.length > 0 && market[0]["runners"]) {
             odds = market[0]["runners"].map(function (item) {
               delete item.ex;
-              delete item.status;
               delete item.lastPriceTraded;
               delete item.selectionId;
               return item;
@@ -632,6 +637,30 @@ const getEventMatchDataFront = async ({ eventId, user }) => {
               });
               event[0].market[i].market_runner[j].matchOdds = filterdata[0];
               delete event[0].market[i].market_runner[j].matchOdds.runner;
+            } else {
+              event[0].market[i].market_runner[j].matchOdds = {};
+            }
+          }
+        }
+      }
+      else if (event[0].market[i].bet_category.name == DEFAULT_CATEGORIES[2]) {
+        var marketUrl = `${appConfig.BASE_URL}?action=fancy&event_id=${event[0].market[i].apiEventId}`;
+        const { statusCode, data } = await commonService.fetchData(marketUrl);
+        if (statusCode === 200) {
+          const market = data;
+          for (var j = 0; j < event[0].market[i].market_runner.length; j++) {
+            if (market.length > 0) {
+              let filterdata = market.filter(function (item) {
+                return item.RunnerName == event[0].market[i].market_runner[j].runnerName;
+              });
+              if (filterdata.length > 0) {
+                event[0].market[i].market_runner[j].matchOdds = filterdata[0];
+                delete event[0].market[i].market_runner[j].matchOdds.RunnerName;
+                delete event[0].market[i].market_runner[j].matchOdds.SelectionId;
+              }
+              else {
+                event[0].market[i].market_runner[j].matchOdds = {};
+              }
             } else {
               event[0].market[i].market_runner[j].matchOdds = {};
             }

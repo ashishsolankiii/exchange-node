@@ -2,6 +2,8 @@ import mongoose from "mongoose";
 import softDeletePlugin from "../plugins/soft-delete.js";
 import timestampPlugin from "../plugins/timestamp.js";
 
+export const RUNNER_STATUS = { "ACTIVE": "Active", "IN_ACTIVE": "In Active" };
+
 const marketRunnerSchema = new mongoose.Schema({
   // Reference to the market this market belongs to
   marketId: {
