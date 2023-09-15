@@ -61,7 +61,10 @@ const existingUserPermissions = async ({ userId }) => {
         $unset: "appModule",
       },
       {
-        $unwind: "$subModules",
+        $unwind: {
+          path: "$subModules",
+          preserveNullAndEmptyArrays: true,
+        },
       },
       {
         $lookup: {
@@ -72,7 +75,10 @@ const existingUserPermissions = async ({ userId }) => {
         },
       },
       {
-        $unwind: "$subModules.appModule",
+        $unwind: {
+          path: "$subModules.appModule",
+          preserveNullAndEmptyArrays: true,
+        },
       },
       {
         $addFields: {
@@ -96,7 +102,15 @@ const existingUserPermissions = async ({ userId }) => {
       { $sort: { name: 1 } },
     ]);
 
-    return permissions;
+    const data = permissions.map((permission) => {
+      if (!Object.keys(permission).length) {
+        return [];
+      }
+      permission.subModules = permission.subModules.filter((subModule) => Object.keys(subModule).length);
+      return permission;
+    });
+
+    return data;
   } catch (e) {
     throw new Error(e.message);
   }
@@ -209,12 +223,76 @@ const fetchDefaultUserPermissions = async (encrypt = true) => {
   return sortedPermissions;
 };
 
+const syncUserPermissions = async ({ userId, permissions }) => {
+  const updatedPermissions = [];
+
+  const currentPermissions = permissions.flatMap((permission) => {
+    const subModules = permission.subModules ?? [];
+    return [permission, ...subModules];
+  });
+
+  for (const defaultPermission of defaultPermissions) {
+    let currentPermissionObj = {};
+
+    const existingPermission = currentPermissions.find((permission) => permission.key === defaultPermission.key);
+
+    if (existingPermission) {
+      currentPermissionObj = {
+        ...existingPermission,
+        moduleId: existingPermission._id,
+        subModules: [],
+      };
+
+      if (defaultPermission.subModules?.length) {
+        for (const defaultSubModule of defaultPermission.subModules) {
+          const existingSubModule = currentPermissions.find((subModule) => subModule.key === defaultSubModule.key);
+
+          if (existingSubModule) {
+            currentPermissionObj.subModules.push(existingSubModule);
+          } else {
+            const module = await AppModule.findOne({ key: defaultSubModule.key });
+            currentPermissionObj.subModules.push({
+              moduleId: module._id,
+              isActive: defaultSubModule.active,
+            });
+          }
+        }
+      }
+    } else {
+      const module = await AppModule.findOne({ key: defaultPermission.key });
+
+      currentPermissionObj = {
+        moduleId: module._id,
+        isActive: defaultPermission.active,
+        subModules: [],
+      };
+
+      if (defaultPermission.subModules?.length) {
+        for (const defaultSubModule of defaultPermission.subModules) {
+          const subModuleModule = await AppModule.findOne({ key: defaultSubModule.key });
+          currentPermissionObj.subModules.push({
+            moduleId: subModuleModule._id,
+            isActive: defaultSubModule.active,
+          });
+        }
+      }
+    }
+
+    updatedPermissions.push(currentPermissionObj);
+  }
+
+  await Permission.findOneAndUpdate({ userId }, { modules: updatedPermissions });
+};
+
 const fetchUserPermissions = async ({ userId }) => {
   try {
     let permissions = await existingUserPermissions({ userId });
 
     if (permissions.length === 0) {
       await generateUserDefaultPermissions({ userId });
+      permissions = await existingUserPermissions({ userId });
+    } else {
+      await syncUserPermissions({ userId, permissions });
       permissions = await existingUserPermissions({ userId });
     }
 

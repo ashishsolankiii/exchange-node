@@ -205,7 +205,7 @@ const addUser = async ({ user, ...reqBody }) => {
     }
     // Existing mobile number
     const existingMobile = await User.findOne({ mobileNumber: reqBody.mobileNumber }, { _id: 1 });
-    if (existingMobile) {
+    if (reqBody.mobileNumber && existingMobile) {
       throw new Error("Mobile number already in use. Please choose a different mobile number.");
     }
 
@@ -372,7 +372,7 @@ const modifyUser = async ({ user, ...reqBody }) => {
       { mobileNumber: reqBody.mobileNumber, _id: { $ne: reqBody._id } },
       { _id: 1 }
     );
-    if (existingMobile) {
+    if (reqBody.mobileNumber && existingMobile) {
       throw new Error("Mobile number already in use. Please choose a different mobile number.");
     }
 
