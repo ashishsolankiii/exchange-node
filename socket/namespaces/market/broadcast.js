@@ -5,6 +5,7 @@ const marketEmitters = new Map();
 const marketGetters = new Map();
 marketGetters.set("match_odds", marketService.getMatchOdds);
 marketGetters.set("bookamkers", marketService.getBookmakerPrice);
+marketGetters.set("fancy", marketService.getFencyPrice);
 
 export const emitMarketData = async (socket, market) => {
   // console.log("Emitting market data", marketEmitters.keys());
