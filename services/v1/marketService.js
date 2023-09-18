@@ -280,6 +280,26 @@ const getFencyPrice = async (eventId) => {
   }
 };
 
+const getFencyPriceByRunner = async (runnerId) => {
+  try {
+    let findMarketRuner = await MarketRunner.findOne({ _id: runnerId })
+    let findMarket = await Market.findOne({ _id: findMarketRuner.marketId })
+    // var marketUrl = `${appConfig.BASE_URL}?action=fancy&event_id=${Number(findMarket.apiEventId)}`;
+    // const { statusCode, data } = await commonService.fetchData(marketUrl);
+    const data = [{ "RunnerName": "CC 20 Over Runs ADV", "LayPrice1": 172, "LaySize1": 100, "BackPrice1": 175, "BackSize1": 100, "Game Status": "", "SelectionId": 94476 }, { "RunnerName": "Highest Run In Over ADV", "LayPrice1": 20, "LaySize1": 100, "BackPrice1": 21, "BackSize1": 100, "GameStatus": "", "SelectionId": "94490" }]
+    // if (statusCode === 200) {
+
+    var newMarketRunnersAdd = data.filter(function (element) {
+      return element.SelectionId == findMarketRuner.selectionId;
+    });
+    return newMarketRunnersAdd;
+    // }
+
+  } catch (e) {
+    return e;
+  }
+};
+
 const getBookmakerPrice = async (markeId) => {
   try {
     let allMarketId = markeId.toString().replace(/["']/g, "");
@@ -317,5 +337,6 @@ export default {
   modifyMarket,
   syncMarketByEventId,
   getFencyPrice,
-  getBookmakerPrice
+  getBookmakerPrice,
+  getFencyPriceByRunner
 };
