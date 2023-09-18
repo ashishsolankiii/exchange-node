@@ -10,7 +10,7 @@ async function createBetRequest(req) {
     eventId: Yup.string()
       .required()
       .test("eventId", "Invalid eventId!", (v) => !v || isValidObjectId),
-    apiMarketId: Yup.string().required(),
+    apiMarketId: Yup.string().nullable(true),
     runnerSelectionId: Yup.number().required(),
     odds: Yup.number().required(),
     stake: Yup.number().required(),
@@ -82,6 +82,19 @@ async function betCompleteRequest(req) {
   return req;
 }
 
+async function betCompleteFancyRequest(req) {
+  const validationSchema = Yup.object().shape({
+    marketRunnerId: Yup.string()
+      .required()
+      .test("marketRunnerId", "Invalid market runner id!", (v) => !v || isValidObjectId),
+    winScore: Yup.number().required()
+  });
+
+  await validationSchema.validate(req.body);
+
+  return req;
+}
+
 async function settlementRequest(req) {
   const validationSchema = Yup.object().shape({
     settlementData: Yup.array().required(),
@@ -141,6 +154,7 @@ export default {
   createBetRequest,
   getAllBetRequest,
   betCompleteRequest,
+  betCompleteFancyRequest,
   settlementRequest,
   getRunnerPlsRequest,
   getCurrentBetsUserwise,

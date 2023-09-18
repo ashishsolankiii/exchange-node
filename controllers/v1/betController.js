@@ -39,6 +39,16 @@ const betComplete = async (req, res) => {
 
   res.status(201).json({ success: true, data: { details: completeBet } });
 };
+
+// Bet complete fancy
+const betCompleteFancy = async (req, res) => {
+  const { body } = await betRequest.betCompleteFancyRequest(req);
+
+  const completeBet = await betService.completeBetFency({ ...body });
+
+  res.status(201).json({ success: true, data: { details: completeBet } });
+};
+
 // Settlement
 
 const settlement = async (req, res) => {
@@ -80,6 +90,7 @@ export default {
   getAllBet,
   getUserEventBets,
   betComplete,
+  betCompleteFancy,
   settlement,
   getChildUserData,
   getRunnerPls,
