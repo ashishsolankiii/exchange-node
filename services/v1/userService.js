@@ -447,6 +447,9 @@ const modifyUser = async ({ user, ...reqBody }) => {
     });
 
     // Update user's permissions if it's a cloned user
+    if (!reqBody.moduleIds.length) {
+      throw new Error("Please select atleast one module.");
+    }
     if (currentUser?.cloneParentId) {
       await permissionService.setUserPermissions({
         userId: currentUser._id,
@@ -523,6 +526,9 @@ const cloneUser = async ({ user, ...reqBody }) => {
       if (module) {
         validModuleIds.push(id);
       }
+    }
+    if (!validModuleIds.length) {
+      throw new Error("Please select atleast one module.");
     }
 
     const cloneParent = await User.findById(user._id).lean();
