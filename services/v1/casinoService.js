@@ -1,8 +1,7 @@
-import mongoose from "mongoose";
 import ErrorResponse from "../../lib/error-handling/error-response.js";
+import { uploadImageToS3 } from "../../lib/files/image-upload.js";
 import { generatePaginationQueries, generateSearchFilters } from "../../lib/helpers/pipeline.js";
 import Casino, { CASINO_IMAGE_SIZES, CASINO_IMAGE_TYPES } from "../../models/v1/Casino.js";
-import { uploadImageToS3 } from "../../lib/files/image-upload.js";
 
 const uploadCasinoImages = async (casinoId, files) => {
   const casino = await Casino.findById(casinoId);
@@ -32,22 +31,12 @@ const uploadCasinoImages = async (casinoId, files) => {
   }
 
   await Promise.all(imagePromises);
-
-
 };
 
 // Fetch all casino from the database
 const fetchAllCasino = async ({ ...reqBody }) => {
   try {
-    const {
-      page,
-      perPage,
-      sortBy,
-      direction,
-      searchQuery,
-      showDeleted,
-      status,
-    } = reqBody;
+    const { page, perPage, sortBy, direction, searchQuery, showDeleted, status } = reqBody;
 
     // Pagination and Sorting
     const sortDirection = direction === "asc" ? 1 : -1;
@@ -95,7 +84,7 @@ const fetchAllCasino = async ({ ...reqBody }) => {
     }
 
     for (var i = 0; i < data.records.length; i++) {
-      const existingCasino = await Casino.findById(data.records[i]._id)
+      const existingCasino = await Casino.findById(data.records[i]._id);
       data.records[i].image = await existingCasino.getImageUrl(
         CASINO_IMAGE_TYPES.CASINO_IMAGE,
         CASINO_IMAGE_SIZES.CASINO_IMAGE.DEFAULT
@@ -113,7 +102,7 @@ const fetchAllCasino = async ({ ...reqBody }) => {
  */
 const fetchCasinoId = async (_id) => {
   try {
-    let existingCasino = await Casino.findById(_id)
+    let existingCasino = await Casino.findById(_id);
     let image = await existingCasino.getImageUrl(
       CASINO_IMAGE_TYPES.CASINO_IMAGE,
       CASINO_IMAGE_SIZES.CASINO_IMAGE.DEFAULT
@@ -134,11 +123,14 @@ const fetchCasinoId = async (_id) => {
  * Create casino in the database
  */
 const addCasino = async ({ files, ...reqBody }) => {
-  const {
-    name,
-  } = reqBody;
+  const { name } = reqBody;
 
   try {
+    const existingName = await Casino.findOne({ name });
+    if (existingName) {
+      throw new Error("Casino with same name name already exists.");
+    }
+
     const newCasinoObj = {
       name,
     };
@@ -159,9 +151,13 @@ const addCasino = async ({ files, ...reqBody }) => {
 const modifyCasino = async ({ files, ...reqBody }) => {
   try {
     const casino = await Casino.findById(reqBody._id);
-
     if (!casino) {
       throw new Error("Casino not found.");
+    }
+
+    const existingName = await Casino.findOne({ name: reqBody.name, _id: { $ne: reqBody._id } });
+    if (existingName) {
+      throw new Error("Casino with same name already exists.");
     }
 
     casino.name = reqBody.name;
@@ -205,12 +201,12 @@ const casinoStatusModify = async ({ _id, fieldName, status }) => {
 /**
  * Fetch all casino from the database
  */
-const allCasino = async (_id) => {
+const allCasino = async () => {
   try {
-    let existingCasino = await Casino.find({ isVisible: true, isDeleted: false })
-    let data = []
+    let existingCasino = await Casino.find({ isVisible: true, isDeleted: false });
+    let data = [];
     for (var i = 0; i < existingCasino.length; i++) {
-      const fetchExistingCasino = await Casino.findById(existingCasino[i]._id)
+      const fetchExistingCasino = await Casino.findById(existingCasino[i]._id);
       let image = await fetchExistingCasino.getImageUrl(
         CASINO_IMAGE_TYPES.CASINO_IMAGE,
         CASINO_IMAGE_SIZES.CASINO_IMAGE.DEFAULT
@@ -221,7 +217,6 @@ const allCasino = async (_id) => {
         image,
       });
     }
-
 
     return data;
   } catch (e) {
@@ -236,5 +231,5 @@ export default {
   modifyCasino,
   removeCasino,
   casinoStatusModify,
-  allCasino
+  allCasino,
 };
