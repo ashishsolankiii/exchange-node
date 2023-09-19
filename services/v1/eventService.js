@@ -21,6 +21,7 @@ const fetchAllEvent = async ({ ...reqBody }) => {
       showDeleted,
       showRecord,
       status,
+      completed,
       sportId,
       competitionId,
       fields,
@@ -72,6 +73,10 @@ const fetchAllEvent = async ({ ...reqBody }) => {
     if (searchQuery) {
       const fields = ["name", "sportId"];
       filters.$or = generateSearchFilters(searchQuery, fields);
+    }
+
+    if (completed) {
+      filters.completed = [true, "true"].includes(completed);
     }
 
     const event = await Event.aggregate([

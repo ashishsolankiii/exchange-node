@@ -39,6 +39,8 @@ async function eventListingRequest(req) {
 
     status: Yup.boolean().nullable(true),
 
+    completed: Yup.boolean().nullable(true),
+
     fromDate: Yup.date().nullable(true),
 
     toDate: Yup.date().nullable(true),
