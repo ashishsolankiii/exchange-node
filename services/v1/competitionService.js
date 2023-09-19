@@ -180,7 +180,7 @@ const fetchAllCompetitionEvents = async () => {
                   as: "events",
                   pipeline: [
                     {
-                      $match: { isDeleted: false },
+                      $match: { isDeleted: false, completed: false },
                     },
                     {
                       $sort: { name: 1 },
