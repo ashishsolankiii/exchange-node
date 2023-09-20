@@ -414,8 +414,12 @@ async function fancyBet(loggedInUser, reqBody) {
   if (!market) {
     throw new Error("Market not found.");
   }
-
-  if (market.maxStake > 0 && market.minStake > 0) {
+  if (Number(runner.max > 0) && Number(runner.min) > 0) {
+    if (Number(reqBody.stake) < Number(runner.min) || Number(reqBody.stake) > Number(runner.max)) {
+      throw new Error("Invalid stake.");
+    }
+  }
+  else if (market.maxStake > 0 && market.minStake > 0) {
     if (Number(reqBody.stake) < market.minStake || Number(reqBody.stake) > market.maxStake) {
       throw new Error("Invalid stake.");
     }
