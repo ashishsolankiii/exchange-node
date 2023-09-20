@@ -339,7 +339,7 @@ async function fancyBet(loggedInUser, reqBody) {
     throw new Error("Market not found.");
   }
   const matchOdds = data;
-  const runner = matchOdds.find((runner) => runner.SelectionId === Number(reqBody.runnerSelectionId));
+  const runner = matchOdds.find((runner) => Number(runner.SelectionId) === Number(reqBody.runnerSelectionId));
   if (!runner) {
     throw new Error("Runner not found.");
   }
