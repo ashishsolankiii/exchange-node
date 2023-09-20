@@ -50,6 +50,9 @@ const competitionSchema = new mongoose.Schema({
 
   // Indicates if the competition is customised or not
   isCustomised: { type: Boolean, default: false },
+
+  // Indicates if the event is completed
+  completed: { type: Boolean, default: false },
 });
 
 competitionSchema.plugin(timestampPlugin);

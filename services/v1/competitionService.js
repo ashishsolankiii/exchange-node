@@ -173,6 +173,9 @@ const fetchAllCompetitionEvents = async () => {
             as: "competitions",
             pipeline: [
               {
+                $match: { isDeleted: false, completed: false },
+              },
+              {
                 $lookup: {
                   from: "events",
                   localField: "_id",
@@ -328,6 +331,7 @@ const modifyCompetition = async ({ ...reqBody }) => {
     competition.endDate = reqBody.endDate;
     competition.visibleToPlayer = reqBody.visibleToPlayer;
     competition.isCustomised = reqBody.isCustomised;
+    competition.completed = reqBody.completed;
     competition.isActive = reqBody.isActive;
     await competition.save();
 
