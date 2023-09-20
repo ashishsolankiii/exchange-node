@@ -80,6 +80,7 @@ async function updateCompetitionRequest(req) {
     isActive: Yup.boolean().required(),
     startDate: Yup.string().required(),
     endDate: Yup.string().required(),
+    completed: Yup.boolean(),
   });
 
   await validationSchema.validate(req.body);

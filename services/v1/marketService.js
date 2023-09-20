@@ -272,6 +272,10 @@ const getFencyPrice = async (eventId) => {
         });
         data[k].runnerId = filterdata[0]._id;
         data[k].marketId = filterdata[0].marketId;
+        if (data[k].min == undefined || data[k].min == "" || data[k].min == null || data[k].max == undefined || data[k].max == "" || data[k].max == null) {
+          data[k].min = String(findMarket.minStake);
+          data[k].max = String(findMarket.maxStake);
+        }
       }
     }
     return data;
