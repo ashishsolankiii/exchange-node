@@ -12,22 +12,41 @@ import commonService from "./commonService.js";
 const sportsList = async () => {
   try {
     const allSports = await Sport.find({ isActive: true, isDeleted: false }, { _id: 1, name: 1 }).sort("name");
+    const startOfDay = new Date(new Date()).toISOString();
+    const endOfDay = new Date(
+      new Date(new Date().setDate(new Date().getDate() + 1)).setUTCHours(23, 59, 59, 999)
+    ).toISOString();
     let data = [];
     for (var i = 0; i < allSports.length; i++) {
       const getAllCompetition = await Competition.find(
-        { isActive: true, isDeleted: false, sportId: allSports[i]._id },
+        { isActive: true, isDeleted: false, sportId: allSports[i]._id, completed: false },
         { _id: 1, name: 1 }
       );
-      const getAllActiveEvent = await Event.count(
-        { isActive: true, sportId: allSports[i]._id, isDeleted: false }
+      const getAllLiveEvent = await Event.count(
+        {
+          isActive: true, sportId: allSports[i]._id, isDeleted: false, completed: false, isLive: true, matchDate: {
+            $gte: startOfDay,
+            $lt: endOfDay,
+          },
+        }
       );
-      const getAllEvent = await Event.count(
-        { isDeleted: false, sportId: allSports[i]._id }
+      const getAllActiveEvent = await Event.count(
+        {
+          isDeleted: false, sportId: allSports[i]._id, completed: false, isActive: true, matchDate: {
+            $gte: startOfDay,
+            $lt: endOfDay,
+          },
+        }
       );
       let competitionEvent = [];
       for (var j = 0; j < getAllCompetition.length; j++) {
         const getAllEvent = await Event.find(
-          { isActive: true, isDeleted: false, competitionId: getAllCompetition[j]._id },
+          {
+            isActive: true, isDeleted: false, competitionId: getAllCompetition[j]._id, completed: false, matchDate: {
+              $gte: startOfDay,
+              $lt: endOfDay,
+            },
+          },
           { _id: 1, name: 1, isFavourite: 1 }
         );
         competitionEvent.push({
@@ -39,8 +58,8 @@ const sportsList = async () => {
       data.push({
         _id: allSports[i]._id,
         name: allSports[i].name,
-        activeEventCount: getAllActiveEvent,
-        allEventCount: getAllEvent,
+        allLiveEvent: getAllLiveEvent,
+        allActiveEvent: getAllActiveEvent,
         competition: competitionEvent,
       });
     }
@@ -72,8 +91,10 @@ const sportWiseMatchList = async (sportId) => {
           $gte: startOfDay,
           $lt: endOfDay,
         },
+        isActive: true,
+        completed: false
       },
-      { name: 1, matchDate: 1, _id: 1, apiCompetitionId: 1 }
+      { name: 1, matchDate: 1, _id: 1, apiCompetitionId: 1, isLive: 1 }
     ).sort({ matchDate: 1 });
     let ids = findEvents.map((item) => item._id);
     let findMarketIds = await Market.find(

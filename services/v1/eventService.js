@@ -248,6 +248,10 @@ const modifyEvent = async ({ ...reqBody }) => {
     event.completed = reqBody.completed;
     event.betDeleted = reqBody.betDeleted;
     event.isFavourite = reqBody.isFavourite;
+
+    if (event.completed == false && (reqBody.completed == true || reqBody.completed == "true")) {
+      event.isLive = false;
+    }
     await event.save();
 
     return event;
