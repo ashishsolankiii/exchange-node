@@ -14,26 +14,26 @@ export const THEME_IMAGE_SIZES = {
   [THEME_IMAGE_TYPES.BANNER]: {
     ...IMAGE_SIZES,
     // avg aspect ratio = 4.27:1
-    DEFAULT: "400_220",
-    THUMBNAIL: "200_50",
+    DEFAULT: "400_94",
+    THUMBNAIL: "200_47",
   },
   [THEME_IMAGE_TYPES.WELCOME_MOBILE]: {
     ...IMAGE_SIZES,
     // avg aspect ratio = 3:2
-    DEFAULT: "400_265",
-    THUMBNAIL: "200_132",
+    DEFAULT: "400_267",
+    THUMBNAIL: "200_133",
   },
   [THEME_IMAGE_TYPES.WELCOME_DESKTOP]: {
     ...IMAGE_SIZES,
     // avg aspect ratio = 3:2
-    DEFAULT: "400_265",
-    THUMBNAIL: "200_132",
+    DEFAULT: "400_267",
+    THUMBNAIL: "200_133",
   },
   [THEME_IMAGE_TYPES.LOGO]: {
     ...IMAGE_SIZES,
     // avg aspect ratio = 3:2
-    DEFAULT: "400_265",
-    THUMBNAIL: "200_132",
+    DEFAULT: "400_267",
+    THUMBNAIL: "200_133",
   },
 };
 
@@ -67,8 +67,6 @@ const themeSettingSchema = new mongoose.Schema({
   welcomeMessage: { type: String, default: null },
 
   bannerImages: [{ type: String, required: true }],
-
-
 });
 
 themeSettingSchema.plugin(timestampPlugin);
