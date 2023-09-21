@@ -253,6 +253,7 @@ const deleteBannerImage = async ({ _id: themeSettingId, bannerImageName }) => {
 const getThemeSettingByCurrencyAndDomain = async ({ ...reqBody }) => {
   try {
     const { countryName, domainUrl } = reqBody;
+    console.log(domainUrl);
     const regex = new RegExp(`^${countryName}$`, "i");
     let findCurrency = await Currency.findOne({ countryName: { $regex: regex } });
     let currencyId = "";
@@ -274,7 +275,6 @@ const getThemeSettingByCurrencyAndDomain = async ({ ...reqBody }) => {
             const path = await checkUrl(
               await getThemeSetting.getImageUrl(THEME_IMAGE_TYPES.BANNER, THEME_IMAGE_SIZES.BANNER.ORIGINAL, imageName)
             );
-            console.log(path);
             bannerImages.push({
               name: imageName,
               url: path,
