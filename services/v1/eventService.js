@@ -8,6 +8,7 @@ import commonService from "./commonService.js";
 import User, { USER_ROLE } from "../../models/v1/User.js";
 import { DEFAULT_CATEGORIES } from "../../models/v1/BetCategory.js";
 import { RUNNER_STATUS } from "../../models/v1/MarketRunner.js";
+import Bet from "../../models/v1/Bet.js";
 
 // Fetch all event from the database
 const fetchAllEvent = async ({ ...reqBody }) => {
@@ -683,6 +684,139 @@ const getEventMatchDataFront = async ({ eventId, user }) => {
   }
 };
 
+
+async function getChidUsers(user, userArray) {
+  let findUsers = await User.find({ parentId: user._id });
+
+  for (var i = 0; i < findUsers.length; i++) {
+    if (findUsers[i].role == USER_ROLE.USER) {
+      userArray.push(findUsers[i]._id)
+    }
+    await getChidUsers(findUsers[i], userArray)
+  }
+}
+
+const getMatchStake = async ({ eventId, loginUserId }) => {
+  try {
+    const market = await Market.aggregate([
+      {
+        $match: {
+          eventId: new mongoose.Types.ObjectId(eventId),
+        },
+      },
+      {
+        $lookup: {
+          from: "sports",
+          localField: "sportId",
+          foreignField: "_id",
+          as: "sport",
+          pipeline: [
+            {
+              $project: { name: 1 },
+            },
+          ],
+        },
+      },
+      {
+        $unwind: {
+          path: "$sport",
+          preserveNullAndEmptyArrays: true,
+        },
+      },
+      {
+        $lookup: {
+          from: "events",
+          localField: "eventId",
+          foreignField: "_id",
+          as: "event",
+          pipeline: [
+            {
+              $project: { name: 1 },
+            },
+          ],
+        },
+      },
+      {
+        $unwind: {
+          path: "$event",
+          preserveNullAndEmptyArrays: true,
+        },
+      },
+      {
+        $lookup: {
+          from: "competitions",
+          localField: "competitionId",
+          foreignField: "_id",
+          as: "competition",
+          pipeline: [
+            {
+              $project: { name: 1 },
+            },
+          ],
+        },
+      },
+      {
+        $unwind: {
+          path: "$competition",
+          preserveNullAndEmptyArrays: true,
+        },
+      },
+      {
+        $lookup: {
+          from: "market_runners",
+          localField: "_id",
+          foreignField: "marketId",
+          as: "market_runner",
+          pipeline: [
+            {
+              $project: { runnerName: 1 },
+            },
+          ],
+        },
+      },
+
+      {
+        $set: {
+          sportsName: "$sport.name",
+          competitionName: "$competition.name",
+          eventName: "$event.name",
+        },
+      },
+      {
+        $unset: ["sport", "competition", "event"],
+      },
+      { $project: { name: 1, sportsName: 1, competitionName: 1, eventName: 1, market_runner: 1 } },
+    ]);
+
+    const userIds = [];
+    const findUser = await User.findOne({ _id: loginUserId })
+    await getChidUsers(findUser, userIds);
+    for (var i = 0; i < market.length; i++) {
+      let marketTotalWin = 0;
+      let marketTotalLoss = 0;
+      for (var j = 0; j < market[i].market_runner.length; j++) {
+        let totalWin = 0;
+        let totalLoss = 0;
+        const findBet = await Bet.find({ marketId: market[i]._id, userId: { $in: userIds }, runnerId: market[i].market_runner[j]._id });
+        for (var k = 0; k < findBet.length; k++) {
+          totalWin = totalWin + (-findBet[k].potentialLoss);
+          totalLoss = totalLoss + (-findBet[k].potentialWin);
+        }
+        market[i].market_runner[j].totalWin = totalWin;
+        market[i].market_runner[j].totalLoss = totalLoss;
+        marketTotalWin = marketTotalWin + totalWin;
+        marketTotalLoss = marketTotalLoss + totalLoss;
+      }
+      market[i].marketTotalWin = marketTotalWin;
+      market[i].marketTotalLoss = marketTotalLoss;
+    }
+
+    return market;
+  } catch (e) {
+    throw new ErrorResponse(e.message).status(200);
+  }
+};
+
 export default {
   fetchAllEvent,
   fetchEventId,
@@ -694,4 +828,5 @@ export default {
   upcomingEvents,
   getEventMatchData,
   getEventMatchDataFront,
+  getMatchStake
 };
