@@ -571,7 +571,7 @@ const fetchAllBet = async ({ ...reqBody }) => {
 async function updateUserPl(userId, profitLoss) {
   let findUser = await User.findOne({ _id: userId });
   findUser.userPl = findUser.userPl + profitLoss;
-  findUser.balance = findUser.balance + profitLoss;
+  // findUser.balance = findUser.balance + profitLoss;
   findUser.save();
 
   if (findUser.role != USER_ROLE.SUPER_ADMIN) {

@@ -4,11 +4,13 @@ import { deleteImageFromS3, uploadImageToS3 } from "../../lib/files/image-upload
 import ThemeSetting, { THEME_IMAGE_SIZES, THEME_IMAGE_TYPES } from "../../models/v1/ThemeSetting.js";
 import User from "../../models/v1/User.js";
 import Currency from "../../models/v1/Currency.js";
+import fetch from 'node-fetch';
+
 
 const uploadThemeImages = async (themeSettingId, files) => {
   const themeSetting = await ThemeSetting.findById(themeSettingId);
 
-  const { bannerImages = [], welcomeMobileImage, welcomeDesktopImage } = files;
+  const { bannerImages = [], welcomeMobileImage, welcomeDesktopImage, logo } = files;
 
   const imagePromises = [];
 
@@ -48,6 +50,11 @@ const uploadThemeImages = async (themeSettingId, files) => {
     imagePromises.push(...imageSizePromises(themeSetting, welcomeDesktopImage, THEME_IMAGE_TYPES.WELCOME_DESKTOP));
   }
 
+  // Logo
+  if (logo) {
+    imagePromises.push(...imageSizePromises(themeSetting, logo, THEME_IMAGE_TYPES.LOGO));
+  }
+
   await Promise.all(imagePromises);
 
   if (bannerImageNames.length) {
@@ -56,6 +63,25 @@ const uploadThemeImages = async (themeSettingId, files) => {
   }
 };
 
+//Check image url exist
+async function checkUrl(url) {
+  let data = ""
+  await fetch(url)
+    .then(response => {
+      if (response.ok) {
+        // Image loaded successfully
+        data = url;
+      } else {
+        // Image failed to load
+        data = ""
+      }
+    })
+    .catch(() => {
+      // Image failed to load
+      data = ""
+    });
+  return data;
+}
 /**
  * Fetch themeSetting by Id from the database
  */
@@ -70,11 +96,11 @@ const fetchThemeSettingId = async (userId) => {
     const bannerImages = [];
     if (existingThemeSetting.bannerImages?.length) {
       for (const imageName of existingThemeSetting.bannerImages) {
-        const path = await existingThemeSetting.getImageUrl(
+        const path = await checkUrl(await existingThemeSetting.getImageUrl(
           THEME_IMAGE_TYPES.BANNER,
           THEME_IMAGE_SIZES.BANNER.DEFAULT,
           imageName
-        );
+        ));
         bannerImages.push({
           name: imageName,
           url: path,
@@ -83,19 +109,19 @@ const fetchThemeSettingId = async (userId) => {
     }
 
     // Mobile Welcome Image
-    const welcomeMobileImage = await existingThemeSetting.getImageUrl(
+    const welcomeMobileImage = await checkUrl(await existingThemeSetting.getImageUrl(
       THEME_IMAGE_TYPES.WELCOME_MOBILE,
       THEME_IMAGE_SIZES.WELCOME_MOBILE.DEFAULT
-    );
+    ));
 
     // Desktop Welcome Image
-    const welcomeDesktopImage = await existingThemeSetting.getImageUrl(
+    const welcomeDesktopImage = await checkUrl(await existingThemeSetting.getImageUrl(
       THEME_IMAGE_TYPES.WELCOME_DESKTOP,
       THEME_IMAGE_SIZES.WELCOME_DESKTOP.DEFAULT
-    );
+    ));
 
     // Desktop Logo
-    const logoImage = await existingThemeSetting.getImageUrl(THEME_IMAGE_TYPES.LOGO, THEME_IMAGE_SIZES.LOGO.DEFAULT);
+    let logoImage = await checkUrl(await existingThemeSetting.getImageUrl(THEME_IMAGE_TYPES.LOGO, THEME_IMAGE_SIZES.LOGO.DEFAULT));
 
     const data = {
       ...existingThemeSetting._doc,
@@ -155,7 +181,7 @@ const modifyThemeSetting = async ({ files, ...reqBody }) => {
 
       const newThemeSetting = await ThemeSetting.create(newThemeSettingObj);
 
-      await uploadThemeImages(themeSetting._id, files);
+      await uploadThemeImages(newThemeSetting._id, files);
 
       return newThemeSetting;
     } else {
@@ -245,11 +271,11 @@ const getThemeSettingByCurrencyAndDomain = async ({ ...reqBody }) => {
         const bannerImages = [];
         if (getThemeSetting.bannerImages?.length) {
           for (const imageName of getThemeSetting.bannerImages) {
-            const path = await getThemeSetting.getImageUrl(
+            const path = await checkUrl(await getThemeSetting.getImageUrl(
               THEME_IMAGE_TYPES.BANNER,
               THEME_IMAGE_SIZES.BANNER.DEFAULT,
               imageName
-            );
+            ));
             bannerImages.push({
               name: imageName,
               url: path,
@@ -258,19 +284,19 @@ const getThemeSettingByCurrencyAndDomain = async ({ ...reqBody }) => {
         }
 
         // Mobile Welcome Image
-        const welcomeMobileImage = await getThemeSetting.getImageUrl(
+        const welcomeMobileImage = await checkUrl(await getThemeSetting.getImageUrl(
           THEME_IMAGE_TYPES.WELCOME_MOBILE,
           THEME_IMAGE_SIZES.WELCOME_MOBILE.DEFAULT
-        );
+        ));
 
         // Desktop Welcome Image
-        const welcomeDesktopImage = await getThemeSetting.getImageUrl(
+        const welcomeDesktopImage = await checkUrl(await getThemeSetting.getImageUrl(
           THEME_IMAGE_TYPES.WELCOME_DESKTOP,
           THEME_IMAGE_SIZES.WELCOME_DESKTOP.DEFAULT
-        );
+        ));
 
         // Desktop Logo
-        const logoImage = await getThemeSetting.getImageUrl(THEME_IMAGE_TYPES.LOGO, THEME_IMAGE_SIZES.LOGO.DEFAULT);
+        const logoImage = await checkUrl(await getThemeSetting.getImageUrl(THEME_IMAGE_TYPES.LOGO, THEME_IMAGE_SIZES.LOGO.DEFAULT));
 
         getThemeSetting = {
           ...getThemeSetting._doc,
