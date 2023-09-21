@@ -274,7 +274,6 @@ const getThemeSettingByCurrencyAndDomain = async ({ ...reqBody }) => {
             const path = await checkUrl(
               await getThemeSetting.getImageUrl(THEME_IMAGE_TYPES.BANNER, THEME_IMAGE_SIZES.BANNER.ORIGINAL, imageName)
             );
-            console.log(path);
             bannerImages.push({
               name: imageName,
               url: path,
