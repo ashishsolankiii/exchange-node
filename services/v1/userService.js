@@ -447,7 +447,7 @@ const modifyUser = async ({ user, ...reqBody }) => {
     });
 
     // Update user's permissions if it's a cloned user
-    if (!reqBody.moduleIds.length) {
+    if (reqBody.isMultiLoginUser === true && !reqBody.moduleIds?.length) {
       throw new Error("Please select atleast one module.");
     }
     if (currentUser?.cloneParentId) {
