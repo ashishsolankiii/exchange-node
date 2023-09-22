@@ -77,6 +77,8 @@ themeSettingSchema.methods.generateImagePath = function (type, size = IMAGE_SIZE
 
   if (appConfig.NODE_ENV === "development") {
     path = `dev/${appConfig.DEV_USER}/${path}`;
+  } else if (appConfig.NODE_ENV === "staging") {
+    path = `staging/${path}`;
   }
 
   switch (type) {
