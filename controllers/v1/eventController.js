@@ -111,6 +111,16 @@ const getEventMatchDataFront = async (req, res) => {
   res.status(200).json({ success: true, data: { details: GetEventMatchData } });
 };
 
+const getMatchWiseWinLoss = async (req, res) => {
+  const { eventId, loginUserId } = req.body;
+  const GetEventMatchData = await eventService.getMatchStake({
+    eventId,
+    loginUserId
+  });
+
+  res.status(200).json({ success: true, data: { details: GetEventMatchData } });
+};
+
 export default {
   getAllEvent,
   getEventById,
@@ -122,4 +132,5 @@ export default {
   upcomingEvent,
   getEventMatchData,
   getEventMatchDataFront,
+  getMatchWiseWinLoss
 };
