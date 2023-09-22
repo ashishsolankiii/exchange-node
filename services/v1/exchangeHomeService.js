@@ -124,6 +124,7 @@ const sportWiseMatchList = async (sportId) => {
           );
           if (eventInfo.length > 0 && findCompetition) {
             allData.push({
+              _id: eventInfo[0]._id,
               eventName: eventInfo[0].name,
               competitionName: findCompetition.name,
               matchDate: eventInfo[0].matchDate,
