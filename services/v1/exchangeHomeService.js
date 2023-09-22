@@ -12,10 +12,6 @@ import commonService from "./commonService.js";
 const sportsList = async () => {
   try {
     const allSports = await Sport.find({ isActive: true, isDeleted: false }, { _id: 1, name: 1 }).sort("name");
-    const startOfDay = new Date(new Date().setUTCHours(0, 0, 0, 0)).toISOString();
-    const endOfDay = new Date(
-      new Date(new Date().setDate(new Date().getDate() + 1)).setUTCHours(23, 59, 59, 999)
-    ).toISOString();
     let data = [];
     for (var i = 0; i < allSports.length; i++) {
       const getAllCompetition = await Competition.find(
@@ -24,28 +20,19 @@ const sportsList = async () => {
       );
       const getAllLiveEvent = await Event.count(
         {
-          isActive: true, sportId: allSports[i]._id, isDeleted: false, completed: false, isLive: true, matchDate: {
-            $gte: startOfDay,
-            $lt: endOfDay,
-          },
+          isActive: true, sportId: allSports[i]._id, isDeleted: false, completed: false, isLive: true
         }
       );
       const getAllActiveEvent = await Event.count(
         {
-          isDeleted: false, sportId: allSports[i]._id, completed: false, isActive: true, matchDate: {
-            $gte: startOfDay,
-            $lt: endOfDay,
-          },
+          isDeleted: false, sportId: allSports[i]._id, completed: false, isActive: true, isLive: false
         }
       );
       let competitionEvent = [];
       for (var j = 0; j < getAllCompetition.length; j++) {
         const getAllEvent = await Event.find(
           {
-            isActive: true, isDeleted: false, competitionId: getAllCompetition[j]._id, completed: false, matchDate: {
-              $gte: startOfDay,
-              $lt: endOfDay,
-            },
+            isActive: true, isDeleted: false, competitionId: getAllCompetition[j]._id, completed: false
           },
           { _id: 1, name: 1, isFavourite: 1 }
         );
