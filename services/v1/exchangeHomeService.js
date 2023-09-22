@@ -12,7 +12,7 @@ import commonService from "./commonService.js";
 const sportsList = async () => {
   try {
     const allSports = await Sport.find({ isActive: true, isDeleted: false }, { _id: 1, name: 1 }).sort("name");
-    const startOfDay = new Date(new Date()).toISOString();
+    const startOfDay = new Date(new Date().setUTCHours(0, 0, 0, 0)).toISOString();
     const endOfDay = new Date(
       new Date(new Date().setDate(new Date().getDate() + 1)).setUTCHours(23, 59, 59, 999)
     ).toISOString();
@@ -72,7 +72,7 @@ const sportsList = async () => {
 // Sport wise match list
 const sportWiseMatchList = async (sportId) => {
   try {
-    const startOfDay = new Date(new Date()).toISOString();
+    const startOfDay = new Date(new Date().setUTCHours(0, 0, 0, 0)).toISOString();
     const endOfDay = new Date(
       new Date(new Date().setDate(new Date().getDate() + 1)).setUTCHours(23, 59, 59, 999)
     ).toISOString();
