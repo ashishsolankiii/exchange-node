@@ -1,8 +1,8 @@
 import mongoose from "mongoose";
-import softDeletePlugin from "../plugins/soft-delete.js";
-import { IMAGE_SIZES, getImageUrlFromS3 } from "../../lib/files/image-upload.js";
-import timestampPlugin from "../plugins/timestamp.js";
 import { appConfig } from "../../config/app.js";
+import { IMAGE_SIZES, getImageUrlFromS3 } from "../../lib/files/image-upload.js";
+import softDeletePlugin from "../plugins/soft-delete.js";
+import timestampPlugin from "../plugins/timestamp.js";
 
 export const CASINO_IMAGE_TYPES = {
   CASINO_IMAGE: "CASINO_IMAGE",
@@ -15,7 +15,7 @@ export const CASINO_IMAGE_SIZES = {
     DEFAULT: "400_220",
     THUMBNAIL: "200_50",
   },
-}
+};
 
 const casinoSchema = new mongoose.Schema({
   name: {
@@ -38,6 +38,8 @@ casinoSchema.methods.generateImagePath = function (type, size = IMAGE_SIZES.ORIG
 
   if (appConfig.NODE_ENV === "development") {
     path = `dev/${appConfig.DEV_USER}/${path}`;
+  } else if (appConfig.NODE_ENV === "staging") {
+    path = `staging/${path}`;
   }
 
   switch (type) {
