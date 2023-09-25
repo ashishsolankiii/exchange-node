@@ -17,6 +17,11 @@ export const CASINO_IMAGE_SIZES = {
   },
 };
 
+export const GAME_TYPE = {
+  LIVE: "live",
+  VIRTUAL: "virtual"
+};
+
 const casinoSchema = new mongoose.Schema({
   name: {
     type: String,
@@ -27,6 +32,9 @@ const casinoSchema = new mongoose.Schema({
     type: Boolean,
     default: true,
   },
+  casinoType: {
+    type: String, enum: Object.values(GAME_TYPE), required: true
+  }
 });
 
 casinoSchema.plugin(timestampPlugin);

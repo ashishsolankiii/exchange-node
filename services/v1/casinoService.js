@@ -36,7 +36,7 @@ const uploadCasinoImages = async (casinoId, files) => {
 // Fetch all casino from the database
 const fetchAllCasino = async ({ ...reqBody }) => {
   try {
-    const { page, perPage, sortBy, direction, searchQuery, showDeleted, status } = reqBody;
+    const { page, perPage, sortBy, direction, searchQuery, showDeleted, status, casinoType } = reqBody;
 
     // Pagination and Sorting
     const sortDirection = direction === "asc" ? 1 : -1;
@@ -49,6 +49,10 @@ const fetchAllCasino = async ({ ...reqBody }) => {
 
     if (status !== null) {
       filters.isVisible = [true, "true"].includes(status);
+    }
+
+    if (casinoType !== null) {
+      filters.casinoType = casinoType
     }
 
     if (searchQuery) {
@@ -123,7 +127,7 @@ const fetchCasinoId = async (_id) => {
  * Create casino in the database
  */
 const addCasino = async ({ files, ...reqBody }) => {
-  const { name } = reqBody;
+  const { name, casinoType } = reqBody;
 
   try {
     const existingName = await Casino.findOne({ name });
@@ -133,6 +137,7 @@ const addCasino = async ({ files, ...reqBody }) => {
 
     const newCasinoObj = {
       name,
+      casinoType
     };
 
     const newCasino = await Casino.create(newCasinoObj);
@@ -161,6 +166,7 @@ const modifyCasino = async ({ files, ...reqBody }) => {
     }
 
     casino.name = reqBody.name;
+    casino.casinoType = reqBody.casinoType;
 
     await casino.save();
     await uploadCasinoImages(reqBody._id, files);

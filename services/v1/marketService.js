@@ -105,9 +105,22 @@ const getMatchOdds = async (markeId) => {
     let allData = [];
     if (statusCode === 200) {
       for (const market of data) {
+        let findMarket = await Market.findOne({ marketId: market["marketId"] });
+        let min, max;
+        if (findMarket.minStake != 0 || findMarket.maxStake != 0) {
+          min = findMarket.minStake;
+          max = findMarket.maxStake;
+        }
+        else {
+          let findEvent = await Event.findOne({ _id: findMarket.eventId });
+          min = findEvent.minStake;
+          max = findEvent.maxStake;
+        }
         if (market["runners"]) {
           allData.push({
             marketId: market["marketId"],
+            min,
+            max,
             matchOdds: market["runners"].map(function (item) {
               delete item.ex;
               return item;
@@ -310,9 +323,22 @@ const getBookmakerPrice = async (markeId) => {
     let allData = [];
     if (statusCode === 200) {
       for (const market of data) {
+        let findMarket = await Market.findOne({ marketId: market["marketId"] });
+        let min, max;
+        if (findMarket.minStake != 0 || findMarket.maxStake != 0) {
+          min = findMarket.minStake;
+          max = findMarket.maxStake;
+        }
+        else {
+          let findEvent = await Event.findOne({ _id: findMarket.eventId });
+          min = findEvent.minStake;
+          max = findEvent.maxStake;
+        }
         if (market["runners"]) {
           allData.push({
             marketId: market["marketId"],
+            min,
+            max,
             matchOdds: market["runners"].map(function (item) {
               delete item.ex;
               return item;
