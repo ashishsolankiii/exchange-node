@@ -115,6 +115,7 @@ const sportWiseMatchList = async (sportId) => {
               eventName: eventInfo[0].name,
               competitionName: findCompetition.name,
               matchDate: eventInfo[0].matchDate,
+              isLive: eventInfo[0].isLive,
               matchOdds: market["runners"].map(function (item) {
                 delete item.ex;
                 delete item.selectionId;
