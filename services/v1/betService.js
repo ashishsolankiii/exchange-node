@@ -609,14 +609,13 @@ const fetchUserEventBets = async ({ ...reqBody }) => {
           localField: "marketId",
           foreignField: "_id",
           as: "market",
-          pipeline: [{ $project: { name: 1 } }],
+          pipeline: [{ $project: { name: 1 } }, {
+            $sort: { name: 1 },
+          },],
         },
       },
       {
         $unwind: "$market",
-      },
-      {
-        $sort: { createdAt: -1, 'market.name': 1 },
       },
       {
         $group: {
@@ -639,6 +638,9 @@ const fetchUserEventBets = async ({ ...reqBody }) => {
           market: "$_id",
           bets: 1,
         },
+      },
+      {
+        $sort: { 'bets.createdAt': -1 },
       },
     ]);
 
