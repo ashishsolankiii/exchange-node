@@ -12,7 +12,7 @@ async function casinoListingRequest(req) {
   req.body.showDeleted = req.body?.showDeleted ? [true, "true"].includes(req.body.showDeleted) : false;
   req.body.showRecord = req.body?.showRecord ? req.body.showRecord?.trim() : "All";
   req.body.status = req.body?.status ? req.body.status : null;
-  req.body.casionType = req.body?.casionType ? req.body.casionType : null;
+  req.body.casinoType = req.body?.casinoType ? req.body.casinoType : null;
 
   const validationSchema = Yup.object().shape({
     page: Yup.number().nullable(true),
@@ -31,7 +31,7 @@ async function casinoListingRequest(req) {
 
     status: Yup.boolean().nullable(true),
 
-    casionType: Yup.string().nullable(true),
+    casinoType: Yup.string().nullable(true),
   });
 
   await validationSchema.validate(req.body);

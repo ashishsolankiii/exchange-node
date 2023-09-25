@@ -616,7 +616,7 @@ const fetchUserEventBets = async ({ ...reqBody }) => {
         $unwind: "$market",
       },
       {
-        $sort: { createdAt: -1 },
+        $sort: { createdAt: -1, 'market.name': 1 },
       },
       {
         $group: {
@@ -809,6 +809,7 @@ const getChildUserData = async ({ userId, filterUserId }) => {
       isDeleted: false,
       isActive: true,
       parentId: new mongoose.Types.ObjectId(userId),
+      userPl: { $ne: 0 }
     };
 
     //If filterUserId has value then add in filter
