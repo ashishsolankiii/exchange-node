@@ -43,6 +43,10 @@ const createUser = async (req, res) => {
 
   const newUser = await userService.addUser({ user, ...body });
 
+  const parentUser = await User.findById(user._id);
+  const parentUserDetails = getTrimmedUser(parentUser);
+  io.user.emit(`user:${parentUserDetails._id}`, parentUserDetails);
+
   await userActivityService.createUserActivity({
     userId: newUser._id,
     event: USER_ACTIVITY_EVENT.CREATED,
@@ -59,15 +63,21 @@ const updateUser = async (req, res) => {
 
   const updatedUser = await userService.modifyUser({ user, ...body });
 
+  const userDetails = getTrimmedUser(updatedUser);
+  io.user.emit(`user:${userDetails._id}`, userDetails);
+
+  if (userDetails.parentId) {
+    const parentUser = await User.findById(userDetails.parentId);
+    const parentUserDetails = getTrimmedUser(parentUser);
+    io.user.emit(`user:${parentUserDetails._id}`, parentUserDetails);
+  }
+
   await userActivityService.createUserActivity({
     userId: updatedUser._id,
     event: USER_ACTIVITY_EVENT.UPDATED,
     ipAddress: body.ipAddress,
     description: body.description,
   });
-
-  const userDetails = getTrimmedUser(updatedUser);
-  io.user.emit(`user:${userDetails._id}`, userDetails);
 
   res.status(200).json({ success: true, data: { details: updatedUser } });
 };
