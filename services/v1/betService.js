@@ -590,6 +590,7 @@ const fetchUserEventBets = async ({ ...reqBody }) => {
         $match: {
           eventId: new mongoose.Types.ObjectId(eventId),
           userId: new mongoose.Types.ObjectId(userId),
+          betResultStatus: BET_RESULT_STATUS.RUNNING
         },
       },
       {
@@ -667,17 +668,21 @@ const completeBet = async ({ ...reqBody }) => {
           if (winRunnerId == findBet[i].marketRunnerId) {
             profit = findBet[i].potentialWin;
             newFindBet.betPl = profit;
+            newFindBet.betResultStatus = BET_RESULT_STATUS.WON
           } else {
             loss = findBet[i].potentialLoss;
             newFindBet.betPl = loss;
+            newFindBet.betResultStatus = BET_RESULT_STATUS.LOST
           }
         } else {
           if (winRunnerId != findBet[i].marketRunnerId) {
             profit = findBet[i].potentialWin;
             newFindBet.betPl = profit;
+            newFindBet.betResultStatus = BET_RESULT_STATUS.WON
           } else {
             loss = findBet[i].potentialLoss;
             newFindBet.betPl = loss;
+            newFindBet.betResultStatus = BET_RESULT_STATUS.LOST
           }
         }
         newFindBet.save();
@@ -716,19 +721,23 @@ const completeBetFency = async ({ ...reqBody }) => {
           if (newFindBet.odds <= winScore) {
             profit = findBet[i].potentialWin;
             newFindBet.betPl = profit;
+            newFindBet.betResultStatus = BET_RESULT_STATUS.WON
           }
           else {
             loss = findBet[i].potentialLoss;
             newFindBet.betPl = loss;
+            newFindBet.betResultStatus = BET_RESULT_STATUS.LOST
           }
         } else {
           if (newFindBet.odds > winScore) {
             profit = findBet[i].potentialWin;
             newFindBet.betPl = profit;
+            newFindBet.betResultStatus = BET_RESULT_STATUS.WON
           }
           else {
             loss = findBet[i].potentialLoss;
             newFindBet.betPl = loss;
+            newFindBet.betResultStatus = BET_RESULT_STATUS.LOST
           }
         }
         newFindBet.save();

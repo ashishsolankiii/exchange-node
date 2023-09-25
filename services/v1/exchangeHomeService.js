@@ -25,7 +25,7 @@ const sportsList = async () => {
       );
       const getAllActiveEvent = await Event.count(
         {
-          isDeleted: false, sportId: allSports[i]._id, completed: false, isActive: true, isLive: false
+          isDeleted: false, sportId: allSports[i]._id, completed: false, isActive: true
         }
       );
       let competitionEvent = [];
