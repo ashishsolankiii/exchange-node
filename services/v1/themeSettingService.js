@@ -161,6 +161,7 @@ const modifyThemeSetting = async ({ files, ...reqBody }) => {
         forgotPasswordLink,
         depositePopupNumber,
         welcomeMessage,
+        welcomeMessageMobile,
       } = reqBody;
 
       const newThemeSettingObj = {
@@ -178,6 +179,7 @@ const modifyThemeSetting = async ({ files, ...reqBody }) => {
         forgotPasswordLink,
         depositePopupNumber,
         welcomeMessage,
+        welcomeMessageMobile,
       };
 
       const newThemeSetting = await ThemeSetting.create(newThemeSettingObj);
@@ -200,6 +202,7 @@ const modifyThemeSetting = async ({ files, ...reqBody }) => {
       themeSetting.hardBetDeleted = reqBody.hardBetDeleted;
       themeSetting.depositePopupNumber = reqBody.depositePopupNumber;
       themeSetting.welcomeMessage = reqBody.welcomeMessage;
+      themeSetting.welcomeMessageMobile = reqBody.welcomeMessageMobile;
 
       await themeSetting.save();
 

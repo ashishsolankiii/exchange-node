@@ -66,6 +66,8 @@ const themeSettingSchema = new mongoose.Schema({
 
   welcomeMessage: { type: String, default: null },
 
+  welcomeMessageMobile: { type: String, default: null },
+
   bannerImages: [{ type: String, required: true }],
 });
 
