@@ -17,6 +17,7 @@ async function updateThemeSettingRequest(req) {
     forgotPasswordLink: Yup.string(),
     depositePopupNumber: Yup.string(),
     welcomeMessage: Yup.string(),
+    welcomeMessageMobile: Yup.string(),
   });
 
   await validationSchema.validate(req.body);
