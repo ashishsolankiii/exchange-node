@@ -616,7 +616,7 @@ const fetchUserEventBets = async ({ ...reqBody }) => {
         $unwind: "$market",
       },
       {
-        $sort: { createdAt: -1 },
+        $sort: { createdAt: -1, 'market.name': 1 },
       },
       {
         $group: {
