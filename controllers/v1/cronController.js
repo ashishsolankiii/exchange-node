@@ -164,6 +164,7 @@ async function syncEvents(competitionIds) {
           apiCompetitionId: competitionDetail.apiCompetitionId,
           apiEventId: event.event.id,
           matchDate: event.event.openDate,
+          matchTime: event.event.openDate.slice(11, 16),
           marketCount: event.marketCount,
         };
 
@@ -486,10 +487,42 @@ async function syncMarketFancy(eventApiIds) {
   return runnerSelectionIdsArray;
 }
 
+// Active Event
+const getActiveEvent = async (req, res) => {
+  try {
+    const startOfDay = new Date(
+      new Date().setUTCHours(0, 0, 0, 0)
+    ).toISOString();
+
+    const endOfDay = new Date(
+      new Date(new Date().setDate(new Date().getDate() + 3)).setUTCHours(23, 59, 59, 999)
+    ).toISOString();
+
+    const findEvent = await Event.find({
+      matchDate: {
+        $gte: startOfDay,
+        $lt: endOfDay,
+      },
+      completed: false, isActive: false
+    });
+    for (var i = 0; i < findEvent.length; i++) {
+      const updatedUser = await Event.findByIdAndUpdate(findEvent[i]._id, { isActive: true }, {
+        new: true,
+      });
+    }
+
+    res.status(200).json({ message: "Active event updated." });
+
+  } catch (e) {
+    throw new Error(e);
+  }
+}
+
 export default {
   syncDetail,
   getLiveEvent,
   syncMarket,
   syncMarketBookmakers,
-  syncMarketFancy
+  syncMarketFancy,
+  getActiveEvent
 };

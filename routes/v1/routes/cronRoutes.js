@@ -8,5 +8,6 @@ route(router, "post", "/syncData", cronController.syncDetail, false);
 route(router, "post", "/marketSync", cronController.marketSync, false);
 route(router, "post", "/getMatchOdds", cronController.getMatchOdds, false);
 route(router, "post", "/getLiveEvent", cronController.getLiveEvent, false);
+route(router, "post", "/getActiveEvent", cronController.getActiveEvent, false);
 
 export default router;
