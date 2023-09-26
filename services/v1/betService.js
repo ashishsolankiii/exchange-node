@@ -856,7 +856,7 @@ const getCurrentBetsUserwise = async ({ ...reqBody }) => {
     const { loginUserId, page,
       perPage,
       sortBy,
-      direction, betType } = reqBody;
+      direction, betType, betResultStatus } = reqBody;
 
     const startOfDay = new Date(
       new Date().setUTCHours(0, 0, 0, 0)
@@ -882,6 +882,9 @@ const getCurrentBetsUserwise = async ({ ...reqBody }) => {
       } else if (betType == "lay") {
         filters.isBack = false;
       }
+    }
+    if (betResultStatus) {
+      filters.betResultStatus = betResultStatus;
     }
     const bet = await Bet.aggregate([
       {
