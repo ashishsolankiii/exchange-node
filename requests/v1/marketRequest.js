@@ -30,11 +30,6 @@ async function updateMarketRequest(req) {
   const validationSchema = Yup.object().shape({
     _id: Yup.string().required().test("_id", "Given _id is not valid!", isValidObjectId),
     name: Yup.string().required(),
-    typeId: Yup.string().required().test("betCategoryId", "Invalid betCategoryId!", isValidObjectId),
-    eventId: Yup.string().required().test("eventId", "Invalid eventId!", isValidObjectId),
-    competitionId: Yup.string().required().test("competitionId", "Invalid competitionId!", isValidObjectId),
-    sportId: Yup.string().required().test("sportId", "Invalid sportId!", isValidObjectId),
-    isManual: Yup.boolean().nullable(true),
     marketStatus: Yup.number().nullable(true),
     betDelay: Yup.number().nullable(true),
     visibleToPlayer: Yup.boolean().nullable(true),
