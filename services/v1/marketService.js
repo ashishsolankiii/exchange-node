@@ -201,11 +201,6 @@ const modifyMarket = async ({ ...reqBody }) => {
     }
 
     market.name = reqBody.name,
-      market.typeId = reqBody.typeId,
-      market.eventId = reqBody.eventId,
-      market.competitionId = reqBody.competitionId,
-      market.sportId = reqBody.sportId,
-      market.isManual = reqBody.isManual,
       market.betDelay = reqBody.betDelay,
       market.visibleToPlayer = reqBody.visibleToPlayer,
       market.positionIndex = reqBody.positionIndex,
