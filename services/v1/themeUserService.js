@@ -1,7 +1,7 @@
 import mongoose from "mongoose";
 import ErrorResponse from "../../lib/error-handling/error-response.js";
-import { encryptPassword, generateJwtToken, getTrimmedUser, validatePassword } from "../../lib/helpers/auth.js";
 import { generatePaginationQueries, generateSearchFilters } from "../../lib/helpers/pipeline.js";
+import { encryptPassword, generateJwtToken, getTrimmedUser, validatePassword } from "../../lib/io-guards/auth.js";
 import ThemeUser from "../../models/v1/ThemeUser.js";
 import User from "../../models/v1/User.js";
 

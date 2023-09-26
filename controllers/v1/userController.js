@@ -1,16 +1,9 @@
-//Helpers
 import ErrorResponse from "../../lib/error-handling/error-response.js";
-import { getTrimmedUser } from "../../lib/helpers/auth.js";
-import { decryptTransactionCode } from "../../lib/helpers/transaction-code.js";
-
-//Models
+import { getTrimmedUser } from "../../lib/io-guards/auth.js";
+import { decryptTransactionCode } from "../../lib/io-guards/transaction-code.js";
 import User from "../../models/v1/User.js";
 import { USER_ACTIVITY_EVENT } from "../../models/v1/UserActivity.js";
-
-//Request
 import userRequest from "../../requests/v1/userRequest.js";
-
-//Services
 import userActivityService from "../../services/v1/userActivityService.js";
 import userService from "../../services/v1/userService.js";
 import { io } from "../../socket/index.js";

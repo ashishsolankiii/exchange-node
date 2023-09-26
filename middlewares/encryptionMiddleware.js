@@ -1,4 +1,6 @@
-import { decryptRequest, encryptResponse } from "../lib/helpers/io-encryption.js";
+import { appConfig } from "../config/app.js";
+import { encryptionConfig } from "../config/encryption.js";
+import { decryptRequest, encryptResponse } from "../lib/io-guards/encryption.js";
 
 /**
  * Middleware function to encrypt response and decrypt request payload
@@ -8,8 +10,8 @@ import { decryptRequest, encryptResponse } from "../lib/helpers/io-encryption.js
  */
 export default function encryptResponseInterceptor(req, res, next) {
   try {
-    const isBypassed = req.get("X-Bypass-Res-Enc") === "true";
-    const isBypassKeyValid = req.get("X-Res-Enc-Bypass-Key") === process.env.RESPONSE_AES_BYPASS_KEY;
+    const isBypassed = req.get(encryptionConfig.encBypassHeader) === "true";
+    const isBypassKeyValid = req.get(encryptionConfig.encBypassKeyHeader) === appConfig.RESPONSE_AES_BYPASS_KEY;
 
     // Encrypt response
     const originalSend = res.json;
@@ -19,8 +21,8 @@ export default function encryptResponseInterceptor(req, res, next) {
     };
 
     // Decrypt request
-    if (req.body?.payload) {
-      req.body = decryptRequest(req.body.payload);
+    if (encryptionConfig.requestKey in req.body) {
+      req.body = decryptRequest(req.body[encryptionConfig.requestKey]);
     }
 
     next();

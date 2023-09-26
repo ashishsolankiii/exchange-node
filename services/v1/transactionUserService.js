@@ -1,7 +1,7 @@
 import mongoose from "mongoose";
 import ErrorResponse from "../../lib/error-handling/error-response.js";
-import { encryptPassword, generateJwtToken, getTrimmedUser, validatePassword } from "../../lib/helpers/auth.js";
 import { generatePaginationQueries, generateSearchFilters } from "../../lib/helpers/pipeline.js";
+import { encryptPassword, generateJwtToken, getTrimmedUser, validatePassword } from "../../lib/io-guards/auth.js";
 import TransactionUser from "../../models/v1/TransactionUser.js";
 import User from "../../models/v1/User.js";
 
@@ -53,7 +53,7 @@ const fetchTransactionUserId = async (_id, fields) => {
 /**
  * update Transaction user in the database
  */
-const modifyTransactionUser = async ({ user, ...reqBody }) => {
+const modifyTransactionUser = async ({ ...reqBody }) => {
   try {
     const exisitngTransactionUsername = await TransactionUser.findOne({
       username: reqBody.username,

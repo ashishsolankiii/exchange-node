@@ -1,4 +1,4 @@
-import { getTrimmedUser } from "../../../lib/helpers/auth.js";
+import { getTrimmedUser } from "../../../lib/io-guards/auth.js";
 import userService from "../../../services/v1/userService.js";
 import { validateAuth, validateUser } from "./middlewares.js";
 
