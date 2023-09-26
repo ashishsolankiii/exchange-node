@@ -49,4 +49,6 @@ export const appConfig = {
       secretAccessKey: env.AWS_S3_SECRET,
     },
   },
+
+  ENABLE_LOGGING: env.ENABLE_LOGGING,
 };

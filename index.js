@@ -10,6 +10,7 @@ import dbConnection from "./database/connect.js";
 import { settleHandshake } from "./lib/io-guards/encryption.js";
 import corsMiddleware from "./middlewares/corsMiddleware.js";
 import encryptResponseInterceptor from "./middlewares/encryptionMiddleware.js";
+import loggerMiddleware from "./middlewares/loggerMiddleware.js";
 import apiRoutes from "./routes/apiRoutes.js";
 import { initSocket } from "./socket/index.js";
 
@@ -28,6 +29,7 @@ app.use(
 );
 
 app.use(corsMiddleware);
+app.use(loggerMiddleware);
 
 app.use("/handshake", settleHandshake);
 
