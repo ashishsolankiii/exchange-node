@@ -304,13 +304,8 @@ const getLiveEvent = async (req, res) => {
       },
       completed: false, isLive: false
     });
-
-    for (var i = 0; i < findEvent.length; i++) {
-      const updatedUser = await Event.findByIdAndUpdate(findEvent[i]._id, { isLive: true }, {
-        new: true,
-      });
-    }
-
+    const eventIds = findEvent.map((item) => item._id);
+    await Event.updateMany({ _id: { $in: eventIds } }, { isLive: true });
     res.status(200).json({ message: "Live event updated." });
 
   } catch (e) {
@@ -505,11 +500,8 @@ const getActiveEvent = async (req, res) => {
       },
       completed: false, isActive: false
     });
-    for (var i = 0; i < findEvent.length; i++) {
-      const updatedUser = await Event.findByIdAndUpdate(findEvent[i]._id, { isActive: true }, {
-        new: true,
-      });
-    }
+    const eventIds = findEvent.map((item) => item._id);
+    await Event.updateMany({ _id: { $in: eventIds } }, { isActive: true });
 
     res.status(200).json({ message: "Active event updated." });
 
