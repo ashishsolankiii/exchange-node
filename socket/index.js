@@ -1,4 +1,5 @@
 import { Server } from "socket.io";
+import { appConfig } from "../config/app.js";
 import marketNamespace from "./namespaces/market/marketNamespace.js";
 import userNamespace from "./namespaces/user/userNamespace.js";
 
@@ -9,7 +10,7 @@ let io = {
 
 const initSocket = (server) => {
   io = new Server(server, {
-    cors: { origin: "*" },
+    cors: { origin: appConfig.CORS_ALLOWED_ORIGINS },
   });
 
   io.user = io.of("/io/user");

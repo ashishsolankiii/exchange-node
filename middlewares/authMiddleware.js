@@ -1,4 +1,4 @@
-import { validateJwtToken } from "../lib/helpers/auth.js";
+import { validateJwtToken } from "../lib/io-guards/auth.js";
 
 /**
  * Middleware that performs authentication using a JWT token.

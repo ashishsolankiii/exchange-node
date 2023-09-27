@@ -3,15 +3,16 @@ import express from "express";
 import fileUpload from "express-fileupload";
 import { createServer } from "http";
 import moment from "moment";
+import cron from "node-cron";
 import { appConfig } from "./config/app.js";
+import cronController from "./controllers/v1/cronController.js";
 import dbConnection from "./database/connect.js";
-import { settleHandshake } from "./lib/helpers/io-encryption.js";
+import { settleHandshake } from "./lib/io-guards/encryption.js";
 import corsMiddleware from "./middlewares/corsMiddleware.js";
 import encryptResponseInterceptor from "./middlewares/encryptionMiddleware.js";
+import loggerMiddleware from "./middlewares/loggerMiddleware.js";
 import apiRoutes from "./routes/apiRoutes.js";
 import { initSocket } from "./socket/index.js";
-import cron from "node-cron";
-import cronController from "./controllers/v1/cronController.js";
 
 const app = express();
 const server = createServer(app);
@@ -28,6 +29,7 @@ app.use(
 );
 
 app.use(corsMiddleware);
+app.use(loggerMiddleware);
 
 app.use("/handshake", settleHandshake);
 
@@ -49,7 +51,6 @@ initSocket(server);
 
 // Cron Job for sync market
 cron.schedule("0 2 * * *", async function () {
-
   // For market sync data
   await cronController.syncDetail();
   await cronController.getActiveEvent();
@@ -57,7 +58,6 @@ cron.schedule("0 2 * * *", async function () {
 
 // Cron Job for live event
 cron.schedule("* * * * *", async function () {
-
   // For market sync data
   await cronController.getLiveEvent();
 });

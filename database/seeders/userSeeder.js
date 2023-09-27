@@ -1,5 +1,5 @@
 //Import Users module
-import { encryptPassword } from "../../lib/helpers/auth.js";
+import { encryptPassword } from "../../lib/io-guards/auth.js";
 import Currency from "../../models/v1/Currency.js";
 import User, { USER_ROLE } from "../../models/v1/User.js";
 

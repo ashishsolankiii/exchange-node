@@ -1,7 +1,7 @@
 import mongoose from "mongoose";
 import ErrorResponse from "../../lib/error-handling/error-response.js";
 import { generatePaginationQueries, generateSearchFilters } from "../../lib/helpers/pipeline.js";
-import { validateTransactionCode } from "../../lib/helpers/transaction-code.js";
+import { validateTransactionCode } from "../../lib/io-guards/transaction-code.js";
 import Transaction from "../../models/v1/Transaction.js";
 import User from "../../models/v1/User.js";
 // Create transaction in database

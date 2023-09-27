@@ -1,16 +1,16 @@
 import mongoose from "mongoose";
 import ErrorResponse from "../../lib/error-handling/error-response.js";
-import { getTrimmedUser } from "../../lib/helpers/auth.js";
 import { generatePaginationQueries, generateSearchFilters } from "../../lib/helpers/pipeline.js";
-import { decryptTransactionCode } from "../../lib/helpers/transaction-code.js";
+import { getTrimmedUser } from "../../lib/io-guards/auth.js";
+import { decryptTransactionCode } from "../../lib/io-guards/transaction-code.js";
 import Bet, { BET_ORDER_STATUS, BET_RESULT_STATUS } from "../../models/v1/Bet.js";
+import BetCategory, { BET_CATEGORIES } from "../../models/v1/BetCategory.js";
 import Event from "../../models/v1/Event.js";
 import Market from "../../models/v1/Market.js";
 import MarketRunner from "../../models/v1/MarketRunner.js";
 import User, { USER_ROLE } from "../../models/v1/User.js";
 import { io } from "../../socket/index.js";
 import marketService from "./marketService.js";
-import BetCategory, { BET_CATEGORIES, DEFAULT_CATEGORIES } from "../../models/v1/BetCategory.js";
 
 const fetchRunnerPls = async ({ user, ...reqBody }) => {
   try {
@@ -82,18 +82,15 @@ const addBet = async ({ user: loggedInUser, ...reqBody }) => {
     const findMarket = await Market.findById(reqBody.marketId);
     let winLossCalculation;
     if (findMarket) {
-      const findBetType = await BetCategory.findById(findMarket.typeId)
+      const findBetType = await BetCategory.findById(findMarket.typeId);
       if (findBetType) {
         if (findBetType.name == BET_CATEGORIES.MATCH_ODDS) {
           winLossCalculation = await matchOddsBet(loggedInUser, reqBody);
-        }
-        else if (findBetType.name == BET_CATEGORIES.BOOKMAKER) {
+        } else if (findBetType.name == BET_CATEGORIES.BOOKMAKER) {
           winLossCalculation = await bookmakersBet(loggedInUser, reqBody);
-        }
-        else if (findBetType.name == BET_CATEGORIES.FANCY) {
+        } else if (findBetType.name == BET_CATEGORIES.FANCY) {
           winLossCalculation = await fancyBet(loggedInUser, reqBody);
-        }
-        else {
+        } else {
           throw new Error("Market Type not found.");
         }
       }
@@ -224,8 +221,8 @@ async function matchOddsBet(loggedInUser, reqBody) {
   let potentialWinLoss = {
     potentialWin,
     potentialLoss,
-    newExposure
-  }
+    newExposure,
+  };
   return potentialWinLoss;
 }
 
@@ -258,8 +255,8 @@ async function bookmakersBet(loggedInUser, reqBody) {
 
   // let length = Number(String(reqBody.odds).length);
   // let divideBy = Number(String(1).padEnd(length + 1, "0"));
-  const potentialWin = reqBody.isBack ? reqBody.stake * reqBody.odds / 100 : reqBody.stake;
-  const potentialLoss = reqBody.isBack ? -reqBody.stake : -(reqBody.stake * reqBody.odds / 100);
+  const potentialWin = reqBody.isBack ? (reqBody.stake * reqBody.odds) / 100 : reqBody.stake;
+  const potentialLoss = reqBody.isBack ? -reqBody.stake : -((reqBody.stake * reqBody.odds) / 100);
 
   const runnerPls = await fetchRunnerPls({ user, ...reqBody });
 
@@ -326,8 +323,8 @@ async function bookmakersBet(loggedInUser, reqBody) {
   let potentialWinLoss = {
     potentialWin,
     potentialLoss,
-    newExposure
-  }
+    newExposure,
+  };
   return potentialWinLoss;
 }
 
@@ -418,8 +415,7 @@ async function fancyBet(loggedInUser, reqBody) {
     if (Number(reqBody.stake) < Number(runner.min) || Number(reqBody.stake) > Number(runner.max)) {
       throw new Error("Invalid stake.");
     }
-  }
-  else if (market.maxStake > 0 && market.minStake > 0) {
+  } else if (market.maxStake > 0 && market.minStake > 0) {
     if (Number(reqBody.stake) < market.minStake || Number(reqBody.stake) > market.maxStake) {
       throw new Error("Invalid stake.");
     }
@@ -431,8 +427,8 @@ async function fancyBet(loggedInUser, reqBody) {
   let potentialWinLoss = {
     potentialWin,
     potentialLoss,
-    newExposure
-  }
+    newExposure,
+  };
   return potentialWinLoss;
 }
 
@@ -590,7 +586,7 @@ const fetchUserEventBets = async ({ ...reqBody }) => {
         $match: {
           eventId: new mongoose.Types.ObjectId(eventId),
           userId: new mongoose.Types.ObjectId(userId),
-          betResultStatus: BET_RESULT_STATUS.RUNNING
+          betResultStatus: BET_RESULT_STATUS.RUNNING,
         },
       },
       {
@@ -609,9 +605,12 @@ const fetchUserEventBets = async ({ ...reqBody }) => {
           localField: "marketId",
           foreignField: "_id",
           as: "market",
-          pipeline: [{ $project: { name: 1 } }, {
-            $sort: { name: 1 },
-          },],
+          pipeline: [
+            { $project: { name: 1 } },
+            {
+              $sort: { name: 1 },
+            },
+          ],
         },
       },
       {
@@ -640,7 +639,7 @@ const fetchUserEventBets = async ({ ...reqBody }) => {
         },
       },
       {
-        $sort: { 'bets.createdAt': -1 },
+        $sort: { "bets.createdAt": -1 },
       },
     ]);
 
@@ -670,21 +669,21 @@ const completeBet = async ({ ...reqBody }) => {
           if (winRunnerId == findBet[i].marketRunnerId) {
             profit = findBet[i].potentialWin;
             newFindBet.betPl = profit;
-            newFindBet.betResultStatus = BET_RESULT_STATUS.WON
+            newFindBet.betResultStatus = BET_RESULT_STATUS.WON;
           } else {
             loss = findBet[i].potentialLoss;
             newFindBet.betPl = loss;
-            newFindBet.betResultStatus = BET_RESULT_STATUS.LOST
+            newFindBet.betResultStatus = BET_RESULT_STATUS.LOST;
           }
         } else {
           if (winRunnerId != findBet[i].marketRunnerId) {
             profit = findBet[i].potentialWin;
             newFindBet.betPl = profit;
-            newFindBet.betResultStatus = BET_RESULT_STATUS.WON
+            newFindBet.betResultStatus = BET_RESULT_STATUS.WON;
           } else {
             loss = findBet[i].potentialLoss;
             newFindBet.betPl = loss;
-            newFindBet.betResultStatus = BET_RESULT_STATUS.LOST
+            newFindBet.betResultStatus = BET_RESULT_STATUS.LOST;
           }
         }
         newFindBet.save();
@@ -710,9 +709,7 @@ const completeBetFency = async ({ ...reqBody }) => {
     const { marketRunnerId, winScore } = reqBody;
 
     let findMarketRunner = await MarketRunner.findOne({ _id: marketRunnerId });
-    if (
-      findMarketRunner.winScore == null
-    ) {
+    if (findMarketRunner.winScore == null) {
       let findBet = await Bet.find({ runnerId: marketRunnerId });
 
       for (var i = 0; i < findBet.length; i++) {
@@ -723,23 +720,21 @@ const completeBetFency = async ({ ...reqBody }) => {
           if (newFindBet.odds <= winScore) {
             profit = findBet[i].potentialWin;
             newFindBet.betPl = profit;
-            newFindBet.betResultStatus = BET_RESULT_STATUS.WON
-          }
-          else {
+            newFindBet.betResultStatus = BET_RESULT_STATUS.WON;
+          } else {
             loss = findBet[i].potentialLoss;
             newFindBet.betPl = loss;
-            newFindBet.betResultStatus = BET_RESULT_STATUS.LOST
+            newFindBet.betResultStatus = BET_RESULT_STATUS.LOST;
           }
         } else {
           if (newFindBet.odds > winScore) {
             profit = findBet[i].potentialWin;
             newFindBet.betPl = profit;
-            newFindBet.betResultStatus = BET_RESULT_STATUS.WON
-          }
-          else {
+            newFindBet.betResultStatus = BET_RESULT_STATUS.WON;
+          } else {
             loss = findBet[i].potentialLoss;
             newFindBet.betPl = loss;
-            newFindBet.betResultStatus = BET_RESULT_STATUS.LOST
+            newFindBet.betResultStatus = BET_RESULT_STATUS.LOST;
           }
         }
         newFindBet.save();
@@ -811,7 +806,7 @@ const getChildUserData = async ({ userId, filterUserId }) => {
       isDeleted: false,
       isActive: true,
       parentId: new mongoose.Types.ObjectId(userId),
-      userPl: { $ne: 0 }
+      userPl: { $ne: 0 },
     };
 
     //If filterUserId has value then add in filter
@@ -853,27 +848,21 @@ const getChildUserData = async ({ userId, filterUserId }) => {
 
 const getCurrentBetsUserwise = async ({ ...reqBody }) => {
   try {
-    const { loginUserId, page,
-      perPage,
-      sortBy,
-      direction, betType, betResultStatus } = reqBody;
+    const { loginUserId, page, perPage, sortBy, direction, betType, betResultStatus } = reqBody;
 
-    const startOfDay = new Date(
-      new Date().setUTCHours(0, 0, 0, 0)
-    ).toISOString();
-    const endOfDay = new Date(
-      new Date().setUTCHours(23, 59, 59, 999)
-    ).toISOString();
+    const startOfDay = new Date(new Date().setUTCHours(0, 0, 0, 0)).toISOString();
+    const endOfDay = new Date(new Date().setUTCHours(23, 59, 59, 999)).toISOString();
 
     // Pagination and Sorting
     const sortDirection = direction === "asc" ? 1 : -1;
     const paginationQueries = generatePaginationQueries(page, perPage);
 
     let filters = {
-      userId: new mongoose.Types.ObjectId(loginUserId), "market.startDate": {
+      userId: new mongoose.Types.ObjectId(loginUserId),
+      "market.startDate": {
         $gte: new Date(startOfDay),
         $lt: new Date(endOfDay),
-      }
+      },
     };
 
     if (betType) {
@@ -937,7 +926,7 @@ const getCurrentBetsUserwise = async ({ ...reqBody }) => {
         },
       },
       {
-        $match: filters
+        $match: filters,
       },
       {
         $set: {
@@ -980,31 +969,30 @@ const getCurrentBetsUserwise = async ({ ...reqBody }) => {
         },
       },
       {
-        $match: filters
+        $match: filters,
       },
       {
         $unset: ["market"],
       },
       {
-        "$group": {
+        $group: {
           _id: null,
           total: {
-            $sum: "$stake"
-          }
-        }
-      }
+            $sum: "$stake",
+          },
+        },
+      },
     ]);
 
     if (totalAmount.length > 0) {
       totalAmount = totalAmount[0].total;
-    }
-    else {
+    } else {
       totalAmount = 0;
     }
     const data = {
       records: [],
       totalRecords: 0,
-      totalAmount: totalAmount
+      totalAmount: totalAmount,
     };
 
     if (bet?.length) {
@@ -1013,7 +1001,6 @@ const getCurrentBetsUserwise = async ({ ...reqBody }) => {
     }
 
     return data;
-
   } catch (e) {
     throw new Error(e);
   }
@@ -1028,5 +1015,5 @@ export default {
   completeBetFency,
   settlement,
   getChildUserData,
-  getCurrentBetsUserwise
+  getCurrentBetsUserwise,
 };

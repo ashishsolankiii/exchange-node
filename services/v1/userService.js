@@ -1,8 +1,8 @@
 import mongoose, { isValidObjectId } from "mongoose";
 import ErrorResponse from "../../lib/error-handling/error-response.js";
-import { encryptPassword, getTrimmedUser, transferCloneParentFields } from "../../lib/helpers/auth.js";
 import { generatePaginationQueries, generateSearchFilters } from "../../lib/helpers/pipeline.js";
-import { generateTransactionCode, validateTransactionCode } from "../../lib/helpers/transaction-code.js";
+import { encryptPassword, getTrimmedUser, transferCloneParentFields } from "../../lib/io-guards/auth.js";
+import { generateTransactionCode, validateTransactionCode } from "../../lib/io-guards/transaction-code.js";
 import AppModule from "../../models/v1/AppModule.js";
 import User, { SETTLEMENT_DURATION, USER_ACCESSIBLE_ROLES, USER_ROLE } from "../../models/v1/User.js";
 import transactionActivityService from "../../services/v1/transactionActivityService.js";

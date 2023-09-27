@@ -5,8 +5,8 @@ import {
   getTrimmedUser,
   transferCloneParentFields,
   validatePassword,
-} from "../../lib/helpers/auth.js";
-import { generateTransactionCode } from "../../lib/helpers/transaction-code.js";
+} from "../../lib/io-guards/auth.js";
+import { generateTransactionCode } from "../../lib/io-guards/transaction-code.js";
 import Currency from "../../models/v1/Currency.js";
 import User, { USER_ROLE } from "../../models/v1/User.js";
 import permissionService from "./permissionService.js";

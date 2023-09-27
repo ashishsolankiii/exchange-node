@@ -1,4 +1,4 @@
-import { parseJwtToken } from "../../../lib/helpers/auth.js";
+import { parseJwtToken } from "../../../lib/io-guards/auth.js";
 import User from "../../../models/v1/User.js";
 
 async function validateAuth(socket, next) {

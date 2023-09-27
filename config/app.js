@@ -49,4 +49,10 @@ export const appConfig = {
       secretAccessKey: env.AWS_S3_SECRET,
     },
   },
+
+  LOG_ENABLED: env.LOG_ENABLED,
+  LOG_PATH: env.LOG_PATH,
+  LOG_MAX_FILE_SIZE: env.LOG_MAX_FILE_SIZE,
+  LOG_MAX_HISTORY: env.LOG_MAX_HISTORY,
+  LOG_DATE_FORMAT: env.LOG_DATE_FORMAT,
 };
