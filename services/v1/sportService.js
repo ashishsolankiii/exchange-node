@@ -156,7 +156,7 @@ const modifySport = async ({ _id, name, betCategory, apiSportId }) => {
       return char.toUpperCase();
     });
     sport.apiSportId = apiSportId;
-    await sport.save();
+
 
     var newCategoryAdd = betCategory.filter(function (obj) {
       return !sportBetCategory.some(function (obj2) {
@@ -169,7 +169,17 @@ const modifySport = async ({ _id, name, betCategory, apiSportId }) => {
         return obj.betCatId.toString() == obj2;
       });
     });
-
+    for (var j = 0; j < oldCategoryRemove.length; j++) {
+      const sportBetCategory = await SportsBetCategory.findOne({
+        sportsId: _id,
+        betCatId: oldCategoryRemove[j].betCatId.toString(),
+      });
+      if (sportBetCategory) {
+        throw new Error("Bet Category should not be removed after adding Bet Settings and Rule Settings.");
+      }
+      sportBetCategory.isActive = false;
+      await sportBetCategory.save();
+    }
     for (var i = 0; i < newCategoryAdd.length; i++) {
       const findSportBetCategory = await SportsBetCategory.findOne({
         sportsId: _id,
@@ -189,14 +199,7 @@ const modifySport = async ({ _id, name, betCategory, apiSportId }) => {
       }
     }
 
-    for (var j = 0; j < oldCategoryRemove.length; j++) {
-      const sportBetCategory = await SportsBetCategory.findOne({
-        sportsId: _id,
-        betCatId: oldCategoryRemove[j].betCatId.toString(),
-      });
-      sportBetCategory.isActive = false;
-      await sportBetCategory.save();
-    }
+    await sport.save();
 
     return sport;
   } catch (e) {
