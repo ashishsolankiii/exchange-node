@@ -848,7 +848,7 @@ const getChildUserData = async ({ userId, filterUserId }) => {
 
 const getCurrentBetsUserwise = async ({ ...reqBody }) => {
   try {
-    const { loginUserId, page, perPage, sortBy, direction, betType } = reqBody;
+    const { loginUserId, page, perPage, sortBy, direction, betType, betResultStatus } = reqBody;
 
     const startOfDay = new Date(new Date().setUTCHours(0, 0, 0, 0)).toISOString();
     const endOfDay = new Date(new Date().setUTCHours(23, 59, 59, 999)).toISOString();
@@ -871,6 +871,9 @@ const getCurrentBetsUserwise = async ({ ...reqBody }) => {
       } else if (betType == "lay") {
         filters.isBack = false;
       }
+    }
+    if (betResultStatus) {
+      filters.betResultStatus = betResultStatus;
     }
     const bet = await Bet.aggregate([
       {

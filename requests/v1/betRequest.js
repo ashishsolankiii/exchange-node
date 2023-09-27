@@ -129,6 +129,7 @@ async function getCurrentBetsUserwise(req) {
   req.body.sortBy = req.body?.sortBy ? req.body.sortBy : "createdAt";
   req.body.direction = req.body?.direction ? req.body.direction : "asc";
   req.body.betType = req.body.betType || null;
+  req.body.betResultStatus = req.body.betResultStatus || null;
 
   const validationSchema = Yup.object().shape({
     page: Yup.number().nullable(true),
@@ -143,6 +144,7 @@ async function getCurrentBetsUserwise(req) {
       .nullable(true)
       .test("userId", "Invalid userId!", (v) => !v || isValidObjectId),
     betType: Yup.string().nullable(true),
+    betResultStatus: Yup.string().nullable(true),
   });
 
   await validationSchema.validate(req.body);
