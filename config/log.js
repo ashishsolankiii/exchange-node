@@ -19,7 +19,7 @@ export const LOG_TRANSPORT = {
 };
 
 export const logConfig = {
-  path: "logs",
+  path: appConfig.LOG_PATH || "logs",
 
   format: appConfig.NODE_ENV === "production" ? LOG_FORMAT.SIMPLE : LOG_FORMAT.PRINT,
 
@@ -30,9 +30,9 @@ export const logConfig = {
     LOG_TRANSPORT.FILE,
   ],
 
-  maxFileSize: "20m",
+  maxFileSize: appConfig.LOG_MAX_FILE_SIZE || "20m",
 
-  maxRetention: "14d",
+  maxHistory: appConfig.LOG_MAX_HISTORY || "14d",
 
   dateFormat: "DD-MM-YYYY",
 };
