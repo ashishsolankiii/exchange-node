@@ -154,7 +154,20 @@ const fetchAllEvent = async ({ ...reqBody }) => {
       data.records = event[0]?.paginatedResults || [];
       data.totalRecords = event[0]?.totalRecords?.length ? event[0]?.totalRecords[0].count : 0;
     }
-
+    for (var i = 0; i < data.records.length; i++) {
+      if (data.records[i].isSettled == true) {
+        data.records[i].status = 'Settled'
+      }
+      else if (data.records[i].completed == true) {
+        data.records[i].status = 'Completed'
+      }
+      else if (data.records[i].isLive == true) {
+        data.records[i].status = 'Live'
+      }
+      else {
+        data.records[i].status = 'Upcoming'
+      }
+    }
     return data;
   } catch (e) {
     throw new ErrorResponse(e.message).status(200);
