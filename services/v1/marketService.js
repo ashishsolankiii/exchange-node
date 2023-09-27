@@ -250,19 +250,13 @@ const getFencyPrice = async (eventId) => {
             return obj.SelectionId == obj2.selectionId;
           });
         });
-
+        let promise = []
         var oldMarketRunnersRemove = findMarketRunners.filter(function (obj) {
           return !data.some(function (obj2) {
             return obj.selectionId == obj2.SelectionId;
           });
-        });
-        for (var i = 0; i < oldMarketRunnersRemove.length; i++) {
-          let findRunner = await MarketRunner.findOne(
-            { selectionId: oldMarketRunnersRemove[i].selectionId, marketId: new mongoose.Types.ObjectId(oldMarketRunnersRemove[i].marketId) },
-          );
-          findRunner.status = RUNNER_STATUS.IN_ACTIVE;
-          findRunner.save();
-        }
+        }).map((item) => item.selectionId);
+        promise.push(MarketRunner.updateMany({ selectionId: { $in: oldMarketRunnersRemove }, marketId: new mongoose.Types.ObjectId(findMarket._id) }, { status: RUNNER_STATUS.IN_ACTIVE }));
 
         for (var j = 0; j < newMarketRunnersAdd.length; j++) {
           const marketRunnerObj = {
@@ -271,8 +265,9 @@ const getFencyPrice = async (eventId) => {
             runnerName: newMarketRunnersAdd[j].RunnerName,
           };
 
-          await MarketRunner.create(marketRunnerObj);
+          promise.push(MarketRunner.create(marketRunnerObj));
         }
+        await Promise.all(promise);
       }
       for (var k = 0; k < data.length; k++) {
         let filterdata = findMarketRunners.filter(function (item) {

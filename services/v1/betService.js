@@ -4,7 +4,7 @@ import { generatePaginationQueries, generateSearchFilters } from "../../lib/help
 import { getTrimmedUser } from "../../lib/io-guards/auth.js";
 import { decryptTransactionCode } from "../../lib/io-guards/transaction-code.js";
 import Bet, { BET_ORDER_STATUS, BET_RESULT_STATUS } from "../../models/v1/Bet.js";
-import BetCategory, { BET_CATEGORIES } from "../../models/v1/BetCategory.js";
+import BetCategory, { BET_CATEGORIES, DEFAULT_CATEGORIES } from "../../models/v1/BetCategory.js";
 import Event from "../../models/v1/Event.js";
 import Market from "../../models/v1/Market.js";
 import MarketRunner from "../../models/v1/MarketRunner.js";
@@ -695,6 +695,25 @@ const completeBet = async ({ ...reqBody }) => {
       }
       findMarket.winnerRunnerId = winRunnerId;
       findMarket.save();
+      let findFencyType = await BetCategory.findOne(
+        {
+          name: BET_CATEGORIES.FANCY,
+        },
+        { _id: 1 }
+      );
+      let fencyMarket = await Market.findOne(
+        {
+          typeId: findFencyType._id,
+          eventId: findMarket.eventId
+        },
+        { _id: 0 }
+      ).sort({ startDate: 1 });
+      const findBetNotComplete = await Market.count({ eventId: findMarket.eventId, winnerRunnerId: undefined })
+      const findBetNotCompleteFancy = await MarketRunner.count({ marketId: fencyMarket._id, winScore: null })
+
+      if (findBetNotComplete == 0 && findBetNotCompleteFancy == 0) {
+        await Event.updateOne({ _id: findMarket.eventId }, { completed: true });
+      }
       return reqBody;
     } else {
       throw new ErrorResponse("Winner already added.").status(200);
@@ -746,6 +765,26 @@ const completeBetFency = async ({ ...reqBody }) => {
       }
       findMarketRunner.winScore = winScore;
       findMarketRunner.save();
+
+      let findFencyType = await BetCategory.findOne(
+        {
+          name: BET_CATEGORIES.FANCY,
+        },
+        { _id: 1 }
+      );
+      let fencyMarket = await Market.findOne(
+        {
+          typeId: findFencyType._id,
+          eventId: findMarket.eventId
+        },
+        { _id: 0 }
+      ).sort({ startDate: 1 });
+      const findBetNotComplete = await Market.count({ eventId: findMarket.eventId, winnerRunnerId: undefined })
+      const findBetNotCompleteFancy = await MarketRunner.count({ marketId: fencyMarket._id, winScore: null })
+
+      if (findBetNotComplete == 0 && findBetNotCompleteFancy == 0) {
+        await Event.updateOne({ _id: findMarket.eventId }, { completed: true });
+      }
       return reqBody;
     } else {
       throw new ErrorResponse("Winner already added.").status(200);
