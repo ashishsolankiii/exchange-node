@@ -11,7 +11,7 @@ export default async function currencySeeder() {
     const checkCurrency = await Currency.findOne({ name: "inr" });
 
     if (!checkCurrency) {
-      await Currency.create({ name: "inr" });
+      await Currency.create({ name: "inr", countryName: "IN" });
       seeder.hasSeeded = true;
     }
   } catch (e) {
