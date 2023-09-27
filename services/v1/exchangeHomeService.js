@@ -11,6 +11,10 @@ import commonService from "./commonService.js";
  */
 const sportsList = async () => {
   try {
+    const startOfDay = new Date(new Date().setUTCHours(0, 0, 0, 0)).toISOString();
+    const endOfDay = new Date(
+      new Date(new Date().setDate(new Date().getDate() + 1)).setUTCHours(23, 59, 59, 999)
+    ).toISOString();
     const allSports = await Sport.find({ isActive: true, isDeleted: false }, { _id: 1, name: 1 }).sort("name");
     let data = [];
     for (var i = 0; i < allSports.length; i++) {
@@ -20,12 +24,18 @@ const sportsList = async () => {
       );
       const getAllLiveEvent = await Event.count(
         {
-          isActive: true, sportId: allSports[i]._id, isDeleted: false, completed: false, isLive: true
+          isActive: true, sportId: allSports[i]._id, isDeleted: false, completed: false, isLive: true, isManual: false, matchDate: {
+            $gte: startOfDay,
+            $lt: endOfDay,
+          },
         }
       );
       const getAllActiveEvent = await Event.count(
         {
-          isDeleted: false, sportId: allSports[i]._id, completed: false, isActive: true
+          isDeleted: false, sportId: allSports[i]._id, completed: false, isActive: true, isManual: false, matchDate: {
+            $gte: startOfDay,
+            $lt: endOfDay,
+          },
         }
       );
       let competitionEvent = [];

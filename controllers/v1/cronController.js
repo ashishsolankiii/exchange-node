@@ -297,15 +297,58 @@ const getLiveEvent = async (req, res) => {
 
     const endOfDay = new Date(new Date()).toISOString();
 
-    const findEvent = await Event.find({
-      matchDate: {
-        $gte: startOfDay,
-        $lt: endOfDay,
+    const findEvent = await Event.aggregate([
+      {
+        $project: {
+          "matchDateTime": {
+            $cond: {
+              if: { $eq: ["$matchTime", null] }, then: {
+                $dateFromString: {
+                  dateString: {
+                    $concat: [{
+                      $dateToString: {
+                        format: "%Y-%m-%d %H:%M",
+                        date: {
+                          $toDate: "$matchDate"
+                        }
+                      }
+                    }]
+                  },
+                  format: "%Y-%m-%d %H:%M"
+                }
+              }, else: {
+                $dateFromString: {
+                  dateString: {
+                    $concat: [{
+                      $dateToString: {
+                        format: "%Y-%m-%d",
+                        date: {
+                          $toDate: "$matchDate"
+                        }
+                      }
+                    }, " ", "$matchTime"]
+                  },
+                  format: "%Y-%m-%d %H:%M"
+                }
+              }
+
+            }
+          }
+        }
       },
-      completed: false, isLive: false
-    });
+      {
+        $match: {
+          "matchDateTime": {
+            $gte: new Date(startOfDay),
+            $lt: new Date(endOfDay),
+          },
+          completed: false, isLive: false
+        },
+      }
+    ]);
     const eventIds = findEvent.map((item) => item._id);
     await Event.updateMany({ _id: { $in: eventIds } }, { isLive: true });
+    console.log("Live event updated");
     res.status(200).json({ message: "Live event updated." });
 
   } catch (e) {
@@ -493,16 +536,58 @@ const getActiveEvent = async (req, res) => {
       new Date(new Date().setDate(new Date().getDate() + 3)).setUTCHours(23, 59, 59, 999)
     ).toISOString();
 
-    const findEvent = await Event.find({
-      matchDate: {
-        $gte: startOfDay,
-        $lt: endOfDay,
+    const findEvent = await Event.aggregate([
+      {
+        $project: {
+          "matchDateTime": {
+            $cond: {
+              if: { $eq: ["$matchTime", null] }, then: {
+                $dateFromString: {
+                  dateString: {
+                    $concat: [{
+                      $dateToString: {
+                        format: "%Y-%m-%d %H:%M",
+                        date: {
+                          $toDate: "$matchDate"
+                        }
+                      }
+                    }]
+                  },
+                  format: "%Y-%m-%d %H:%M"
+                }
+              }, else: {
+                $dateFromString: {
+                  dateString: {
+                    $concat: [{
+                      $dateToString: {
+                        format: "%Y-%m-%d",
+                        date: {
+                          $toDate: "$matchDate"
+                        }
+                      }
+                    }, " ", "$matchTime"]
+                  },
+                  format: "%Y-%m-%d %H:%M"
+                }
+              }
+
+            }
+          }
+        }
       },
-      completed: false, isActive: false
-    });
+      {
+        $match: {
+          "matchDateTime": {
+            $gte: new Date(startOfDay),
+            $lt: new Date(endOfDay),
+          },
+          completed: false, isActive: false
+        },
+      }
+    ]);
     const eventIds = findEvent.map((item) => item._id);
     await Event.updateMany({ _id: { $in: eventIds } }, { isActive: true });
-
+    console.log("Active event updated");
     res.status(200).json({ message: "Active event updated." });
 
   } catch (e) {
