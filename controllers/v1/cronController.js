@@ -348,7 +348,7 @@ const getLiveEvent = async (req, res) => {
     ]);
     const eventIds = findEvent.map((item) => item._id);
     await Event.updateMany({ _id: { $in: eventIds } }, { isLive: true });
-    console.log("Live event updated");
+    // console.log("Live event updated");
     res.status(200).json({ message: "Live event updated." });
 
   } catch (e) {
