@@ -202,6 +202,8 @@ const addUser = async ({ user, ...reqBody }) => {
     const existingUsername = await User.findOne({ username: username }, { _id: 1 });
     if (existingUsername) {
       throw new Error("Username already exists. Please choose a different username.");
+    } else if (!/^[a-zA-Z0-9_]+$/.test(username)) {
+      throw new Error("Username can only contain alphanumeric characters or an underscore.");
     }
     // Existing mobile number
     const existingMobile = await User.findOne({ mobileNumber: reqBody.mobileNumber }, { _id: 1 });
@@ -365,6 +367,8 @@ const modifyUser = async ({ user, ...reqBody }) => {
     const exisitngUsername = await User.findOne({ username: reqBody.username, _id: { $ne: reqBody._id } }, { _id: 1 });
     if (exisitngUsername) {
       throw new Error("Username already exists. Please choose a different username.");
+    } else if (!/^[a-zA-Z0-9_]+$/.test(reqBody.username)) {
+      throw new Error("Username can only contain alphanumeric characters or an underscore.");
     }
 
     // Existing mobile number
@@ -515,6 +519,13 @@ const fetchBalance = async ({ ...reqBody }) => {
 const cloneUser = async ({ user, ...reqBody }) => {
   try {
     const { fullName, username, password, moduleIds, transactionCode } = reqBody;
+
+    const exisitngUsername = await User.findOne({ username: username }, { _id: 1 });
+    if (exisitngUsername) {
+      throw new Error("Username already exists. Please choose a different username.");
+    } else if (!/^[a-zA-Z0-9_]+$/.test(username)) {
+      throw new Error("Username can only contain alphanumeric characters or an underscore.");
+    }
 
     // Only accept valid moduleIds
     const validModuleIds = [];
