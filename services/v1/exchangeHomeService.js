@@ -1,3 +1,4 @@
+import mongoose from "mongoose";
 import { appConfig } from "../../config/app.js";
 import BetCategory, { DEFAULT_CATEGORIES } from "../../models/v1/BetCategory.js";
 import Competition from "../../models/v1/Competition.js";
@@ -15,52 +16,97 @@ const sportsList = async () => {
     const endOfDay = new Date(
       new Date(new Date().setDate(new Date().getDate() + 1)).setUTCHours(23, 59, 59, 999)
     ).toISOString();
-    const allSports = await Sport.find({ isActive: true, isDeleted: false }, { _id: 1, name: 1 }).sort("name");
-    let data = [];
-    for (var i = 0; i < allSports.length; i++) {
-      const getAllCompetition = await Competition.find(
-        { isActive: true, isDeleted: false, sportId: allSports[i]._id, completed: false },
-        { _id: 1, name: 1 }
-      );
-      const getAllLiveEvent = await Event.count(
-        {
-          isActive: true, sportId: allSports[i]._id, isDeleted: false, completed: false, isLive: true, isManual: false, matchDate: {
-            $gte: startOfDay,
-            $lt: endOfDay,
-          },
+    const sports = await Sport.aggregate([
+      {
+        $match: {
+          isActive: true,
+          isDeleted: false,
+        },
+      },
+      {
+        $project: { name: 1, positionIndex: 1 },
+      },
+      {
+        $lookup: {
+          from: "competitions",
+          localField: "_id",
+          foreignField: "sportId",
+          as: "competitions",
+          pipeline: [
+            {
+              $match: {
+                isActive: true,
+                isDeleted: false,
+                completed: false,
+                $and: [
+                  { startDate: { $ne: null } },
+                  { endDate: { $ne: null } },
+                  { endDate: { $gte: new Date(startOfDay) } },
+                ],
+              },
+            },
+            {
+              $project: {
+                name: 1,
+                startDate: 1,
+                endDate: 1
+              },
+            },
+            {
+              $lookup: {
+                from: "events",
+                localField: "_id",
+                foreignField: "competitionId",
+                as: "events",
+                pipeline: [
+                  {
+                    $match: {
+                      isActive: true,
+                      isDeleted: false,
+                      completed: false,
+                      isManual: false,
+                      matchDate: {
+                        $gte: new Date(startOfDay),
+                        $lt: new Date(endOfDay),
+                      },
+                    },
+                  },
+                  {
+                    $project: {
+                      name: 1,
+                      matchDate: 1,
+                      isFavourite: 1,
+                      isLive: 1
+                    },
+                  },
+                ],
+              },
+            },
+          ],
+        },
+      },
+      { $sort: { positionIndex: 1 } }
+    ]);
+
+    for (var i = 0; i < sports.length; i++) {
+      let allLiveEvent = 0;
+      let allActiveEvent = 0;
+      if (sports[i].competitions.length > 0) {
+        for (const competition of sports[i].competitions) {
+          if (competition.events?.length > 0) {
+            allActiveEvent = competition.events.length;
+            const liveEvent = competition.events.filter((event) => {
+              return event.isLive;
+            });
+            allLiveEvent = liveEvent.length;
+          }
         }
-      );
-      const getAllActiveEvent = await Event.count(
-        {
-          isDeleted: false, sportId: allSports[i]._id, completed: false, isActive: true, isManual: false, matchDate: {
-            $gte: startOfDay,
-            $lt: endOfDay,
-          },
-        }
-      );
-      let competitionEvent = [];
-      for (var j = 0; j < getAllCompetition.length; j++) {
-        const getAllEvent = await Event.find(
-          {
-            isActive: true, isDeleted: false, competitionId: getAllCompetition[j]._id, completed: false
-          },
-          { _id: 1, name: 1, isFavourite: 1 }
-        );
-        competitionEvent.push({
-          _id: getAllCompetition[j].id,
-          name: getAllCompetition[j].name,
-          event: getAllEvent,
-        });
       }
-      data.push({
-        _id: allSports[i]._id,
-        name: allSports[i].name,
-        allLiveEvent: getAllLiveEvent,
-        allActiveEvent: getAllActiveEvent,
-        competition: competitionEvent,
-      });
+      sports[i].getAllLiveEvent = allLiveEvent;
+      sports[i].getAllActiveEvent = allActiveEvent;
     }
-    return data;
+    return sports;
+
   } catch (e) {
     throw new Error(e);
   }

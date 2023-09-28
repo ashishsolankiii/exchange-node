@@ -11,7 +11,7 @@ const marketSchema = new mongoose.Schema({
   typeId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "bet_category",
-    required: [true, "Bet Category Id is Required!"],
+    required: [true, "Bet Category Id is Required!"], index: true
   },
 
   // Status of the market, represented as a number (0 by default)
@@ -122,7 +122,7 @@ const marketSchema = new mongoose.Schema({
   startDate: {
     type: Date,
   },
-  winnerRunnerId: { type: mongoose.Schema.Types.ObjectId, ref: "market_runner" },
+  winnerRunnerId: { type: mongoose.Schema.Types.ObjectId, ref: "market_runner", index: true },
 });
 
 // Indexing for frequently queried fields
