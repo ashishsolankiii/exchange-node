@@ -223,6 +223,11 @@ const fetchAllActiveCompetitionEvents = async () => {
             as: "competitions",
             pipeline: [
               {
+                $match: {
+                  isActive: true,
+                },
+              },
+              {
                 $lookup: {
                   from: "events",
                   localField: "_id",
