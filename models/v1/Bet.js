@@ -21,12 +21,12 @@ export const BET_RESULT_STATUS = {
 };
 
 const betSchema = new mongoose.Schema({
-  userId: { type: mongoose.Schema.Types.ObjectId, ref: "user", required: true },
+  userId: { type: mongoose.Schema.Types.ObjectId, ref: "user", required: true, index: true },
 
-  marketId: { type: mongoose.Schema.Types.ObjectId, ref: "market", required: true },
+  marketId: { type: mongoose.Schema.Types.ObjectId, ref: "market", required: true, index: true },
 
   // Any match or fancy
-  eventId: { type: mongoose.Schema.Types.ObjectId, ref: "event", required: true },
+  eventId: { type: mongoose.Schema.Types.ObjectId, ref: "event", required: true, index: true },
 
   odds: { type: Number, required: true },
 
@@ -37,7 +37,7 @@ const betSchema = new mongoose.Schema({
   isBack: { type: Boolean, required: true },
 
   //Runner ID on which runner we are betting
-  runnerId: { type: mongoose.Schema.Types.ObjectId, ref: "market_runner", required: true },
+  runnerId: { type: mongoose.Schema.Types.ObjectId, ref: "market_runner", required: true, index: true },
 
   betOrderType: { type: String, enum: Object.values(BET_ORDER_TYPE), required: true },
 

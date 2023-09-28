@@ -24,7 +24,7 @@ const fetchAllSport = async ({ page, perPage, sortBy, direction, showDeleted, se
       const fields = selectFields;
       selected = generateSelectFields(fields);
     } else {
-      selected = { name: 1, apiSportId: 1, isActive: 1, createdAt: 1, updatedAt: 1 };
+      selected = { name: 1, apiSportId: 1, isActive: 1, positionIndex: 1, createdAt: 1, updatedAt: 1 };
     }
 
     if (status) {
@@ -95,6 +95,7 @@ const fetchSportId = async (_id) => {
       updatedAt: sport.updatedAt,
       createdAt: sport.createdAt,
       betCategory: betCatId,
+      positionIndex: sport.positionIndex,
     };
     return data;
   } catch (e) {
@@ -105,7 +106,7 @@ const fetchSportId = async (_id) => {
 /**
  * create Sport in the database
  */
-const addSport = async ({ name, betCategory, apiSportId }) => {
+const addSport = async ({ name, betCategory, apiSportId, positionIndex }) => {
   try {
     const existingSport = await Sport.findOne({ name: { $regex: name, $options: "i" } });
     if (existingSport) {
@@ -117,6 +118,7 @@ const addSport = async ({ name, betCategory, apiSportId }) => {
         return char.toUpperCase();
       }),
       apiSportId: apiSportId,
+      positionIndex: positionIndex
     };
     const newsport = await Sport.create(newSportObj);
 
@@ -139,11 +141,11 @@ const addSport = async ({ name, betCategory, apiSportId }) => {
 /**
  * update Sport in the database
  */
-const modifySport = async ({ _id, name, betCategory, apiSportId }) => {
+const modifySport = async ({ _id, name, betCategory, apiSportId, positionIndex }) => {
   try {
     const sport = await Sport.findById(_id);
 
-    const existingSport = await Sport.findOne({ name: { $regex: name, $options: "i" }, _id: { $ne: _id } });
+    const existingSport = await Sport.findOne({ name: name, _id: { $ne: _id } });
     if (existingSport) {
       throw new Error("name already exists!");
     }
@@ -156,6 +158,7 @@ const modifySport = async ({ _id, name, betCategory, apiSportId }) => {
       return char.toUpperCase();
     });
     sport.apiSportId = apiSportId;
+    sport.positionIndex = positionIndex;
 
 
     var newCategoryAdd = betCategory.filter(function (obj) {

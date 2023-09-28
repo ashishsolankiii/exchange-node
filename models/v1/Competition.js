@@ -7,28 +7,28 @@ const competitionSchema = new mongoose.Schema({
   name: { type: String, required: true },
 
   // Reference to the sport associated with this competition
-  sportId: { type: mongoose.Schema.Types.ObjectId, ref: "sport", required: [true, "Sport is Required"] },
+  sportId: { type: mongoose.Schema.Types.ObjectId, ref: "sport", required: [true, "Sport is Required"], index: true },
 
   // API identifier for the sport (if applicable)
-  apiSportId: { type: String, default: null },
+  apiSportId: { type: String, default: null, index: true },
 
   // API identifier for the competition (if applicable)
-  apiCompetitionId: { type: String, default: null },
+  apiCompetitionId: { type: String, default: null, index: true },
 
   // Date when the competition was created
   createdOn: { type: Date },
 
   // Start date of the competition
-  startDate: { type: Date, default: null },
+  startDate: { type: Date, default: null, index: true },
 
   // End date of the competition
-  endDate: { type: Date, default: null },
+  endDate: { type: Date, default: null, index: true },
 
   // Indicates if the competition is currently active or not
-  isActive: { type: Boolean, default: false },
+  isActive: { type: Boolean, default: false, index: true },
 
   // Indicates if the competition is manually created (as opposed to being imported from an external API)
-  isManual: { type: Boolean, default: false },
+  isManual: { type: Boolean, default: false, index: true },
 
   // Number of markets available for this competition (default is 0)
   marketCount: { type: Number, default: 0 },
@@ -52,7 +52,7 @@ const competitionSchema = new mongoose.Schema({
   isCustomised: { type: Boolean, default: false },
 
   // Indicates if the event is completed
-  completed: { type: Boolean, default: false },
+  completed: { type: Boolean, default: false, index: true },
 });
 
 competitionSchema.plugin(timestampPlugin);
