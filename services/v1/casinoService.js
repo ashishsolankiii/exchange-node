@@ -1,5 +1,6 @@
 import ErrorResponse from "../../lib/error-handling/error-response.js";
 import { uploadImageToS3 } from "../../lib/files/image-upload.js";
+import { checkImageExist } from "../../lib/helpers/images.js";
 import { generatePaginationQueries, generateSearchFilters } from "../../lib/helpers/pipeline.js";
 import Casino, { CASINO_IMAGE_SIZES, CASINO_IMAGE_TYPES } from "../../models/v1/Casino.js";
 
@@ -52,7 +53,7 @@ const fetchAllCasino = async ({ ...reqBody }) => {
     }
 
     if (casinoType !== null) {
-      filters.casinoType = casinoType
+      filters.casinoType = casinoType;
     }
 
     if (searchQuery) {
@@ -114,7 +115,7 @@ const fetchCasinoId = async (_id) => {
 
     const data = {
       ...existingCasino._doc,
-      image,
+      image: await checkImageExist(image),
     };
 
     return data;
@@ -137,7 +138,7 @@ const addCasino = async ({ files, ...reqBody }) => {
 
     const newCasinoObj = {
       name,
-      casinoType
+      casinoType,
     };
 
     const newCasino = await Casino.create(newCasinoObj);
