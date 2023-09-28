@@ -7,31 +7,31 @@ const eventSchema = new mongoose.Schema({
   name: { type: String, require: true },
 
   // Reference to the sport associated with this event
-  sportId: { type: mongoose.Schema.Types.ObjectId, ref: "sport", required: [true, "Sport is Required!"] },
+  sportId: { type: mongoose.Schema.Types.ObjectId, ref: "sport", required: [true, "Sport is Required!"], index: true },
 
   // API identifier for the sport (if applicable)
-  apiSportId: { type: String, default: null },
+  apiSportId: { type: String, default: null, index: true },
 
   // Reference to the competition associated with this event
   competitionId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "competition",
-    required: [true, "Competition is Required!"],
+    required: [true, "Competition is Required!"], index: true
   },
 
   betDelay: { type: Number, default: 1 },
 
   // API identifier for the competition (if applicable)
-  apiCompetitionId: { type: String, default: null },
+  apiCompetitionId: { type: String, default: null, index: true },
 
   // API identifier for the specific match of the event (if applicable)
-  apiEventId: { type: String, default: null },
+  apiEventId: { type: String, default: null, index: true },
 
   // Date of the match
-  matchDate: { type: Date, default: null },
+  matchDate: { type: Date, default: null, index: true },
 
   // Time of the match
-  matchTime: { type: String, default: null },
+  matchTime: { type: String, default: null, index: true },
 
   // Number of markets available for this event (default is 0)
   marketCount: { type: Number, default: 0 },
@@ -67,10 +67,10 @@ const eventSchema = new mongoose.Schema({
   completed: { type: Boolean, default: false },
 
   // Indicates if the event is active
-  isActive: { type: Boolean, default: false },
+  isActive: { type: Boolean, default: false, index: true },
 
   // Indicates if the event is manually created (as opposed to being imported from an external API)
-  isManual: { type: Boolean, default: false },
+  isManual: { type: Boolean, default: false, index: true },
 
   // Indicates if the event is settled or not
   isSettled: { type: Boolean, default: false },
@@ -85,7 +85,7 @@ const eventSchema = new mongoose.Schema({
   isFavourite: { type: Boolean, default: false },
 
   // Check event is live
-  isLive: { type: Boolean, default: false },
+  isLive: { type: Boolean, default: false, index: true },
 });
 
 eventSchema.plugin(timestampPlugin);

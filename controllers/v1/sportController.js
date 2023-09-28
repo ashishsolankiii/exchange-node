@@ -4,7 +4,7 @@ import sportService from "../../services/v1/sportService.js";
 const getAllSport = async (req, res) => {
   const page = req.body?.page ? Number(req.body.page) : null;
   const perPage = req.body?.perPage ? Number(req.body.perPage) : null;
-  const sortBy = req.body?.sortBy ? req.body.sortBy : "createdAt";
+  const sortBy = req.body?.sortBy ? req.body.sortBy : "positionIndex";
   const direction = req.body?.direction ? req.body.direction : "desc";
   const showDeleted = req.body?.showDeleted
     ? req.body.showDeleted === true || req.body.showDeleted === "true"
@@ -45,13 +45,15 @@ const createSport = async (req, res) => {
   const name = req.body?.name ? req.body.name.trim() : null;
   const betCategory = req.body?.betCategory || [];
   const apiSportId = req.body?.apiSportId ? req.body.apiSportId : null;
+  const positionIndex = req.body?.positionIndex ? req.body.positionIndex : null;
   if (!name) {
     throw new Error("name is required!");
   }
   const newsport = await sportService.addSport({
     name: name,
     betCategory: betCategory,
-    apiSportId: apiSportId
+    apiSportId: apiSportId,
+    positionIndex: positionIndex
   });
 
   res.status(201).json({ success: true, data: { details: newsport } });
@@ -63,16 +65,17 @@ const updateSport = async (req, res) => {
   const name = req.body?.name ? req.body.name : null;
   const betCategory = req.body?.betCategory || [];
   const apiSportId = req.body?.apiSportId ? req.body.apiSportId : null;
+  const positionIndex = req.body?.positionIndex ? req.body.positionIndex : null;
 
   if (!_id) {
     throw new Error("_id is required!");
   }
-
   const updatedSport = await sportService.modifySport({
     _id,
     name,
     betCategory,
-    apiSportId
+    apiSportId,
+    positionIndex
   });
 
   res.status(200).json({ success: true, data: { details: updatedSport } });
