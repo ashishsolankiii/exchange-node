@@ -9,14 +9,4 @@ route(router, "post", "/userLogin", authController.userlogin, false);
 route(router, "post", "/register", authController.register, false);
 route(router, "post", "/resetPassword", authController.resetPassword);
 
-route(
-  router,
-  "post",
-  "/s3test",
-  async (req, res) => {
-    return res.status(200).json({ message: "success" });
-  },
-  false
-);
-
 export default router;
