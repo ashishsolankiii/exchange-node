@@ -2,13 +2,13 @@ import mongoose from "mongoose";
 import { appConfig } from "../../config/app.js";
 import ErrorResponse from "../../lib/error-handling/error-response.js";
 import { generatePaginationQueries, generateSearchFilters } from "../../lib/helpers/pipeline.js";
+import Bet from "../../models/v1/Bet.js";
+import { DEFAULT_CATEGORIES } from "../../models/v1/BetCategory.js";
 import Event from "../../models/v1/Event.js";
 import Market from "../../models/v1/Market.js";
-import commonService from "./commonService.js";
-import User, { USER_ROLE } from "../../models/v1/User.js";
-import { DEFAULT_CATEGORIES } from "../../models/v1/BetCategory.js";
 import { RUNNER_STATUS } from "../../models/v1/MarketRunner.js";
-import Bet from "../../models/v1/Bet.js";
+import User, { USER_ROLE } from "../../models/v1/User.js";
+import commonService from "./commonService.js";
 
 // Fetch all event from the database
 const fetchAllEvent = async ({ ...reqBody }) => {
@@ -156,16 +156,13 @@ const fetchAllEvent = async ({ ...reqBody }) => {
     }
     for (var i = 0; i < data.records.length; i++) {
       if (data.records[i].isSettled == true) {
-        data.records[i].status = 'Settled'
-      }
-      else if (data.records[i].completed == true) {
-        data.records[i].status = 'Completed'
-      }
-      else if (data.records[i].isLive == true) {
-        data.records[i].status = 'Live'
-      }
-      else {
-        data.records[i].status = 'Upcoming'
+        data.records[i].status = "Settled";
+      } else if (data.records[i].completed == true) {
+        data.records[i].status = "Completed";
+      } else if (data.records[i].isLive == true) {
+        data.records[i].status = "Live";
+      } else {
+        data.records[i].status = "Upcoming";
       }
     }
     return data;
@@ -203,7 +200,7 @@ const addEvent = async ({ ...reqBody }) => {
     minStakeSession,
     maxStakeSession,
     isFavourite,
-    matchTime
+    matchTime,
   } = reqBody;
 
   try {
@@ -223,7 +220,7 @@ const addEvent = async ({ ...reqBody }) => {
       isActive: true,
       isManual: true,
       isFavourite,
-      matchTime
+      matchTime,
     };
 
     const newEvent = await Event.create(newEventObj);
@@ -320,7 +317,7 @@ const upcomingEvents = async () => {
         $match: {
           matchDate: {
             $gt: new Date(),
-          }
+          },
         },
       },
       {
@@ -352,7 +349,7 @@ const upcomingEvents = async () => {
       },
       { $limit: 10 },
       { $sort: { matchDate: 1 } },
-      { $project: { name: 1, matchDate: 1, sportId: 1, sportsName: 1 } }
+      { $project: { name: 1, matchDate: 1, sportId: 1, sportsName: 1 } },
     ]);
 
     return event;
@@ -459,7 +456,11 @@ const getEventMatchData = async ({ eventId }) => {
 };
 
 async function getBetLock(userId) {
-  let findUser = await User.findOne({ _id: userId });
+  const findUser = await User.findById(userId, { isBetLock: 1, parentId: 1, role: 1 });
+  if (!findUser) {
+    return false;
+  }
+
   if (findUser.isBetLock == true) {
     return true;
   }
@@ -536,8 +537,8 @@ const getEventMatchDataFront = async ({ eventId, user }) => {
                 pipeline: [
                   {
                     $match: {
-                      status: { $ne: RUNNER_STATUS.IN_ACTIVE }
-                    }
+                      status: { $ne: RUNNER_STATUS.IN_ACTIVE },
+                    },
                   },
                   {
                     $project: { runnerName: 1, priority: 1, selectionId: 1 },
@@ -589,8 +590,7 @@ const getEventMatchDataFront = async ({ eventId, user }) => {
     if (findUser.role == USER_ROLE.USER) {
       if (event[0].betLock == true) {
         betLock = true;
-      }
-      else {
+      } else {
         betLock = await getBetLock(user._id);
       }
     }
@@ -636,8 +636,7 @@ const getEventMatchDataFront = async ({ eventId, user }) => {
             }
           }
         }
-      }
-      else if (event[0].market[i].bet_category.name == DEFAULT_CATEGORIES[1]) {
+      } else if (event[0].market[i].bet_category.name == DEFAULT_CATEGORIES[1]) {
         var marketUrl = `${appConfig.BASE_URL}?action=bookmakermatchodds&market_id=${event[0].market[i].marketId}`;
         const { statusCode, data } = await commonService.fetchData(marketUrl);
         if (statusCode === 200) {
@@ -665,8 +664,7 @@ const getEventMatchDataFront = async ({ eventId, user }) => {
             }
           }
         }
-      }
-      else if (event[0].market[i].bet_category.name == DEFAULT_CATEGORIES[2]) {
+      } else if (event[0].market[i].bet_category.name == DEFAULT_CATEGORIES[2]) {
         var marketUrl = `${appConfig.BASE_URL}?action=fancy&event_id=${event[0].market[i].apiEventId}`;
         const { statusCode, data } = await commonService.fetchData(marketUrl);
         if (statusCode === 200) {
@@ -680,8 +678,7 @@ const getEventMatchDataFront = async ({ eventId, user }) => {
                 event[0].market[i].market_runner[j].matchOdds = filterdata[0];
                 delete event[0].market[i].market_runner[j].matchOdds.RunnerName;
                 delete event[0].market[i].market_runner[j].matchOdds.SelectionId;
-              }
-              else {
+              } else {
                 event[0].market[i].market_runner[j].matchOdds = {};
               }
             } else {
@@ -697,15 +694,14 @@ const getEventMatchDataFront = async ({ eventId, user }) => {
   }
 };
 
-
 async function getChidUsers(user, userArray) {
   let findUsers = await User.find({ parentId: user._id });
 
   for (var i = 0; i < findUsers.length; i++) {
     if (findUsers[i].role == USER_ROLE.USER) {
-      userArray.push(findUsers[i]._id)
+      userArray.push(findUsers[i]._id);
     }
-    await getChidUsers(findUsers[i], userArray)
+    await getChidUsers(findUsers[i], userArray);
   }
 }
 
@@ -802,7 +798,7 @@ const getMatchStake = async ({ eventId, loginUserId }) => {
     ]);
 
     const userIds = [];
-    const findUser = await User.findOne({ _id: loginUserId })
+    const findUser = await User.findOne({ _id: loginUserId });
     await getChidUsers(findUser, userIds);
     for (var i = 0; i < market.length; i++) {
       let marketTotalWin = 0;
@@ -810,10 +806,14 @@ const getMatchStake = async ({ eventId, loginUserId }) => {
       for (var j = 0; j < market[i].market_runner.length; j++) {
         let totalWin = 0;
         let totalLoss = 0;
-        const findBet = await Bet.find({ marketId: market[i]._id, userId: { $in: userIds }, runnerId: market[i].market_runner[j]._id });
+        const findBet = await Bet.find({
+          marketId: market[i]._id,
+          userId: { $in: userIds },
+          runnerId: market[i].market_runner[j]._id,
+        });
         for (var k = 0; k < findBet.length; k++) {
-          totalWin = totalWin + (-findBet[k].potentialLoss);
-          totalLoss = totalLoss + (-findBet[k].potentialWin);
+          totalWin = totalWin + -findBet[k].potentialLoss;
+          totalLoss = totalLoss + -findBet[k].potentialWin;
         }
         market[i].market_runner[j].totalWin = totalWin;
         market[i].market_runner[j].totalLoss = totalLoss;
@@ -841,5 +841,5 @@ export default {
   upcomingEvents,
   getEventMatchData,
   getEventMatchDataFront,
-  getMatchStake
+  getMatchStake,
 };
