@@ -1,8 +1,7 @@
-import UserActivity, { USER_ACTIVITY_EVENT, GEO_LOCATION_TYPE } from "../../models/v1/UserActivity.js";
+import mongoose from "mongoose";
 import ErrorResponse from "../../lib/error-handling/error-response.js";
 import { generatePaginationQueries, generateSearchFilters } from "../../lib/helpers/pipeline.js";
-import mongoose from "mongoose";
-import User from "../../models/v1/User.js";
+import UserActivity, { GEO_LOCATION_TYPE, USER_ACTIVITY_EVENT } from "../../models/v1/UserActivity.js";
 
 const createUserActivity = async ({ userId, event, ipAddress, description, city, country, platform }) => {
   try {
@@ -23,9 +22,9 @@ const createUserActivity = async ({ userId, event, ipAddress, description, city,
 };
 
 // Fetch all users activity from the database
-const fetchAllUserActivity = async ({ user, ...reqBody }) => {
+const fetchAllUserActivity = async ({ ...reqBody }) => {
   try {
-    const { page, perPage, sortBy, direction, searchQuery, type, userId, filterUserId } = reqBody;
+    const { page, perPage, sortBy, direction, searchQuery, type, userId } = reqBody;
 
     // Pagination and Sorting
     const sortDirection = direction === "asc" ? 1 : -1;
@@ -37,8 +36,8 @@ const fetchAllUserActivity = async ({ user, ...reqBody }) => {
       fromDate = new Date(new Date(reqBody.fromDate).setUTCHours(0, 0, 0)).toISOString();
       toDate = new Date(new Date(reqBody.toDate).setUTCHours(23, 59, 59)).toISOString();
     }
-    // Filters
 
+    // Filters
     let filters = {};
 
     if (type) {
@@ -46,6 +45,7 @@ const fetchAllUserActivity = async ({ user, ...reqBody }) => {
         event: type,
       };
     }
+
     if (fromDate && toDate) {
       filters = {
         createdAt: { $gte: new Date(fromDate), $lte: new Date(toDate) },
@@ -53,12 +53,7 @@ const fetchAllUserActivity = async ({ user, ...reqBody }) => {
     }
 
     if (userId) {
-      let childUser = await User.find({ parentId: userId }, { _id: 1 });
-      let childId = childUser.map(a => a._id);
-      filters.userId = { $in: childId };
-    }
-    if (filterUserId) {
-      filters.userId = new mongoose.Types.ObjectId(filterUserId);
+      filters.userId = new mongoose.Types.ObjectId(userId);
     }
 
     if (searchQuery) {
