@@ -31,7 +31,7 @@ const sportsList = async () => {
           from: "competitions",
           localField: "_id",
           foreignField: "sportId",
-          as: "competitions",
+          as: "competition",
           pipeline: [
             {
               $match: {
@@ -57,7 +57,7 @@ const sportsList = async () => {
                 from: "events",
                 localField: "_id",
                 foreignField: "competitionId",
-                as: "events",
+                as: "event",
                 pipeline: [
                   {
                     $match: {
@@ -91,11 +91,11 @@ const sportsList = async () => {
     for (var i = 0; i < sports.length; i++) {
       let allLiveEvent = 0;
       let allActiveEvent = 0;
-      if (sports[i].competitions.length > 0) {
-        for (const competition of sports[i].competitions) {
-          if (competition.events?.length > 0) {
-            allActiveEvent = competition.events.length;
-            const liveEvent = competition.events.filter((event) => {
+      if (sports[i].competition.length > 0) {
+        for (const competition of sports[i].competition) {
+          if (competition.event?.length > 0) {
+            allActiveEvent = competition.event.length;
+            const liveEvent = competition.event.filter((event) => {
               return event.isLive;
             });
             allLiveEvent = liveEvent.length;
