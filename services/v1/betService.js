@@ -100,6 +100,7 @@ const addBet = async ({ user: loggedInUser, ...reqBody }) => {
       marketId: reqBody.marketId,
       eventId: reqBody.eventId,
       odds: reqBody.odds,
+      runnerScore: reqBody.runnerScore,
       stake: reqBody.stake,
       isBack: reqBody.isBack,
       betOrderType: reqBody.betOrderType,
@@ -341,7 +342,7 @@ async function fancyBet(loggedInUser, reqBody) {
     throw new Error("Runner not found.");
   }
   const oddPrices = reqBody.isBack ? runner.BackPrice1 : runner.LayPrice1;
-  if (oddPrices != Number(reqBody.odds)) {
+  if (oddPrices != Number(reqBody.runnerScore)) {
     throw new Error("Bet not confirmed, Odds changed!");
   }
 
@@ -354,39 +355,33 @@ async function fancyBet(loggedInUser, reqBody) {
     throw new Error("Invalid request.");
   }
 
-  // let length = Number(String(reqBody.odds).length);
-  // let divideBy = Number(String(1).padEnd(length + 1, "0"));
-  const potentialWin = reqBody.stake;
-  const potentialLoss = -reqBody.stake;
+  const potentialWin = reqBody.isBack ? (reqBody.stake * (reqBody.odds / 100)) : reqBody.stake;
+  const potentialLoss = reqBody.isBack ? -reqBody.stake : -(reqBody.stake * (reqBody.odds / 100));
 
-  const runnerPls = await fetchRunnerPls({ user, ...reqBody });
+  const bets = await Bet.aggregate([
+    {
+      $match: {
+        eventId: new mongoose.Types.ObjectId(reqBody.eventId),
+        marketId: new mongoose.Types.ObjectId(reqBody.marketId),
+        userId: new mongoose.Types.ObjectId(user._id),
+        betOrderStatus: BET_ORDER_STATUS.PLACED,
+        betResultStatus: BET_RESULT_STATUS.RUNNING,
+      },
+    },
+    { $sort: { createdAt: 1 } },
+  ]);
 
   let totalPreviousLoss = 0;
-  let requiredExposure = 0;
-
-  const pl = [0, 0];
-  runnerPls.forEach((runner) => {
-    if (runner.pl < 0) {
-      totalPreviousLoss += runner.pl;
-    }
-    if (runner._id.toString() === reqBody.runnerId) {
-      pl[0] = runner.pl;
-    } else {
-      pl[1] = runner.pl;
-    }
+  bets.forEach((bet) => {
+    totalPreviousLoss += bet.potentialWin;
+    totalPreviousLoss += bet.potentialLoss;
   });
 
-  if (reqBody.isBack) {
-    pl[0] = pl[0] + potentialWin;
-    pl[1] = pl[1] + potentialLoss;
-  } else {
-    pl[0] = pl[0] + potentialLoss;
-    pl[1] = pl[1] + potentialWin;
-  }
+  let requiredExposure = 0;
 
-  requiredExposure = Math.min(...pl);
+  requiredExposure = totalPreviousLoss + potentialLoss + potentialWin;
 
-  const newExposure = user.exposure + totalPreviousLoss + Math.abs(requiredExposure);
+  const newExposure = Math.abs(requiredExposure);
 
   if (user.balance < Math.abs(requiredExposure)) {
     throw new Error("Insufficient balance.");
@@ -736,7 +731,7 @@ const completeBetFency = async ({ ...reqBody }) => {
         let profit = 0;
         let loss = 0;
         if (findBet[i].isBack == true) {
-          if (newFindBet.odds <= winScore) {
+          if (newFindBet.runnerScore <= winScore) {
             profit = findBet[i].potentialWin;
             newFindBet.betPl = profit;
             newFindBet.betResultStatus = BET_RESULT_STATUS.WON;
@@ -746,7 +741,7 @@ const completeBetFency = async ({ ...reqBody }) => {
             newFindBet.betResultStatus = BET_RESULT_STATUS.LOST;
           }
         } else {
-          if (newFindBet.odds > winScore) {
+          if (newFindBet.runnerScore > winScore) {
             profit = findBet[i].potentialWin;
             newFindBet.betPl = profit;
             newFindBet.betResultStatus = BET_RESULT_STATUS.WON;
