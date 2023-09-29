@@ -436,7 +436,6 @@ const getEventMatchData = async ({ eventId }) => {
           ],
         },
       },
-
       {
         $set: {
           sportsName: "$sport.name",
@@ -688,6 +687,15 @@ const getEventMatchDataFront = async ({ eventId, user }) => {
         }
       }
     }
+
+    const sortOrder = ["Match Odds", "Bookmaker", "Normal"];
+    const sortedMarkets = [];
+    for (const order of sortOrder) {
+      const market = event[0].market.find((item) => item.name === order);
+      sortedMarkets.push(market);
+    }
+    event[0].market = sortedMarkets.filter((market) => !!market);
+
     return event[0];
   } catch (e) {
     throw new ErrorResponse(e.message).status(200);
