@@ -54,6 +54,8 @@ const betSchema = new mongoose.Schema({
   deviceInfo: { type: String, required: true },
 
   ipAddress: { type: String, required: true },
+
+  runnerScore: { type: Number, required: false },
 });
 
 betSchema.plugin(timestampPlugin);
