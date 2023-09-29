@@ -17,7 +17,13 @@ export default function loggerMiddleware(req, res, next) {
   };
 
   res.end = function (chunk) {
-    if (chunk) chunks.push(chunk);
+    if (chunk) {
+      if (Buffer.isBuffer(chunk)) {
+        chunks.push(chunk);
+      } else {
+        chunks.push(Buffer.from(chunk, "utf8"));
+      }
+    }
 
     const body = Buffer.concat(chunks).toString("utf8");
     if (appConfig.NODE_ENV === "development") {
