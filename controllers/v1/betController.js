@@ -78,6 +78,14 @@ const getRunnerPls = async (req, res) => {
   res.status(201).json({ success: true, data: { details: getRunnerPls } });
 };
 
+const getRunnerPlsFancy = async (req, res) => {
+  const { body } = await betRequest.getRunnerPlsRequest(req);
+
+  const getRunnerPls = await betService.fetchRunnerPlsFancy({ user: req.user, ...body });
+
+  res.status(201).json({ success: true, data: { details: getRunnerPls } });
+};
+
 const getCurrentBetsUserwise = async (req, res) => {
   const { body } = await betRequest.getCurrentBetsUserwise(req);
   const getCurrentBet = await betService.getCurrentBetsUserwise({ ...body });
@@ -94,5 +102,6 @@ export default {
   settlement,
   getChildUserData,
   getRunnerPls,
-  getCurrentBetsUserwise
+  getCurrentBetsUserwise,
+  getRunnerPlsFancy
 };

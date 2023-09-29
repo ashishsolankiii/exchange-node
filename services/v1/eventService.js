@@ -201,6 +201,7 @@ const addEvent = async ({ ...reqBody }) => {
     maxStakeSession,
     isFavourite,
     matchTime,
+    isLive
   } = reqBody;
 
   try {
@@ -221,6 +222,7 @@ const addEvent = async ({ ...reqBody }) => {
       isManual: true,
       isFavourite,
       matchTime,
+      isLive
     };
 
     const newEvent = await Event.create(newEventObj);
@@ -259,6 +261,7 @@ const modifyEvent = async ({ ...reqBody }) => {
     event.completed = reqBody.completed;
     event.betDeleted = reqBody.betDeleted;
     event.isFavourite = reqBody.isFavourite;
+    event.isLive = reqBody.isLive;
 
     if (event.completed == false && (reqBody.completed == true || reqBody.completed == "true")) {
       event.isLive = false;
