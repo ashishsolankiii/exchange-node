@@ -7,7 +7,7 @@ import Bet, { BET_ORDER_STATUS, BET_RESULT_STATUS } from "../../models/v1/Bet.js
 import BetCategory, { BET_CATEGORIES, DEFAULT_CATEGORIES } from "../../models/v1/BetCategory.js";
 import Event from "../../models/v1/Event.js";
 import Market from "../../models/v1/Market.js";
-import MarketRunner from "../../models/v1/MarketRunner.js";
+import MarketRunner, { RUNNER_STATUS } from "../../models/v1/MarketRunner.js";
 import User, { USER_ROLE } from "../../models/v1/User.js";
 import { io } from "../../socket/index.js";
 import marketService from "./marketService.js";
@@ -69,6 +69,48 @@ const fetchRunnerPls = async ({ user, ...reqBody }) => {
     });
 
     return Object.values(runners);
+  } catch (e) {
+    throw new Error(e);
+  }
+};
+
+const fetchRunnerPlsFancy = async ({ user, ...reqBody }) => {
+  try {
+    const { eventId, marketId } = reqBody;
+
+    const bets = await Bet.aggregate([
+      {
+        $match: {
+          eventId: new mongoose.Types.ObjectId(eventId),
+          marketId: new mongoose.Types.ObjectId(marketId),
+          userId: new mongoose.Types.ObjectId(user._id),
+          betOrderStatus: BET_ORDER_STATUS.PLACED,
+          betResultStatus: BET_RESULT_STATUS.RUNNING,
+        },
+      },
+      { $sort: { createdAt: 1 } },
+    ]);
+
+    const marketRunners = await MarketRunner.find({ marketId: new mongoose.Types.ObjectId(marketId), status: { $ne: RUNNER_STATUS.IN_ACTIVE } });
+    let runnerPls = []
+    for (const runner of marketRunners) {
+      const findRunnerBets = bets.filter(function (item) {
+        return item.runnerId.toString() == runner._id.toString();
+      });
+      let pl = 0;
+      if (findRunnerBets.length > 0) {
+        findRunnerBets.map(function (item) {
+          pl = item.potentialLoss + item.potentialWin;
+        })
+      }
+      runnerPls.push({
+        _id: runner._id,
+        marketId: runner.marketId,
+        runnerName: runner.runnerName,
+        pl: pl,
+      })
+    }
+    return runnerPls;
   } catch (e) {
     throw new Error(e);
   }
@@ -1050,4 +1092,5 @@ export default {
   settlement,
   getChildUserData,
   getCurrentBetsUserwise,
+  fetchRunnerPlsFancy
 };
