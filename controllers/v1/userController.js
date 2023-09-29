@@ -30,6 +30,15 @@ const getUserById = async (req, res) => {
   res.status(200).json({ success: true, data: { details: user } });
 };
 
+const getUserDetails = async (req, res) => {
+  const { _id } = req.user;
+  const { fields } = req.body;
+
+  const user = await userService.fetchUserId(_id, fields || { _id: 1, username: 1 });
+
+  res.status(200).json({ success: true, data: { details: user } });
+};
+
 // Create a new user
 const createUser = async (req, res) => {
   const { user, body } = await userRequest.createUserRequest(req);
@@ -163,6 +172,7 @@ const getUserActivityTypes = async (req, res) => {
 export default {
   getAllUser,
   getUserById,
+  getUserDetails,
   createUser,
   updateUser,
   deleteUser,

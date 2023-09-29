@@ -6,6 +6,7 @@ const router = express.Router();
 
 route(router, "post", "/getAllUsers", userController.getAllUser);
 route(router, "post", "/getUserById", userController.getUserById);
+route(router, "post", "/getUserDetails", userController.getUserDetails);
 route(router, "post", "/createUser", userController.createUser);
 route(router, "post", "/updateUser", userController.updateUser);
 route(router, "post", "/deleteUser", userController.deleteUser);
