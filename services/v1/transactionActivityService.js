@@ -35,22 +35,30 @@ const fetchAllTransaction = async ({ user, ...reqBody }) => {
     const paginationQueries = generatePaginationQueries(page, perPage);
 
     let fromDate, toDate;
-    if (reqBody.fromDate && reqBody.toDate) {
+    if (reqBody.fromDate) {
       fromDate = new Date(new Date(reqBody.fromDate).setUTCHours(0, 0, 0)).toISOString();
+    }
+    if (reqBody.toDate) {
       toDate = new Date(new Date(reqBody.toDate).setUTCHours(23, 59, 59)).toISOString();
     }
     // Filters
     let filters = {};
-
     if (fromDate && toDate) {
       filters = {
         createdAt: { $gte: new Date(fromDate), $lte: new Date(toDate) },
         userId: new mongoose.Types.ObjectId(user._id),
       };
     } else {
-      filters = {
-        userId: new mongoose.Types.ObjectId(user._id),
-      };
+      if (fromDate) {
+        filters.createdAt = { $gte: new Date(fromDate) };
+        filters.userId = new mongoose.Types.ObjectId(user._id);
+      } else if (toDate) {
+        filters.createdAt = { $gte: new Date(), $lte: new Date(toDate) };
+        filters.userId = new mongoose.Types.ObjectId(user._id);
+      }
+      else {
+        filters.userId = new mongoose.Types.ObjectId(user._id);
+      }
     }
 
     if (userId) {
@@ -61,7 +69,6 @@ const fetchAllTransaction = async ({ user, ...reqBody }) => {
       const fields = ["fromtoName"];
       filters.$or = generateSearchFilters(searchQuery, fields);
     }
-
     const transaction = await Transaction.aggregate([
       {
         $match: filters,

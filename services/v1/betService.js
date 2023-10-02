@@ -405,6 +405,7 @@ async function fancyBet(loggedInUser, reqBody) {
       $match: {
         eventId: new mongoose.Types.ObjectId(reqBody.eventId),
         marketId: new mongoose.Types.ObjectId(reqBody.marketId),
+        runnerId: new mongoose.Types.ObjectId(reqBody.runnerId),
         userId: new mongoose.Types.ObjectId(user._id),
         betOrderStatus: BET_ORDER_STATUS.PLACED,
         betResultStatus: BET_RESULT_STATUS.RUNNING,
@@ -413,17 +414,30 @@ async function fancyBet(loggedInUser, reqBody) {
     { $sort: { createdAt: 1 } },
   ]);
 
+  let pl = 0;
   let totalPreviousLoss = 0;
+
   bets.forEach((bet) => {
-    totalPreviousLoss += bet.potentialWin;
-    totalPreviousLoss += bet.potentialLoss;
+    if (bet.isBack) {
+      pl += bet.potentialWin;
+    } else {
+      pl += bet.potentialLoss;
+    }
   });
 
   let requiredExposure = 0;
 
-  requiredExposure = totalPreviousLoss + potentialLoss + potentialWin;
+  if (pl < 0) {
+    totalPreviousLoss += pl;
+  }
 
-  const newExposure = Math.abs(requiredExposure);
+  if (reqBody.isBack) {
+    requiredExposure = pl + potentialWin;
+  } else {
+    requiredExposure = pl + potentialLoss;
+  }
+
+  const newExposure = user.exposure + totalPreviousLoss + Math.abs(requiredExposure);
 
   if (user.balance < Math.abs(requiredExposure)) {
     throw new Error("Insufficient balance.");
