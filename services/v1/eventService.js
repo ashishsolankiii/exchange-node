@@ -811,16 +811,17 @@ const getMatchStake = async ({ eventId, loginUserId }) => {
     const userIds = [];
     const findUser = await User.findOne({ _id: loginUserId });
     await getChidUsers(findUser, userIds);
+    const findBets = await Bet.find({
+      userId: { $in: userIds },
+    });
     for (var i = 0; i < market.length; i++) {
       let marketTotalWin = 0;
       let marketTotalLoss = 0;
       for (var j = 0; j < market[i].market_runner.length; j++) {
         let totalWin = 0;
         let totalLoss = 0;
-        const findBet = await Bet.find({
-          marketId: market[i]._id,
-          userId: { $in: userIds },
-          runnerId: market[i].market_runner[j]._id,
+        let findBet = findBets.filter(function (item) {
+          return item.marketId == market[i]._id.toString() && item.runnerId == market[i].market_runner[j]._id.toString();
         });
         for (var k = 0; k < findBet.length; k++) {
           totalWin = totalWin + -findBet[k].potentialLoss;

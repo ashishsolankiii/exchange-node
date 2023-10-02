@@ -139,13 +139,6 @@ const sportWiseMatchList = async (sportId) => {
       new Date(new Date().setDate(new Date().getDate() + 1)).setUTCHours(23, 59, 59, 999)
     ).toISOString();
 
-    let findMatchOdds = await BetCategory.findOne(
-      {
-        name: DEFAULT_CATEGORIES[0],
-      },
-      { _id: 1 }
-    );
-
     let findEvents = await Event.find(
       {
         sportId: sportId,
@@ -161,7 +154,6 @@ const sportWiseMatchList = async (sportId) => {
     let ids = findEvents.map((item) => item._id);
     let findMarketIds = await Market.find(
       {
-        typeId: findMatchOdds._id,
         eventId: { $in: ids },
       },
       { _id: 0, marketId: 1, eventId: 1 }
