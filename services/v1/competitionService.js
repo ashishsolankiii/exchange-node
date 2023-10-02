@@ -183,7 +183,7 @@ const fetchAllCompetitionEvents = async () => {
                   as: "events",
                   pipeline: [
                     {
-                      $match: { isDeleted: false, completed: false },
+                      $match: { isDeleted: false, completed: false, matchDate: { $gte: new Date((new Date().setUTCHours(0, 0, 0, 0))) } },
                     },
                     {
                       $sort: { name: 1 },

@@ -137,7 +137,7 @@ const fetchAllEvent = async ({ ...reqBody }) => {
           paginatedResults: [
             ...projection,
             {
-              $sort: { [sortBy]: sortDirection },
+              $sort: { isLive: -1, [sortBy]: sortDirection },
             },
             ...paginationQueries,
           ],
