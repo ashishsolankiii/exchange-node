@@ -374,7 +374,6 @@ async function bookmakersBet(loggedInUser, reqBody) {
 // Add bet fancy logic
 async function fancyBet(loggedInUser, reqBody) {
   // Market Validation
-  reqBody.odds = reqBody.price;
   const data = await marketService.getFencyPriceByRunner(reqBody.runnerId);
   if (!data) {
     throw new Error("Market not found.");
