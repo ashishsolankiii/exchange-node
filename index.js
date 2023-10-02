@@ -54,6 +54,7 @@ cron.schedule("0 2 * * *", async function () {
   // For market sync data
   await cronController.syncDetail();
   await cronController.getActiveEvent();
+  await cronController.completeCompetition();
 });
 
 // Cron Job for live event
