@@ -387,9 +387,16 @@ async function fancyBet(loggedInUser, reqBody) {
   if (!runner) {
     throw new Error("Runner not found.");
   }
-  const oddPrices = reqBody.isBack ? runner.BackPrice1 : runner.LayPrice1;
-  if (oddPrices != Number(reqBody.runnerScore)) {
-    throw new Error("Bet not confirmed, Odds changed!");
+
+  if (reqBody.isBack) {
+    if (runner.BackPrice1 != Number(reqBody.runnerScore) && runner.BackPrice2 != Number(reqBody.runnerScore) && runner.BackPrice3 != Number(reqBody.runnerScore)) {
+      throw new Error("Bet not confirmed, Odds changed!");
+    }
+  }
+  else {
+    if (runner.LayPrice1 != Number(reqBody.runnerScore) && runner.LayPrice2 != Number(reqBody.runnerScore) && runner.LayPrice3 != Number(reqBody.runnerScore)) {
+      throw new Error("Bet not confirmed, Odds changed!");
+    }
   }
 
   // User Validation
