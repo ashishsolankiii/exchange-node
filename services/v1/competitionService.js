@@ -195,7 +195,24 @@ const fetchAllCompetitionEvents = async () => {
           },
         },
         {
-          $sort: { name: 1 },
+          $addFields: {
+            // Create a new field 'sortField' that is 1 for non-null values
+            // and a high value (e.g., Infinity) for null values.
+            sortField: {
+              $cond: {
+                if: { $eq: ["$positionIndex", null] },
+                then: Infinity, // High value for null values
+                else: "$positionIndex", // Actual field value for non-null values
+              },
+            },
+          },
+        },
+        { $sort: { sortField: 1 } },
+        {
+          $project: {
+            // Remove the temporary 'sortField' if you don't need it in the final result.
+            sortField: 0,
+          },
         },
       ],
       { collation: { locale: "en", strength: 2 } }
@@ -247,7 +264,24 @@ const fetchAllActiveCompetitionEvents = async () => {
           },
         },
         {
-          $sort: { name: 1 },
+          $addFields: {
+            // Create a new field 'sortField' that is 1 for non-null values
+            // and a high value (e.g., Infinity) for null values.
+            sortField: {
+              $cond: {
+                if: { $eq: ["$positionIndex", null] },
+                then: Infinity, // High value for null values
+                else: "$positionIndex", // Actual field value for non-null values
+              },
+            },
+          },
+        },
+        { $sort: { sortField: 1 } },
+        {
+          $project: {
+            // Remove the temporary 'sortField' if you don't need it in the final result.
+            sortField: 0,
+          },
         },
       ],
       { collation: { locale: "en", strength: 2 } }
