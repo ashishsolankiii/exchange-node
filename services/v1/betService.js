@@ -100,7 +100,11 @@ const fetchRunnerPlsFancy = async ({ user, ...reqBody }) => {
       let pl = 0;
       if (findRunnerBets.length > 0) {
         findRunnerBets.map(function (item) {
-          pl = item.potentialLoss + item.potentialWin;
+          if (item.isBack) {
+            pl += item.potentialWin;
+          } else {
+            pl += item.potentialLoss;
+          }
         })
       }
       runnerPls.push({
@@ -825,16 +829,14 @@ const completeBetFency = async ({ ...reqBody }) => {
       );
       let fencyMarket = await Market.findOne(
         {
-          typeId: findFencyType._id,
-          eventId: findMarket.eventId
-        },
-        { _id: 0 }
+          _id: findMarketRunner.marketId,
+        }
       ).sort({ startDate: 1 });
-      const findBetNotComplete = await Market.count({ eventId: findMarket.eventId, winnerRunnerId: undefined })
+      const findBetNotComplete = await Market.count({ eventId: fencyMarket.eventId, winnerRunnerId: undefined })
       const findBetNotCompleteFancy = await MarketRunner.count({ marketId: fencyMarket._id, winScore: null })
 
       if (findBetNotComplete == 0 && findBetNotCompleteFancy == 0) {
-        await Event.updateOne({ _id: findMarket.eventId }, { completed: true });
+        await Event.updateOne({ _id: fencyMarket.eventId }, { completed: true });
       }
       return reqBody;
     } else {
