@@ -1,7 +1,7 @@
+import mongoose from "mongoose";
 import { appConfig } from "../../config/app.js";
-import Competition from "../../models/v1/Competition.js";
+import BetCategory, { BET_CATEGORIES } from "../../models/v1/BetCategory.js";
 import Event from "../../models/v1/Event.js";
-import Market from "../../models/v1/Market.js";
 import Sport from "../../models/v1/Sport.js";
 import commonService from "./commonService.js";
 
@@ -136,66 +136,93 @@ const sportWiseMatchList = async (sportId) => {
       new Date(new Date().setDate(new Date().getDate() + 1)).setUTCHours(23, 59, 59, 999)
     ).toISOString();
 
-    const findEvents = await Event.find(
+    const matchOddCategory = await BetCategory.findOne(
       {
-        sportId: sportId,
-        matchDate: { $gte: startOfDay, $lt: endOfDay },
-        isActive: true,
-        completed: false,
+        name: {
+          $regex: new RegExp(`^${BET_CATEGORIES.MATCH_ODDS}$`, "i"),
+        },
       },
-      { name: 1, matchDate: 1, _id: 1, apiCompetitionId: 1, isLive: 1 }
-    ).sort({ matchDate: 1 });
+      { _id: 1 }
+    );
+    if (!matchOddCategory) {
+      throw new Error("Match odds bet category not found");
+    }
 
-    let ids = findEvents.map((item) => item._id);
-    let findMarketIds = await Market.find(
+    const events = await Event.aggregate([
       {
-        eventId: { $in: ids },
+        $match: {
+          sportId: new mongoose.Types.ObjectId(sportId),
+          isActive: true,
+          completed: false,
+          isManual: false,
+          matchDate: { $gte: new Date(startOfDay), $lt: new Date(endOfDay) },
+        },
       },
-      { _id: 0, marketId: 1, eventId: 1 }
-    ).sort({ startDate: 1 });
-
-    if (findMarketIds.length > 0) {
-      let allMarketId = findMarketIds
-        .map((item) => item.marketId)
-        .toString()
-        .replace(/["']/g, "");
-      var marketUrl = `${appConfig.BASE_URL}?action=matchodds&market_id=${allMarketId}`;
-      const { statusCode, data } = await commonService.fetchData(marketUrl);
-      let allData = [];
-      if (statusCode === 200) {
-        for (const market of data) {
-          let eventId = findMarketIds.filter((item) => item.marketId == Number(market.marketId));
-          let eventInfo = findEvents.filter((item) => item._id == eventId[0].eventId.toString());
-          let findCompetition = await Competition.findOne(
+      {
+        $lookup: {
+          from: "markets",
+          localField: "_id",
+          foreignField: "eventId",
+          as: "market",
+          pipeline: [
             {
-              apiCompetitionId: eventInfo[0].apiCompetitionId,
+              $match: { typeId: matchOddCategory._id },
             },
-            { name: 1 }
-          );
-          if (eventInfo.length > 0 && findCompetition) {
-            allData.push({
-              _id: eventInfo[0]._id,
-              eventName: eventInfo[0].name,
-              competitionName: findCompetition.name,
-              matchDate: eventInfo[0].matchDate,
-              isLive: eventInfo[0].isLive,
-              matchOdds: market["runners"].map(function (item) {
-                delete item.ex;
-                delete item.selectionId;
-                delete item.status;
-                delete item.lastPriceTraded;
-                delete item.removalDate;
+            {
+              $project: { marketId: 1, competitionId: 1 },
+            },
+          ],
+        },
+      },
+      {
+        $addFields: {
+          marketId: { $first: "$market.marketId" },
+          competitionId: { $first: "$market.competitionId" },
+        },
+      },
+      {
+        $lookup: {
+          from: "competitions",
+          localField: "competitionId",
+          foreignField: "_id",
+          as: "competition",
+          pipeline: [{ $project: { name: 1 } }],
+        },
+      },
+      {
+        $project: {
+          eventName: "$name",
+          competitionName: { $first: "$competition.name" },
+          matchDate: 1,
+          isLive: 1,
+          marketId: 1,
+        },
+      },
+    ]);
 
-                return item;
-              }),
-            });
-          }
-        }
-      }
-      return allData;
-    } else {
+    if (!events.length) {
       return [];
     }
+
+    const marketPromises = [];
+
+    const fetchEventMarketData = async (event) => {
+      const marketUrl = `${appConfig.BASE_URL}?action=matchodds&market_id=${event.marketId}`;
+      const { statusCode, data } = await commonService.fetchData(marketUrl);
+      event.matchOdds = [];
+      if (statusCode === 200 && data.length) {
+        event.matchOdds = data[0].runners.map(({ back, lay, runner }) => ({ back, lay, runner }));
+      }
+      return event;
+    };
+
+    events.forEach((event) => {
+      marketPromises.push(fetchEventMarketData(event));
+    });
+
+    const data = await Promise.all(marketPromises);
+
+    return data;
   } catch (e) {
     throw new Error(e);
   }

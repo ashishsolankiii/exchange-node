@@ -258,13 +258,11 @@ const getThemeSettingByCurrencyAndDomain = async ({ ...reqBody }) => {
       return {};
     }
 
-    const imagePromises = [];
     const bannerPromises = [];
-
     const fetchBannerImage = async (imageName) => {
       const path = await themeSettings.getImageUrl(
         THEME_IMAGE_TYPES.BANNER,
-        THEME_IMAGE_SIZES.BANNER.DEFAULT,
+        THEME_IMAGE_SIZES.BANNER.ORIGINAL,
         imageName
       );
       return { name: imageName, url: path };
@@ -275,6 +273,7 @@ const getThemeSettingByCurrencyAndDomain = async ({ ...reqBody }) => {
       }
     }
 
+    const imagePromises = [];
     imagePromises.push(Promise.all(bannerPromises));
     imagePromises.push(themeSettings.getImageUrl(THEME_IMAGE_TYPES.WELCOME_MOBILE));
     imagePromises.push(themeSettings.getImageUrl(THEME_IMAGE_TYPES.WELCOME_DESKTOP));
