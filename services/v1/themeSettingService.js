@@ -236,59 +236,60 @@ const deleteBannerImage = async ({ _id: themeSettingId, bannerImageName }) => {
 const getThemeSettingByCurrencyAndDomain = async ({ ...reqBody }) => {
   try {
     const { countryName, domainUrl } = reqBody;
+
+    let currencyId = null;
     const regex = new RegExp(`^${countryName}$`, "i");
-    let findCurrency = await Currency.findOne({ countryName: { $regex: regex } });
-    let currencyId = "";
-    if (findCurrency) {
-      currencyId = findCurrency._id;
-    } else {
-      findCurrency = await Currency.findOne({ name: { $regex: "inr" } });
-      currencyId = findCurrency._id;
-    }
-    let getThemeSetting = {};
-    const findSuperAdmin = await User.findOne({ currencyId: currencyId, domainUrl: domainUrl });
-    if (findSuperAdmin) {
-      getThemeSetting = await ThemeSetting.findOne({ userId: findSuperAdmin._id });
-      if (getThemeSetting) {
-        // Banner Images
-        const bannerImages = [];
-        if (getThemeSetting.bannerImages?.length) {
-          for (const imageName of getThemeSetting.bannerImages) {
-            const path = await checkImageExist(
-              await getThemeSetting.getImageUrl(THEME_IMAGE_TYPES.BANNER, THEME_IMAGE_SIZES.BANNER.ORIGINAL, imageName)
-            );
-            bannerImages.push({
-              name: imageName,
-              url: path,
-            });
-          }
-        }
-
-        // Mobile Welcome Image
-        const welcomeMobileImage = await checkImageExist(
-          await getThemeSetting.getImageUrl(THEME_IMAGE_TYPES.WELCOME_MOBILE)
-        );
-
-        // Desktop Welcome Image
-        const welcomeDesktopImage = await checkImageExist(
-          await getThemeSetting.getImageUrl(THEME_IMAGE_TYPES.WELCOME_DESKTOP)
-        );
-
-        // Desktop Logo
-        const logoImage = await checkImageExist(await getThemeSetting.getImageUrl(THEME_IMAGE_TYPES.LOGO));
-
-        getThemeSetting = {
-          ...getThemeSetting._doc,
-          bannerImages,
-          welcomeMobileImage,
-          welcomeDesktopImage,
-          logoImage,
-        };
-      } else {
-        getThemeSetting = {};
+    let currency = await Currency.findOne({ countryName: { $regex: regex } }).select("_id");
+    if (!currency) {
+      currency = await Currency.findOne({ name: { $regex: "inr" } }).select("_id");
+      if (!currency) {
+        return {};
       }
     }
-    return getThemeSetting;
+    currencyId = currency._id;
+
+    const superAdmin = await User.findOne({ currencyId: currencyId, domainUrl: domainUrl }).select("_id");
+    if (!superAdmin) {
+      return {};
+    }
+
+    const themeSettings = await ThemeSetting.findOne({ userId: superAdmin._id });
+    if (!themeSettings) {
+      return {};
+    }
+
+    const imagePromises = [];
+    const bannerPromises = [];
+
+    const fetchBannerImage = async (imageName) => {
+      const path = await themeSettings.getImageUrl(
+        THEME_IMAGE_TYPES.BANNER,
+        THEME_IMAGE_SIZES.BANNER.DEFAULT,
+        imageName
+      );
+      return { name: imageName, url: path };
+    };
+    if (themeSettings.bannerImages?.length) {
+      for (const imageName of themeSettings.bannerImages) {
+        bannerPromises.push(fetchBannerImage(imageName));
+      }
+    }
+
+    imagePromises.push(Promise.all(bannerPromises));
+    imagePromises.push(themeSettings.getImageUrl(THEME_IMAGE_TYPES.WELCOME_MOBILE));
+    imagePromises.push(themeSettings.getImageUrl(THEME_IMAGE_TYPES.WELCOME_DESKTOP));
+    imagePromises.push(themeSettings.getImageUrl(THEME_IMAGE_TYPES.LOGO));
+    const [bannerImages, welcomeMobileImage, welcomeDesktopImage, logoImage] = await Promise.all(imagePromises);
+
+    const data = {
+      ...themeSettings._doc,
+      bannerImages,
+      welcomeMobileImage,
+      welcomeDesktopImage,
+      logoImage,
+    };
+
+    return data;
   } catch (e) {
     throw new ErrorResponse(e.message).status(200);
   }

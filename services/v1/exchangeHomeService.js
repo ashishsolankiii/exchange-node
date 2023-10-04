@@ -1,6 +1,4 @@
-import mongoose from "mongoose";
 import { appConfig } from "../../config/app.js";
-import BetCategory, { DEFAULT_CATEGORIES } from "../../models/v1/BetCategory.js";
 import Competition from "../../models/v1/Competition.js";
 import Event from "../../models/v1/Event.js";
 import Market from "../../models/v1/Market.js";
@@ -49,7 +47,7 @@ const sportsList = async () => {
               $project: {
                 name: 1,
                 startDate: 1,
-                endDate: 1
+                endDate: 1,
               },
             },
             {
@@ -76,7 +74,7 @@ const sportsList = async () => {
                       name: 1,
                       matchDate: 1,
                       isFavourite: 1,
-                      isLive: 1
+                      isLive: 1,
                     },
                   },
                 ],
@@ -125,7 +123,6 @@ const sportsList = async () => {
       sports[i].getAllActiveEvent = allActiveEvent;
     }
     return sports;
-
   } catch (e) {
     throw new Error(e);
   }
@@ -139,18 +136,16 @@ const sportWiseMatchList = async (sportId) => {
       new Date(new Date().setDate(new Date().getDate() + 1)).setUTCHours(23, 59, 59, 999)
     ).toISOString();
 
-    let findEvents = await Event.find(
+    const findEvents = await Event.find(
       {
         sportId: sportId,
-        matchDate: {
-          $gte: startOfDay,
-          $lt: endOfDay,
-        },
+        matchDate: { $gte: startOfDay, $lt: endOfDay },
         isActive: true,
-        completed: false
+        completed: false,
       },
       { name: 1, matchDate: 1, _id: 1, apiCompetitionId: 1, isLive: 1 }
     ).sort({ matchDate: 1 });
+
     let ids = findEvents.map((item) => item._id);
     let findMarketIds = await Market.find(
       {
@@ -158,6 +153,7 @@ const sportWiseMatchList = async (sportId) => {
       },
       { _id: 0, marketId: 1, eventId: 1 }
     ).sort({ startDate: 1 });
+
     if (findMarketIds.length > 0) {
       let allMarketId = findMarketIds
         .map((item) => item.marketId)
@@ -197,8 +193,7 @@ const sportWiseMatchList = async (sportId) => {
         }
       }
       return allData;
-    }
-    else {
+    } else {
       return [];
     }
   } catch (e) {
