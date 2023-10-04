@@ -34,7 +34,7 @@ export async function startBroadcast(socket, market) {
     // TODO: Add a check to see if the market is open and set the interval accordingly
     const emitter = setInterval(async () => {
       await emitMarketData(socket, market);
-    }, 5000);
+    }, 1000);
     marketEmitters.set(market.id, emitter);
   }
 }
