@@ -1,5 +1,5 @@
 export const encryptionConfig = {
-  fragmentLength: 100,
+  fragmentLength: 50,
   defragmentStep: 3,
 
   responseKey: "cpr_ctx",
