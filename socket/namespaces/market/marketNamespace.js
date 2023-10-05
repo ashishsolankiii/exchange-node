@@ -1,13 +1,15 @@
-import { clearEmptyEmitters, emitMarketData, startBroadcast } from "./broadcast.js";
+import { clearEmptyEmitters, getMarketData, startBroadcast } from "./broadcast.js";
 
 let clearEmptyEmittersInterval = null;
 
 async function handleConnection(socket) {
   try {
-    socket.on("join:market", async (market) => {
+    socket.on("join:market", async (market, callback) => {
       socket.join(`market:${market.id}`);
-      process.nextTick(async () => await emitMarketData(socket, market));
-      await startBroadcast(socket, market);
+      const [marketData] = await Promise.all([getMarketData(market), startBroadcast(socket, market)]);
+      if (typeof callback === "function") {
+        callback(marketData);
+      }
     });
 
     if (!clearEmptyEmittersInterval) {

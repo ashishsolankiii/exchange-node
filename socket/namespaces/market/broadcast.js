@@ -7,8 +7,7 @@ marketGetters.set("match_odds", marketService.getMatchOdds);
 marketGetters.set("bookamkers", marketService.getBookmakerPrice);
 marketGetters.set("fancy", marketService.getFencyPrice);
 
-export const emitMarketData = async (socket, market) => {
-  // console.log("Emitting market data", marketEmitters.keys());
+export const getMarketData = async (market) => {
   const getter = marketGetters.get(market.type);
   if (getter) {
     const result = await getter(market.id);
@@ -18,13 +17,19 @@ export const emitMarketData = async (socket, market) => {
     } else {
       data = result[0];
     }
-    if (!data) {
-      clearInterval(marketEmitters.get(market.id));
-      marketEmitters.delete(market.id);
-      return;
-    }
-    socket.to(`market:${market.id}`).emit(`market:data:${market.id}`, data);
+    return data;
   }
+};
+
+export const emitMarketData = async (socket, market) => {
+  // console.log("Emitting market data", marketEmitters.keys());
+  const data = await getMarketData(market);
+  if (!data) {
+    clearInterval(marketEmitters.get(market.id));
+    marketEmitters.delete(market.id);
+    return;
+  }
+  socket.to(`market:${market.id}`).emit(`market:data:${market.id}`, data);
 };
 
 export async function startBroadcast(socket, market) {

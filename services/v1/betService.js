@@ -123,6 +123,82 @@ const fetchRunnerPlsFancy = async ({ user, ...reqBody }) => {
   }
 };
 
+const fetchAllUserBetsAndPls = async ({ eventId, userId }) => {
+  const betMarkets = await Bet.aggregate([
+    {
+      $match: {
+        eventId: new mongoose.Types.ObjectId(eventId),
+        betOrderStatus: BET_ORDER_STATUS.PLACED,
+        betResultStatus: BET_RESULT_STATUS.RUNNING,
+        userId: new mongoose.Types.ObjectId(userId),
+      },
+    },
+    {
+      $group: {
+        _id: "$marketId",
+      },
+    },
+    {
+      $lookup: {
+        from: "markets",
+        localField: "_id",
+        foreignField: "_id",
+        as: "market",
+        pipeline: [{ $project: { typeId: 1 } }],
+      },
+    },
+    {
+      $unwind: "$market",
+    },
+    {
+      $lookup: {
+        from: "bet_categories",
+        localField: "market.typeId",
+        foreignField: "_id",
+        as: "betCategory",
+        pipeline: [{ $project: { name: 1 } }],
+      },
+    },
+    {
+      $unwind: "$betCategory",
+    },
+    {
+      $project: {
+        _id: 0,
+        marketId: "$_id",
+        betCategory: "$betCategory.name",
+      },
+    },
+  ]);
+
+  const fetchAllMarketPls = async ({ betMarket, userId, eventId }) => {
+    const params = {
+      user: { _id: userId },
+      marketId: betMarket.marketId,
+      eventId,
+    };
+    if ([BET_CATEGORIES.MATCH_ODDS, BET_CATEGORIES.BOOKMAKER].includes(betMarket.betCategory)) {
+      return await fetchRunnerPls(params);
+    }
+    if (BET_CATEGORIES.FANCY === betMarket.betCategory) {
+      return await fetchRunnerPlsFancy(params);
+    }
+  };
+
+  const plPromises = [];
+  for (const betMarket of betMarkets) {
+    plPromises.push(fetchAllMarketPls({ betMarket, userId, eventId }));
+  }
+
+  const promises = [];
+  promises.push(fetchUserEventBets({ eventId, userId }));
+  promises.push(Promise.all(plPromises));
+
+  const [marketBets, marketPls] = await Promise.all(promises);
+
+  return { marketBets, marketPls };
+};
+
 /**
  * create Bet in the database
  */
@@ -167,8 +243,8 @@ const addBet = async ({ user: loggedInUser, ...reqBody }) => {
     user.exposure = winLossCalculation.newExposure < 0 ? 0 : winLossCalculation.newExposure;
     await user.save();
 
-    const userEventBets = await fetchUserEventBets({ eventId: reqBody.eventId, userId: user._id });
-    io.userBet.emit(`event:bet:${user._id}`, userEventBets);
+    const userBetsAndPls = await fetchAllUserBetsAndPls({ eventId: reqBody.eventId, userId: user._id });
+    io.userBet.emit(`event:bet:${user._id}`, userBetsAndPls);
     io.user.emit(`user:${user._id}`, getTrimmedUser(user));
 
     return newBet;
@@ -736,30 +812,38 @@ const completeBet = async ({ ...reqBody }) => {
     ) {
       let findBet = await Bet.find({ marketId: marketId });
 
-      let userids = findBet.reduce((prev, cur) => {
-        const index = prev.findIndex(v => v.userId.toString() === cur.userId.toString());
-        if (index === -1) {
-          prev.push(cur);
-        }
-        return prev;
-      }, []).map(function (item) { return item.userId })
+      let userids = findBet
+        .reduce((prev, cur) => {
+          const index = prev.findIndex((v) => v.userId.toString() === cur.userId.toString());
+          if (index === -1) {
+            prev.push(cur);
+          }
+          return prev;
+        }, [])
+        .map(function (item) {
+          return item.userId;
+        });
 
       for (var j = 0; j < userids.length; j++) {
         let user = { _id: userids[j] };
-        let body = { marketId: marketId, eventId: findMarket.eventId }
+        let body = { marketId: marketId, eventId: findMarket.eventId };
         let pl = 0;
         let fetchRunnerPl = (await fetchRunnerPls({ user, ...body })).map(function (item) {
           if (item.pl < 0) {
-            pl = item.pl
-            return item.pl
+            pl = item.pl;
+            return item.pl;
           }
         });
-        let findUser = await User.findOne({ _id: userids[j] })
+        let findUser = await User.findOne({ _id: userids[j] });
         findUser.exposure = Number(findUser.exposure) + Number(pl);
         findUser.save();
       }
       for (var i = 0; i < findBet.length; i++) {
-        let newFindBet = await Bet.findOne({ userId: findBet[i].userId, marketId: findBet[i].marketId, _id: findBet[i]._id });
+        let newFindBet = await Bet.findOne({
+          userId: findBet[i].userId,
+          marketId: findBet[i].marketId,
+          _id: findBet[i]._id,
+        });
         let profit = 0;
         let loss = 0;
         if (findBet[i].isBack == true) {
@@ -1142,6 +1226,7 @@ export default {
   fetchRunnerPls,
   addBet,
   fetchAllBet,
+  fetchAllUserBetsAndPls,
   fetchUserEventBets,
   completeBet,
   completeBetFency,
