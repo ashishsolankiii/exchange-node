@@ -1,14 +1,11 @@
 import mongoose from "mongoose";
-import { appConfig } from "../../config/app.js";
 import ErrorResponse from "../../lib/error-handling/error-response.js";
 import { generatePaginationQueries, generateSearchFilters } from "../../lib/helpers/pipeline.js";
 import Bet from "../../models/v1/Bet.js";
-import { DEFAULT_CATEGORIES } from "../../models/v1/BetCategory.js";
 import Event from "../../models/v1/Event.js";
 import Market from "../../models/v1/Market.js";
 import { RUNNER_STATUS } from "../../models/v1/MarketRunner.js";
 import User, { USER_ROLE } from "../../models/v1/User.js";
-import commonService from "./commonService.js";
 
 // Fetch all event from the database
 const fetchAllEvent = async ({ ...reqBody }) => {
@@ -201,7 +198,7 @@ const addEvent = async ({ ...reqBody }) => {
     maxStakeSession,
     isFavourite,
     matchTime,
-    isLive
+    isLive,
   } = reqBody;
 
   try {
@@ -222,7 +219,7 @@ const addEvent = async ({ ...reqBody }) => {
       isManual: true,
       isFavourite,
       matchTime,
-      isLive
+      isLive,
     };
 
     const newEvent = await Event.create(newEventObj);
@@ -463,15 +460,15 @@ async function getBetLock(userId) {
     return false;
   }
 
-  if (findUser.isBetLock == true) {
+  if (findUser.isBetLock === true) {
     return true;
   }
 
-  if (findUser.role != USER_ROLE.SUPER_ADMIN) {
+  if (findUser.role !== USER_ROLE.SUPER_ADMIN) {
     return await getBetLock(findUser.parentId);
-  } else {
-    return false;
   }
+
+  return false;
 }
 
 const getEventMatchDataFront = async ({ eventId, user }) => {
@@ -527,9 +524,6 @@ const getEventMatchDataFront = async ({ eventId, user }) => {
           foreignField: "eventId",
           as: "market",
           pipeline: [
-            //   {
-            //     $project: { runnerName: 1 },
-            //   },
             {
               $lookup: {
                 from: "market_runners",
@@ -570,7 +564,6 @@ const getEventMatchDataFront = async ({ eventId, user }) => {
           ],
         },
       },
-
       {
         $unwind: {
           path: "$bet_category",
@@ -587,115 +580,35 @@ const getEventMatchDataFront = async ({ eventId, user }) => {
         $unset: ["sport", "competition"],
       },
     ]);
+
     let betLock = false;
-    let findUser = await User.findOne({ _id: user._id }, { role: 1 });
-    if (findUser.role == USER_ROLE.USER) {
-      if (event[0].betLock == true) {
+    const loggedInUser = await User.findOne({ _id: user._id }, { role: 1 });
+    if (loggedInUser.role === USER_ROLE.USER) {
+      if (event[0].betLock === true) {
         betLock = true;
       } else {
         betLock = await getBetLock(user._id);
       }
     }
 
+    const sortedMarkets = [];
+    const order = ["Match Odds", "Bookmaker", "Normal"];
     for (var i = 0; i < event[0].market.length; i++) {
-      if (event[0].market[i].minStake == 0) {
+      if (event[0].market[i].minStake === 0) {
         event[0].market[i].minStake = event[0].minStake;
       }
-      if (event[0].market[i].maxStake == 0) {
+      if (event[0].market[i].maxStake === 0) {
         event[0].market[i].maxStake = event[0].maxStake;
       }
-      if (event[0].market[i].betDelay == 0) {
+      if (event[0].market[i].betDelay === 0) {
         event[0].market[i].betDelay = event[0].betDelay;
       }
       event[0].market[i].betLock = betLock;
-      if (event[0].market[i].bet_category.name == DEFAULT_CATEGORIES[0]) {
-        var marketUrl = `${appConfig.BASE_URL}?action=matchodds&market_id=${event[0].market[i].marketId}`;
-        const { statusCode, data } = await commonService.fetchData(marketUrl);
-        if (statusCode === 200) {
-          const market = data;
-          let odds;
-          if (market.length > 0 && market[0]["runners"]) {
-            odds = market[0]["runners"].map(function (item) {
-              delete item.ex;
-              delete item.status;
-              delete item.lastPriceTraded;
-              delete item.selectionId;
-              delete item.removalDate;
-              return item;
-            });
-          } else {
-            odds = [];
-          }
-          for (var j = 0; j < event[0].market[i].market_runner.length; j++) {
-            if (odds.length > 0) {
-              let filterdata = odds.filter(function (item) {
-                return item.runner == event[0].market[i].market_runner[j].runnerName;
-              });
-              event[0].market[i].market_runner[j].matchOdds = filterdata[0];
-              delete event[0].market[i].market_runner[j].matchOdds.runner;
-            } else {
-              event[0].market[i].market_runner[j].matchOdds = {};
-            }
-          }
-        }
-      } else if (event[0].market[i].bet_category.name == DEFAULT_CATEGORIES[1]) {
-        var marketUrl = `${appConfig.BASE_URL}?action=bookmakermatchodds&market_id=${event[0].market[i].marketId}`;
-        const { statusCode, data } = await commonService.fetchData(marketUrl);
-        if (statusCode === 200) {
-          const market = data;
-          let odds;
-          if (market.length > 0 && market[0]["runners"]) {
-            odds = market[0]["runners"].map(function (item) {
-              delete item.ex;
-              delete item.lastPriceTraded;
-              delete item.selectionId;
-              return item;
-            });
-          } else {
-            odds = [];
-          }
-          for (var j = 0; j < event[0].market[i].market_runner.length; j++) {
-            if (odds.length > 0) {
-              let filterdata = odds.filter(function (item) {
-                return item.runnerName == event[0].market[i].market_runner[j].runnerName;
-              });
-              event[0].market[i].market_runner[j].matchOdds = filterdata[0];
-              delete event[0].market[i].market_runner[j].matchOdds.runner;
-            } else {
-              event[0].market[i].market_runner[j].matchOdds = {};
-            }
-          }
-        }
-      } else if (event[0].market[i].bet_category.name == DEFAULT_CATEGORIES[2]) {
-        var marketUrl = `${appConfig.BASE_URL}?action=fancy&event_id=${event[0].market[i].apiEventId}`;
-        const { statusCode, data } = await commonService.fetchData(marketUrl);
-        if (statusCode === 200) {
-          const market = data;
-          for (var j = 0; j < event[0].market[i].market_runner.length; j++) {
-            if (market.length > 0) {
-              let filterdata = market.filter(function (item) {
-                return item.RunnerName == event[0].market[i].market_runner[j].runnerName;
-              });
-              if (filterdata.length > 0) {
-                event[0].market[i].market_runner[j].matchOdds = filterdata[0];
-                delete event[0].market[i].market_runner[j].matchOdds.RunnerName;
-                delete event[0].market[i].market_runner[j].matchOdds.SelectionId;
-              } else {
-                event[0].market[i].market_runner[j].matchOdds = {};
-              }
-            } else {
-              event[0].market[i].market_runner[j].matchOdds = {};
-            }
-          }
-        }
-      }
-    }
 
-    const sortOrder = ["Match Odds", "Bookmaker", "Normal"];
-    const sortedMarkets = [];
-    for (const order of sortOrder) {
-      const market = event[0].market.find((item) => item.name === order);
-      sortedMarkets.push(market);
+      const index = order.indexOf(event[0].market[i].name);
+      if (index !== -1) {
+        sortedMarkets[index] = event[0].market[i];
+      }
     }
     event[0].market = sortedMarkets.filter((market) => !!market);
 
@@ -821,7 +734,9 @@ const getMatchStake = async ({ eventId, loginUserId }) => {
         let totalWin = 0;
         let totalLoss = 0;
         let findBet = findBets.filter(function (item) {
-          return item.marketId == market[i]._id.toString() && item.runnerId == market[i].market_runner[j]._id.toString();
+          return (
+            item.marketId == market[i]._id.toString() && item.runnerId == market[i].market_runner[j]._id.toString()
+          );
         });
         for (var k = 0; k < findBet.length; k++) {
           totalWin = totalWin + -findBet[k].potentialLoss;
