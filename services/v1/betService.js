@@ -742,7 +742,6 @@ const completeBet = async ({ ...reqBody }) => {
           }
         });
         let findUser = await User.findOne({ _id: userids[j] })
-        console.log(Number(findUser.exposure), fetchRunnerPl);
         findUser.exposure = Number(findUser.exposure) + Number(pl);
         findUser.save();
       }
