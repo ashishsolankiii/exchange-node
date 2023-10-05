@@ -1,11 +1,13 @@
 import { Server } from "socket.io";
 import { appConfig } from "../config/app.js";
 import marketNamespace from "./namespaces/market/marketNamespace.js";
+import userBetNamespace from "./namespaces/user-bet/userBetNamespace.js";
 import userNamespace from "./namespaces/user/userNamespace.js";
 
 let io = {
   user: null,
   market: null,
+  userBet: null,
 };
 
 const initSocket = (server) => {
@@ -18,6 +20,9 @@ const initSocket = (server) => {
 
   io.market = io.of("/io/market");
   marketNamespace.connect(io.market);
+
+  io.userBet = io.of("/io/user-bet");
+  userBetNamespace.connect(io.userBet);
 };
 
 export { initSocket, io };
