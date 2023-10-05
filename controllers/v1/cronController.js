@@ -342,7 +342,7 @@ const getLiveEvent = async (req, res) => {
             $gte: new Date(startOfDay),
             $lt: new Date(endOfDay),
           },
-          completed: false, isLive: false
+          completed: false, isLive: false, isActive: true
         },
       }
     ]);
@@ -539,6 +539,9 @@ const getActiveEvent = async (req, res) => {
     const findEvent = await Event.aggregate([
       {
         $project: {
+          "name": 1,
+          "completed": 1,
+          "isActive": 1,
           "matchDateTime": {
             $cond: {
               if: { $eq: ["$matchTime", null] }, then: {

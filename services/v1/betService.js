@@ -629,7 +629,7 @@ const fetchAllBet = async ({ ...reqBody }) => {
 async function updateUserPl(userId, profitLoss) {
   let findUser = await User.findOne({ _id: userId });
   findUser.userPl = findUser.userPl + profitLoss;
-  // findUser.balance = findUser.balance + profitLoss;
+  findUser.balance = findUser.balance + profitLoss;
   findUser.save();
 
   if (findUser.role != USER_ROLE.SUPER_ADMIN) {
@@ -723,12 +723,34 @@ const completeBet = async ({ ...reqBody }) => {
     ) {
       let findBet = await Bet.find({ marketId: marketId });
 
+      let userids = findBet.reduce((prev, cur) => {
+        const index = prev.findIndex(v => v.userId.toString() === cur.userId.toString());
+        if (index === -1) {
+          prev.push(cur);
+        }
+        return prev;
+      }, []).map(function (item) { return item.userId })
+
+      for (var j = 0; j < userids.length; j++) {
+        let user = { _id: userids[j] };
+        let body = { marketId: marketId, eventId: findMarket.eventId }
+        let pl = 0;
+        let fetchRunnerPl = (await fetchRunnerPls({ user, ...body })).map(function (item) {
+          if (item.pl < 0) {
+            pl = item.pl
+            return item.pl
+          }
+        });
+        let findUser = await User.findOne({ _id: userids[j] })
+        findUser.exposure = Number(findUser.exposure) + Number(pl);
+        findUser.save();
+      }
       for (var i = 0; i < findBet.length; i++) {
-        let newFindBet = await Bet.findOne({ userId: findBet[i].userId, marketId: findBet[i].marketId });
+        let newFindBet = await Bet.findOne({ userId: findBet[i].userId, marketId: findBet[i].marketId, _id: findBet[i]._id });
         let profit = 0;
         let loss = 0;
         if (findBet[i].isBack == true) {
-          if (winRunnerId == findBet[i].marketRunnerId) {
+          if (winRunnerId == findBet[i].runnerId.toString()) {
             profit = findBet[i].potentialWin;
             newFindBet.betPl = profit;
             newFindBet.betResultStatus = BET_RESULT_STATUS.WON;
@@ -738,7 +760,7 @@ const completeBet = async ({ ...reqBody }) => {
             newFindBet.betResultStatus = BET_RESULT_STATUS.LOST;
           }
         } else {
-          if (winRunnerId != findBet[i].marketRunnerId) {
+          if (winRunnerId.toString() != findBet[i].runnerId.toString()) {
             profit = findBet[i].potentialWin;
             newFindBet.betPl = profit;
             newFindBet.betResultStatus = BET_RESULT_STATUS.WON;
@@ -748,7 +770,7 @@ const completeBet = async ({ ...reqBody }) => {
             newFindBet.betResultStatus = BET_RESULT_STATUS.LOST;
           }
         }
-        newFindBet.save();
+        await newFindBet.save();
         if (loss == 0) {
           await updateUserPl(findBet[i].userId, profit);
         } else {
