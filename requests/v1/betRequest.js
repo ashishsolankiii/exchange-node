@@ -152,6 +152,21 @@ async function getCurrentBetsUserwise(req) {
   return req;
 }
 
+async function getCompleteBetEventWise(req) {
+  const validationSchema = Yup.object().shape({
+    loginUserId: Yup.string()
+      .required()
+      .test("userId", "Invalid userId!", (v) => !v || isValidObjectId),
+    eventId: Yup.string()
+      .required()
+      .test("eventId", "Invalid eventId!", (v) => !v || isValidObjectId),
+  });
+
+  await validationSchema.validate(req.body);
+
+  return req;
+}
+
 export default {
   createBetRequest,
   getAllBetRequest,
@@ -160,4 +175,5 @@ export default {
   settlementRequest,
   getRunnerPlsRequest,
   getCurrentBetsUserwise,
+  getCompleteBetEventWise
 };

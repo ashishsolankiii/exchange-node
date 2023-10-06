@@ -121,6 +121,16 @@ const getMatchWiseWinLoss = async (req, res) => {
   res.status(200).json({ success: true, data: { details: GetEventMatchData } });
 };
 
+const completedEventList = async (req, res) => {
+  const { startDate, endDate } = req.body;
+  const completedEventLists = await eventService.completedEventList({
+    startDate,
+    endDate
+  });
+
+  res.status(200).json({ success: true, data: { details: completedEventLists } });
+};
+
 export default {
   getAllEvent,
   getEventById,
@@ -132,5 +142,6 @@ export default {
   upcomingEvent,
   getEventMatchData,
   getEventMatchDataFront,
-  getMatchWiseWinLoss
+  getMatchWiseWinLoss,
+  completedEventList
 };
