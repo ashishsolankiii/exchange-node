@@ -93,6 +93,14 @@ const getCurrentBetsUserwise = async (req, res) => {
   res.status(201).json({ success: true, data: { details: getCurrentBet } });
 };
 
+const getCompleteBetEventWise = async (req, res) => {
+  const { body } = await betRequest.getCompleteBetEventWise(req);
+  const getCurrentBet = await betService.getCompleteBetEventWise({ ...body });
+
+  res.status(201).json({ success: true, data: { details: getCurrentBet } });
+};
+
+
 export default {
   createBet,
   getAllBet,
@@ -103,5 +111,6 @@ export default {
   getChildUserData,
   getRunnerPls,
   getCurrentBetsUserwise,
-  getRunnerPlsFancy
+  getRunnerPlsFancy,
+  getCompleteBetEventWise
 };
