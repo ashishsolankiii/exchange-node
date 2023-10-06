@@ -757,6 +757,81 @@ const getMatchStake = async ({ eventId, loginUserId }) => {
   }
 };
 
+const completedEventList = async ({ startDate, endDate }) => {
+  try {
+    let startOfDay, endOfDay;
+    if (startDate && endDate) {
+      startOfDay = new Date(
+        new Date(startDate).setUTCHours(23, 59, 59, 999)
+      ).toISOString();
+      endOfDay = new Date(new Date(endDate).setUTCHours(0, 0, 0, 0)).toISOString();
+    }
+    else {
+      startOfDay = new Date(
+        new Date(new Date().setDate(new Date().getDate() - 1)).setUTCHours(23, 59, 59, 999)
+      ).toISOString();
+      endOfDay = new Date(new Date().setUTCHours(0, 0, 0, 0)).toISOString();
+    }
+
+    const findEvent = await Event.aggregate([
+      {
+        $project: {
+          "name": 1,
+          "completed": 1,
+          "isActive": 1,
+          "matchDateTime": {
+            $cond: {
+              if: { $eq: ["$matchTime", null] }, then: {
+                $dateFromString: {
+                  dateString: {
+                    $concat: [{
+                      $dateToString: {
+                        format: "%Y-%m-%d %H:%M",
+                        date: {
+                          $toDate: "$matchDate"
+                        }
+                      }
+                    }]
+                  },
+                  format: "%Y-%m-%d %H:%M"
+                }
+              }, else: {
+                $dateFromString: {
+                  dateString: {
+                    $concat: [{
+                      $dateToString: {
+                        format: "%Y-%m-%d",
+                        date: {
+                          $toDate: "$matchDate"
+                        }
+                      }
+                    }, " ", "$matchTime"]
+                  },
+                  format: "%Y-%m-%d %H:%M"
+                }
+              }
+
+            }
+          }
+        }
+      },
+      {
+        $match: {
+          "matchDateTime": {
+            $gte: new Date(startOfDay),
+            $lte: new Date(endOfDay),
+          },
+          completed: true
+        },
+      },
+      { $sort: { matchDateTime: -1 } }
+    ]);
+    return findEvent;
+  } catch (e) {
+    throw new ErrorResponse(e.message).status(200);
+  }
+};
+
 export default {
   fetchAllEvent,
   fetchEventId,
@@ -769,4 +844,5 @@ export default {
   getEventMatchData,
   getEventMatchDataFront,
   getMatchStake,
+  completedEventList
 };
