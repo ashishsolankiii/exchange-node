@@ -2,7 +2,7 @@ import mongoose from "mongoose";
 import softDeletePlugin from "../plugins/soft-delete.js";
 import timestampPlugin from "../plugins/timestamp.js";
 
-export const RUNNER_STATUS = { "ACTIVE": "Active", "IN_ACTIVE": "In Active" };
+export const RUNNER_STATUS = { ACTIVE: "Active", IN_ACTIVE: "In Active" };
 
 const marketRunnerSchema = new mongoose.Schema({
   // Reference to the market this market belongs to
@@ -17,7 +17,7 @@ const marketRunnerSchema = new mongoose.Schema({
   // Indexing recommended if queried frequently
   apiMarketId: { type: String, default: null, index: true },
 
-  selectionId: { type: Number },
+  selectionId: { type: Number, index: true },
 
   runnerName: { type: String, default: null },
 
@@ -28,7 +28,6 @@ const marketRunnerSchema = new mongoose.Schema({
   status: { type: String, default: null },
 
   winScore: { type: Number, default: null },
-
 });
 
 marketRunnerSchema.plugin(timestampPlugin);

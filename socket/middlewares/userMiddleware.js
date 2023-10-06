@@ -1,5 +1,5 @@
-import { parseJwtToken } from "../../../lib/io-guards/auth.js";
-import User from "../../../models/v1/User.js";
+import { parseJwtToken } from "../../lib/io-guards/auth.js";
+import User from "../../models/v1/User.js";
 
 async function validateAuth(socket, next) {
   const token = socket.handshake.auth.token;

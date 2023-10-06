@@ -1,10 +1,11 @@
+import moment from "moment";
 import mongoose from "mongoose";
 import ErrorResponse from "../../lib/error-handling/error-response.js";
 import { generatePaginationQueries, generateSearchFilters } from "../../lib/helpers/pipeline.js";
 import { getTrimmedUser } from "../../lib/io-guards/auth.js";
 import { decryptTransactionCode } from "../../lib/io-guards/transaction-code.js";
 import Bet, { BET_ORDER_STATUS, BET_RESULT_STATUS } from "../../models/v1/Bet.js";
-import BetCategory, { BET_CATEGORIES, DEFAULT_CATEGORIES } from "../../models/v1/BetCategory.js";
+import BetCategory, { BET_CATEGORIES } from "../../models/v1/BetCategory.js";
 import Event from "../../models/v1/Event.js";
 import Market from "../../models/v1/Market.js";
 import MarketRunner, { RUNNER_STATUS } from "../../models/v1/MarketRunner.js";
@@ -91,8 +92,11 @@ const fetchRunnerPlsFancy = async ({ user, ...reqBody }) => {
       { $sort: { createdAt: 1 } },
     ]);
 
-    const marketRunners = await MarketRunner.find({ marketId: new mongoose.Types.ObjectId(marketId), status: { $ne: RUNNER_STATUS.IN_ACTIVE } });
-    let runnerPls = []
+    const marketRunners = await MarketRunner.find({
+      marketId: new mongoose.Types.ObjectId(marketId),
+      status: { $ne: RUNNER_STATUS.IN_ACTIVE },
+    });
+    let runnerPls = [];
     for (const runner of marketRunners) {
       const findRunnerBets = bets.filter(function (item) {
         return item.runnerId.toString() == runner._id.toString();
@@ -105,19 +109,95 @@ const fetchRunnerPlsFancy = async ({ user, ...reqBody }) => {
           } else {
             pl += item.potentialLoss;
           }
-        })
+        });
       }
       runnerPls.push({
         _id: runner._id,
         marketId: runner.marketId,
         runnerName: runner.runnerName,
         pl: pl,
-      })
+      });
     }
     return runnerPls;
   } catch (e) {
     throw new Error(e);
   }
+};
+
+const fetchAllUserBetsAndPls = async ({ eventId, userId }) => {
+  const betMarkets = await Bet.aggregate([
+    {
+      $match: {
+        eventId: new mongoose.Types.ObjectId(eventId),
+        betOrderStatus: BET_ORDER_STATUS.PLACED,
+        betResultStatus: BET_RESULT_STATUS.RUNNING,
+        userId: new mongoose.Types.ObjectId(userId),
+      },
+    },
+    {
+      $group: {
+        _id: "$marketId",
+      },
+    },
+    {
+      $lookup: {
+        from: "markets",
+        localField: "_id",
+        foreignField: "_id",
+        as: "market",
+        pipeline: [{ $project: { typeId: 1 } }],
+      },
+    },
+    {
+      $unwind: "$market",
+    },
+    {
+      $lookup: {
+        from: "bet_categories",
+        localField: "market.typeId",
+        foreignField: "_id",
+        as: "betCategory",
+        pipeline: [{ $project: { name: 1 } }],
+      },
+    },
+    {
+      $unwind: "$betCategory",
+    },
+    {
+      $project: {
+        _id: 0,
+        marketId: "$_id",
+        betCategory: "$betCategory.name",
+      },
+    },
+  ]);
+
+  const fetchAllMarketPls = async ({ betMarket, userId, eventId }) => {
+    const params = {
+      user: { _id: userId },
+      marketId: betMarket.marketId,
+      eventId,
+    };
+    if ([BET_CATEGORIES.MATCH_ODDS, BET_CATEGORIES.BOOKMAKER].includes(betMarket.betCategory)) {
+      return await fetchRunnerPls(params);
+    }
+    if (BET_CATEGORIES.FANCY === betMarket.betCategory) {
+      return await fetchRunnerPlsFancy(params);
+    }
+  };
+
+  const plPromises = [];
+  for (const betMarket of betMarkets) {
+    plPromises.push(fetchAllMarketPls({ betMarket, userId, eventId }));
+  }
+
+  const promises = [];
+  promises.push(fetchUserEventBets({ eventId, userId }));
+  promises.push(Promise.all(plPromises));
+
+  const [marketBets, marketPls] = await Promise.all(promises);
+
+  return { marketBets, marketPls };
 };
 
 /**
@@ -126,6 +206,11 @@ const fetchRunnerPlsFancy = async ({ user, ...reqBody }) => {
 const addBet = async ({ user: loggedInUser, ...reqBody }) => {
   try {
     const findMarket = await Market.findById(reqBody.marketId);
+
+    if (!findMarket.startDate || moment(findMarket.startDate).isAfter(moment())) {
+      throw new Error("Failed to place bet.");
+    }
+
     let winLossCalculation;
     if (findMarket) {
       const findBetType = await BetCategory.findById(findMarket.typeId);
@@ -163,6 +248,9 @@ const addBet = async ({ user: loggedInUser, ...reqBody }) => {
     const user = await User.findById(loggedInUser._id);
     user.exposure = winLossCalculation.newExposure < 0 ? 0 : winLossCalculation.newExposure;
     await user.save();
+
+    const userBetsAndPls = await fetchAllUserBetsAndPls({ eventId: reqBody.eventId, userId: user._id });
+    io.userBet.emit(`event:bet:${user._id}`, userBetsAndPls);
     io.user.emit(`user:${user._id}`, getTrimmedUser(user));
 
     return newBet;
@@ -389,12 +477,19 @@ async function fancyBet(loggedInUser, reqBody) {
   }
 
   if (reqBody.isBack) {
-    if (runner.BackPrice1 != Number(reqBody.runnerScore) && runner.BackPrice2 != Number(reqBody.runnerScore) && runner.BackPrice3 != Number(reqBody.runnerScore)) {
+    if (
+      runner.BackPrice1 != Number(reqBody.runnerScore) &&
+      runner.BackPrice2 != Number(reqBody.runnerScore) &&
+      runner.BackPrice3 != Number(reqBody.runnerScore)
+    ) {
       throw new Error("Bet not confirmed, Odds changed!");
     }
-  }
-  else {
-    if (runner.LayPrice1 != Number(reqBody.runnerScore) && runner.LayPrice2 != Number(reqBody.runnerScore) && runner.LayPrice3 != Number(reqBody.runnerScore)) {
+  } else {
+    if (
+      runner.LayPrice1 != Number(reqBody.runnerScore) &&
+      runner.LayPrice2 != Number(reqBody.runnerScore) &&
+      runner.LayPrice3 != Number(reqBody.runnerScore)
+    ) {
       throw new Error("Bet not confirmed, Odds changed!");
     }
   }
@@ -408,7 +503,7 @@ async function fancyBet(loggedInUser, reqBody) {
     throw new Error("Invalid request.");
   }
 
-  const potentialWin = reqBody.isBack ? (reqBody.stake * (reqBody.odds / 100)) : reqBody.stake;
+  const potentialWin = reqBody.isBack ? reqBody.stake * (reqBody.odds / 100) : reqBody.stake;
   const potentialLoss = reqBody.isBack ? -reqBody.stake : -(reqBody.stake * (reqBody.odds / 100));
 
   const bets = await Bet.aggregate([
@@ -638,8 +733,7 @@ async function updateUserPl(userId, profitLoss) {
     } else {
       return;
     }
-  }
-  else {
+  } else {
     return;
   }
 }
@@ -728,30 +822,38 @@ const completeBet = async ({ ...reqBody }) => {
     ) {
       let findBet = await Bet.find({ marketId: marketId });
 
-      let userids = findBet.reduce((prev, cur) => {
-        const index = prev.findIndex(v => v.userId.toString() === cur.userId.toString());
-        if (index === -1) {
-          prev.push(cur);
-        }
-        return prev;
-      }, []).map(function (item) { return item.userId })
+      let userids = findBet
+        .reduce((prev, cur) => {
+          const index = prev.findIndex((v) => v.userId.toString() === cur.userId.toString());
+          if (index === -1) {
+            prev.push(cur);
+          }
+          return prev;
+        }, [])
+        .map(function (item) {
+          return item.userId;
+        });
 
       for (var j = 0; j < userids.length; j++) {
         let user = { _id: userids[j] };
-        let body = { marketId: marketId, eventId: findMarket.eventId }
+        let body = { marketId: marketId, eventId: findMarket.eventId };
         let pl = 0;
         let fetchRunnerPl = (await fetchRunnerPls({ user, ...body })).map(function (item) {
           if (item.pl < 0) {
-            pl = item.pl
-            return item.pl
+            pl = item.pl;
+            return item.pl;
           }
         });
-        let findUser = await User.findOne({ _id: userids[j] })
+        let findUser = await User.findOne({ _id: userids[j] });
         findUser.exposure = Number(findUser.exposure) + Number(pl);
         findUser.save();
       }
       for (var i = 0; i < findBet.length; i++) {
-        let newFindBet = await Bet.findOne({ userId: findBet[i].userId, marketId: findBet[i].marketId, _id: findBet[i]._id });
+        let newFindBet = await Bet.findOne({
+          userId: findBet[i].userId,
+          marketId: findBet[i].marketId,
+          _id: findBet[i]._id,
+        });
         let profit = 0;
         let loss = 0;
         if (findBet[i].isBack == true) {
@@ -793,12 +895,16 @@ const completeBet = async ({ ...reqBody }) => {
       let fencyMarket = await Market.findOne(
         {
           typeId: findFencyType._id,
-          eventId: findMarket.eventId
+          eventId: findMarket.eventId,
         },
         { _id: 1 }
       ).sort({ startDate: 1 });
-      const findBetNotComplete = await Market.count({ eventId: findMarket.eventId, winnerRunnerId: undefined, _id: { $ne: fencyMarket._id } })
-      const findBetNotCompleteFancy = await MarketRunner.count({ marketId: fencyMarket._id, winScore: null })
+      const findBetNotComplete = await Market.count({
+        eventId: findMarket.eventId,
+        winnerRunnerId: undefined,
+        _id: { $ne: fencyMarket._id },
+      });
+      const findBetNotCompleteFancy = await MarketRunner.count({ marketId: fencyMarket._id, winScore: null });
       if (findBetNotComplete == 0 && findBetNotCompleteFancy == 0) {
         await Event.updateOne({ _id: findMarket.eventId }, { completed: true });
       }
@@ -860,13 +966,15 @@ const completeBetFency = async ({ ...reqBody }) => {
         },
         { _id: 1 }
       );
-      let fencyMarket = await Market.findOne(
-        {
-          _id: findMarketRunner.marketId,
-        }
-      ).sort({ startDate: 1 });
-      const findBetNotComplete = await Market.count({ eventId: fencyMarket.eventId, winnerRunnerId: undefined, _id: { $ne: fencyMarket._id } })
-      const findBetNotCompleteFancy = await MarketRunner.count({ marketId: fencyMarket._id, winScore: null })
+      let fencyMarket = await Market.findOne({
+        _id: findMarketRunner.marketId,
+      }).sort({ startDate: 1 });
+      const findBetNotComplete = await Market.count({
+        eventId: fencyMarket.eventId,
+        winnerRunnerId: undefined,
+        _id: { $ne: fencyMarket._id },
+      });
+      const findBetNotCompleteFancy = await MarketRunner.count({ marketId: fencyMarket._id, winScore: null });
 
       if (findBetNotComplete == 0 && findBetNotCompleteFancy == 0) {
         await Event.updateOne({ _id: fencyMarket.eventId }, { completed: true });
@@ -1166,14 +1274,21 @@ const getCompleteBetEventWise = async ({ ...reqBody }) => {
         $unset: ["market"],
       },
       {
-        $group:
-        {
+        $group: {
           _id: "$marketId",
-          pl: { $sum: { $cond: { if: { $eq: ["$betResultStatus", BET_RESULT_STATUS.WON] }, then: "$potentialWin", else: "$potentialLoss" } } },
-          marketName: { "$first": "$marketName" },
-        }
+          pl: {
+            $sum: {
+              $cond: {
+                if: { $eq: ["$betResultStatus", BET_RESULT_STATUS.WON] },
+                then: "$potentialWin",
+                else: "$potentialLoss",
+              },
+            },
+          },
+          marketName: { $first: "$marketName" },
+        },
       },
-      { $sort: { marketName: -1 } }
+      { $sort: { marketName: -1 } },
     ]);
 
     return findEventBets;
@@ -1186,6 +1301,7 @@ export default {
   fetchRunnerPls,
   addBet,
   fetchAllBet,
+  fetchAllUserBetsAndPls,
   fetchUserEventBets,
   completeBet,
   completeBetFency,
@@ -1193,5 +1309,5 @@ export default {
   getChildUserData,
   getCurrentBetsUserwise,
   fetchRunnerPlsFancy,
-  getCompleteBetEventWise
+  getCompleteBetEventWise,
 };

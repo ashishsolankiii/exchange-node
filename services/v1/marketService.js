@@ -1,14 +1,15 @@
+import mongoose from "mongoose";
 import { appConfig } from "../../config/app.js";
+import cronController from "../../controllers/v1/cronController.js";
+import ErrorResponse from "../../lib/error-handling/error-response.js";
+import ArrayProto from "../../lib/helpers/array-proto.js";
 import BetCategory, { DEFAULT_CATEGORIES } from "../../models/v1/BetCategory.js";
 import Competition from "../../models/v1/Competition.js";
 import Event from "../../models/v1/Event.js";
 import Market from "../../models/v1/Market.js";
+import MarketRunner, { RUNNER_STATUS } from "../../models/v1/MarketRunner.js";
 import Sport from "../../models/v1/Sport.js";
 import commonService from "./commonService.js";
-import ErrorResponse from "../../lib/error-handling/error-response.js";
-import cronController from "../../controllers/v1/cronController.js";
-import MarketRunner, { RUNNER_STATUS } from "../../models/v1/MarketRunner.js";
-import mongoose from "mongoose";
 
 const syncMarkets = async (data) => {
   //Get Bet Categories
@@ -102,38 +103,29 @@ const getMatchOdds = async (markeId) => {
     let allMarketId = markeId.toString().replace(/["']/g, "");
     var marketUrl = `${appConfig.BASE_URL}?action=matchodds&market_id=${allMarketId}`;
     const { statusCode, data } = await commonService.fetchData(marketUrl);
-    let allData = [];
-    if (statusCode === 200) {
-      for (const market of data) {
-        let findMarket = await Market.findOne({ marketId: market["marketId"] });
-        let min, max;
-        if (findMarket.minStake != 0 || findMarket.maxStake != 0) {
-          min = findMarket.minStake;
-          max = findMarket.maxStake;
-        }
-        else {
-          let findEvent = await Event.findOne({ _id: findMarket.eventId });
-          min = findEvent.minStake;
-          max = findEvent.maxStake;
-        }
-        if (market["runners"]) {
-          allData.push({
-            marketId: market["marketId"],
-            min,
-            max,
-            matchOdds: market["runners"].map(function (item) {
+
+    if (statusCode !== 200 || !data.length) {
+      return [];
+    }
+
+    const allData = await Promise.all(
+      data.map(async (dataItem) => {
+        const market = await Market.findOne({ marketId: dataItem.marketId });
+
+        const { minStake, maxStake } =
+          market.minStake !== 0 || market.maxStake !== 0 ? market : await Event.findOne({ _id: market.eventId });
+
+        const matchOdds = dataItem.runners
+          ? dataItem.runners.map((item) => {
               delete item.ex;
               return item;
-            }),
-          });
-        } else {
-          allData.push({
-            marketId: market["marketId"],
-            matchOdds: {},
-          });
-        }
-      }
-    }
+            })
+          : [];
+
+        return { marketId: dataItem.marketId, min: minStake, max: maxStake, matchOdds };
+      })
+    );
+
     return allData;
   } catch (e) {
     return e;
@@ -159,7 +151,7 @@ const addMarket = async ({ ...reqBody }) => {
     maxBetLiability,
     maxMarketLiability,
     maxMarketProfit,
-    startDate
+    startDate,
   } = reqBody;
 
   try {
@@ -178,7 +170,7 @@ const addMarket = async ({ ...reqBody }) => {
       maxBetLiability,
       maxMarketLiability,
       maxMarketProfit,
-      startDate
+      startDate,
     };
 
     const newMarket = await Market.create(newMarketObj);
@@ -200,17 +192,16 @@ const modifyMarket = async ({ ...reqBody }) => {
       throw new Error("Market not found.");
     }
 
-    market.name = reqBody.name,
-      market.betDelay = reqBody.betDelay,
-      market.visibleToPlayer = reqBody.visibleToPlayer,
-      market.positionIndex = reqBody.positionIndex,
-      market.minStake = reqBody.minStake,
-      market.maxStake = reqBody.maxStake,
-      market.maxBetLiability = reqBody.maxBetLiability,
-      market.maxMarketLiability = reqBody.maxMarketLiability,
-      market.maxMarketProfit = reqBody.maxMarketProfit,
-      market.startDate = reqBody.startDate,
-
+    (market.name = reqBody.name),
+      (market.betDelay = reqBody.betDelay),
+      (market.visibleToPlayer = reqBody.visibleToPlayer),
+      (market.positionIndex = reqBody.positionIndex),
+      (market.minStake = reqBody.minStake),
+      (market.maxStake = reqBody.maxStake),
+      (market.maxBetLiability = reqBody.maxBetLiability),
+      (market.maxMarketLiability = reqBody.maxMarketLiability),
+      (market.maxMarketProfit = reqBody.maxMarketProfit),
+      (market.startDate = reqBody.startDate),
       await market.save();
 
     return market;
@@ -219,7 +210,6 @@ const modifyMarket = async ({ ...reqBody }) => {
   }
 };
 
-
 /**
  * sync market by event id in the database
  */
@@ -227,7 +217,7 @@ const syncMarketByEventId = async ({ eventId }) => {
   try {
     const mongoEventId = await Event.findById(eventId);
     let apiEventId = [];
-    apiEventId.push(mongoEventId.apiEventId)
+    apiEventId.push(mongoEventId.apiEventId);
     await cronController.syncMarket(apiEventId);
     await cronController.syncMarketBookmakers(apiEventId);
     await cronController.syncMarketFancy(apiEventId);
@@ -239,51 +229,65 @@ const syncMarketByEventId = async ({ eventId }) => {
 
 const getFencyPrice = async (eventId) => {
   try {
-    let findMarket = await Market.findOne({ apiEventId: eventId, name: "Normal" })
-    var marketUrl = `${appConfig.BASE_URL}?action=fancy&event_id=${eventId}`;
-    const { statusCode, data } = await commonService.fetchData(marketUrl);
-    if (findMarket) {
-      let findMarketRunners = await MarketRunner.find({ marketId: findMarket._id, status: { $ne: RUNNER_STATUS.IN_ACTIVE } })
-      if (statusCode === 200) {
-        var newMarketRunnersAdd = data.filter(function (obj) {
-          return !findMarketRunners.some(function (obj2) {
-            return obj.SelectionId == obj2.selectionId;
-          });
+    const marketUrl = `${appConfig.BASE_URL}?action=fancy&event_id=${eventId}`;
+    const [market, { statusCode, data = [] }] = await Promise.all([
+      Market.findOne({ apiEventId: eventId, name: "Normal" }),
+      commonService.fetchData(marketUrl),
+    ]);
+
+    if (!(market && statusCode === 200 && data.length)) {
+      return [];
+    }
+
+    const marketRunners = await MarketRunner.find({
+      marketId: market._id,
+      status: { $ne: RUNNER_STATUS.IN_ACTIVE },
+    });
+
+    const oldRunnerIds = new Set(marketRunners.map((runner) => runner.selectionId));
+
+    const newRunnersToAdd = data.reduce((acc, obj) => {
+      if (!oldRunnerIds.has(Number(obj.SelectionId))) {
+        acc.push({
+          marketId: market._id,
+          selectionId: obj.SelectionId,
+          runnerName: obj.RunnerName,
         });
-        let promise = []
-        var oldMarketRunnersRemove = findMarketRunners.filter(function (obj) {
-          return !data.some(function (obj2) {
-            return obj.selectionId == obj2.SelectionId;
-          });
-        }).map((item) => item.selectionId);
-        promise.push(MarketRunner.updateMany({ selectionId: { $in: oldMarketRunnersRemove }, marketId: new mongoose.Types.ObjectId(findMarket._id) }, { status: RUNNER_STATUS.IN_ACTIVE }));
-
-        for (var j = 0; j < newMarketRunnersAdd.length; j++) {
-          const marketRunnerObj = {
-            marketId: findMarket._id,
-            selectionId: newMarketRunnersAdd[j].SelectionId,
-            runnerName: newMarketRunnersAdd[j].RunnerName,
-          };
-
-          promise.push(MarketRunner.create(marketRunnerObj));
-        }
-        await Promise.all(promise);
       }
-      for (var k = 0; k < data.length; k++) {
-        let filterdata = findMarketRunners.filter(function (item) {
-          return item.selectionId == data[k].SelectionId;
-        });
-        if (filterdata.length > 0) {
-          data[k].runnerId = filterdata[0]._id;
-          data[k].marketId = filterdata[0].marketId;
-          if (!data[k].min) {
-            data[k].min = String(findMarket.minStake);
-            data[k].max = String(findMarket.maxStake);
-          }
+      return acc;
+    }, []);
+
+    const oldRunnerIdsToRemove = marketRunners.reduce((acc, obj) => {
+      if (!data.some((obj2) => obj.selectionId === Number(obj2.SelectionId))) {
+        acc.push(obj.selectionId);
+      }
+      return acc;
+    }, []);
+
+    const [newRunners] = await Promise.all([
+      ...newRunnersToAdd.map((obj) => MarketRunner.create(obj)),
+      MarketRunner.updateMany(
+        { selectionId: { $in: oldRunnerIdsToRemove }, marketId: new mongoose.Types.ObjectId(market._id) },
+        { status: RUNNER_STATUS.IN_ACTIVE }
+      ),
+    ]);
+
+    const sortedData = new ArrayProto(data).sortByKeyAsc({ key: "RunnerName" });
+    const allRunners = marketRunners.concat(newRunners);
+
+    for (const dataItem of sortedData) {
+      const runner = allRunners.find((item) => item.selectionId === Number(dataItem.SelectionId));
+      if (runner) {
+        dataItem.runnerId = runner._id;
+        dataItem.marketId = runner.marketId;
+        if (!dataItem.min) {
+          dataItem.min = String(market.minStake);
+          dataItem.max = String(market.maxStake);
         }
       }
     }
-    return data;
+
+    return sortedData;
   } catch (e) {
     return e;
   }
@@ -291,8 +295,8 @@ const getFencyPrice = async (eventId) => {
 
 const getFencyPriceByRunner = async (runnerId) => {
   try {
-    let findMarketRuner = await MarketRunner.findOne({ _id: runnerId })
-    let findMarket = await Market.findOne({ _id: findMarketRuner.marketId })
+    let findMarketRuner = await MarketRunner.findOne({ _id: runnerId });
+    let findMarket = await Market.findOne({ _id: findMarketRuner.marketId });
     var marketUrl = `${appConfig.BASE_URL}?action=fancy&event_id=${Number(findMarket.apiEventId)}`;
     const { statusCode, data } = await commonService.fetchData(marketUrl);
     if (statusCode === 200) {
@@ -301,49 +305,39 @@ const getFencyPriceByRunner = async (runnerId) => {
       });
       return newMarketRunnersAdd;
     }
-
   } catch (e) {
     return e;
   }
 };
 
-const getBookmakerPrice = async (markeId) => {
+const getBookmakerPrice = async (marketId) => {
   try {
-    let allMarketId = markeId.toString().replace(/["']/g, "");
-    var marketUrl = `${appConfig.BASE_URL}?action=bookmakermatchodds&market_id=${allMarketId}`;
+    const allMarketId = marketId.toString().replace(/["']/g, "");
+    const marketUrl = `${appConfig.BASE_URL}?action=bookmakermatchodds&market_id=${allMarketId}`;
     const { statusCode, data } = await commonService.fetchData(marketUrl);
-    let allData = [];
-    if (statusCode === 200) {
-      for (const market of data) {
-        let findMarket = await Market.findOne({ marketId: market["marketId"] });
-        let min, max;
-        if (findMarket.minStake != 0 || findMarket.maxStake != 0) {
-          min = findMarket.minStake;
-          max = findMarket.maxStake;
-        }
-        else {
-          let findEvent = await Event.findOne({ _id: findMarket.eventId });
-          min = findEvent.minStake;
-          max = findEvent.maxStake;
-        }
-        if (market["runners"]) {
-          allData.push({
-            marketId: market["marketId"],
-            min,
-            max,
-            matchOdds: market["runners"].map(function (item) {
+
+    if (statusCode !== 200 || !data.length) {
+      return [];
+    }
+
+    const allData = await Promise.all(
+      data.map(async (dataItem) => {
+        const market = await Market.findOne({ marketId: dataItem.marketId });
+
+        const { minStake, maxStake } =
+          market.minStake !== 0 || market.maxStake !== 0 ? market : await Event.findOne({ _id: market.eventId });
+
+        const matchOdds = dataItem.runners
+          ? dataItem.runners.map((item) => {
               delete item.ex;
               return item;
-            }),
-          });
-        } else {
-          allData.push({
-            marketId: market["marketId"],
-            matchOdds: {},
-          });
-        }
-      }
-    }
+            })
+          : [];
+
+        return { marketId: dataItem.marketId, min: minStake, max: maxStake, matchOdds };
+      })
+    );
+
     return allData;
   } catch (e) {
     return e;
@@ -358,5 +352,5 @@ export default {
   syncMarketByEventId,
   getFencyPrice,
   getBookmakerPrice,
-  getFencyPriceByRunner
+  getFencyPriceByRunner,
 };
