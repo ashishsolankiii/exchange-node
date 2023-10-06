@@ -1,3 +1,4 @@
+import moment from "moment";
 import mongoose from "mongoose";
 import ErrorResponse from "../../lib/error-handling/error-response.js";
 import { generatePaginationQueries, generateSearchFilters } from "../../lib/helpers/pipeline.js";
@@ -205,6 +206,11 @@ const fetchAllUserBetsAndPls = async ({ eventId, userId }) => {
 const addBet = async ({ user: loggedInUser, ...reqBody }) => {
   try {
     const findMarket = await Market.findById(reqBody.marketId);
+
+    if (!findMarket.startDate || moment(findMarket.startDate).isAfter(moment())) {
+      throw new Error("Failed to place bet.");
+    }
+
     let winLossCalculation;
     if (findMarket) {
       const findBetType = await BetCategory.findById(findMarket.typeId);
