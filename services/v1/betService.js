@@ -727,8 +727,7 @@ async function updateUserPl(userId, profitLoss) {
     } else {
       return;
     }
-  }
-  else {
+  } else {
     return;
   }
 }
@@ -894,7 +893,11 @@ const completeBet = async ({ ...reqBody }) => {
         },
         { _id: 1 }
       ).sort({ startDate: 1 });
-      const findBetNotComplete = await Market.count({ eventId: findMarket.eventId, winnerRunnerId: undefined, _id: { $ne: fencyMarket._id } });
+      const findBetNotComplete = await Market.count({
+        eventId: findMarket.eventId,
+        winnerRunnerId: undefined,
+        _id: { $ne: fencyMarket._id },
+      });
       const findBetNotCompleteFancy = await MarketRunner.count({ marketId: fencyMarket._id, winScore: null });
       if (findBetNotComplete == 0 && findBetNotCompleteFancy == 0) {
         await Event.updateOne({ _id: findMarket.eventId }, { completed: true });
@@ -957,13 +960,15 @@ const completeBetFency = async ({ ...reqBody }) => {
         },
         { _id: 1 }
       );
-      let fencyMarket = await Market.findOne(
-        {
-          _id: findMarketRunner.marketId,
-        }
-      ).sort({ startDate: 1 });
-      const findBetNotComplete = await Market.count({ eventId: fencyMarket.eventId, winnerRunnerId: undefined, _id: { $ne: fencyMarket._id } })
-      const findBetNotCompleteFancy = await MarketRunner.count({ marketId: fencyMarket._id, winScore: null })
+      let fencyMarket = await Market.findOne({
+        _id: findMarketRunner.marketId,
+      }).sort({ startDate: 1 });
+      const findBetNotComplete = await Market.count({
+        eventId: fencyMarket.eventId,
+        winnerRunnerId: undefined,
+        _id: { $ne: fencyMarket._id },
+      });
+      const findBetNotCompleteFancy = await MarketRunner.count({ marketId: fencyMarket._id, winScore: null });
 
       if (findBetNotComplete == 0 && findBetNotCompleteFancy == 0) {
         await Event.updateOne({ _id: fencyMarket.eventId }, { completed: true });
@@ -1263,14 +1268,21 @@ const getCompleteBetEventWise = async ({ ...reqBody }) => {
         $unset: ["market"],
       },
       {
-        $group:
-        {
+        $group: {
           _id: "$marketId",
-          pl: { $sum: { $cond: { if: { $eq: ["$betResultStatus", BET_RESULT_STATUS.WON] }, then: "$potentialWin", else: "$potentialLoss" } } },
-          marketName: { "$first": "$marketName" },
-        }
+          pl: {
+            $sum: {
+              $cond: {
+                if: { $eq: ["$betResultStatus", BET_RESULT_STATUS.WON] },
+                then: "$potentialWin",
+                else: "$potentialLoss",
+              },
+            },
+          },
+          marketName: { $first: "$marketName" },
+        },
       },
-      { $sort: { marketName: -1 } }
+      { $sort: { marketName: -1 } },
     ]);
 
     return findEventBets;
@@ -1290,6 +1302,6 @@ export default {
   settlement,
   getChildUserData,
   getCurrentBetsUserwise,
-  fetchRunnerPlsFancy,,
-  getCompleteBetEventWise
+  fetchRunnerPlsFancy,
+  getCompleteBetEventWise,
 };
