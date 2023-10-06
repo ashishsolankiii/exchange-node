@@ -103,37 +103,29 @@ const getMatchOdds = async (markeId) => {
     let allMarketId = markeId.toString().replace(/["']/g, "");
     var marketUrl = `${appConfig.BASE_URL}?action=matchodds&market_id=${allMarketId}`;
     const { statusCode, data } = await commonService.fetchData(marketUrl);
-    let allData = [];
-    if (statusCode === 200) {
-      for (const market of data) {
-        let findMarket = await Market.findOne({ marketId: market["marketId"] });
-        let min, max;
-        if (findMarket.minStake != 0 || findMarket.maxStake != 0) {
-          min = findMarket.minStake;
-          max = findMarket.maxStake;
-        } else {
-          let findEvent = await Event.findOne({ _id: findMarket.eventId });
-          min = findEvent.minStake;
-          max = findEvent.maxStake;
-        }
-        if (market["runners"]) {
-          allData.push({
-            marketId: market["marketId"],
-            min,
-            max,
-            matchOdds: market["runners"].map(function (item) {
+
+    if (statusCode !== 200 || !data.length) {
+      return [];
+    }
+
+    const allData = await Promise.all(
+      data.map(async (dataItem) => {
+        const market = await Market.findOne({ marketId: dataItem.marketId });
+
+        const { minStake, maxStake } =
+          market.minStake !== 0 || market.maxStake !== 0 ? market : await Event.findOne({ _id: market.eventId });
+
+        const matchOdds = dataItem.runners
+          ? dataItem.runners.map((item) => {
               delete item.ex;
               return item;
-            }),
-          });
-        } else {
-          allData.push({
-            marketId: market["marketId"],
-            matchOdds: {},
-          });
-        }
-      }
-    }
+            })
+          : [];
+
+        return { marketId: dataItem.marketId, min: minStake, max: maxStake, matchOdds };
+      })
+    );
+
     return allData;
   } catch (e) {
     return e;
@@ -319,42 +311,34 @@ const getFencyPriceByRunner = async (runnerId) => {
   }
 };
 
-const getBookmakerPrice = async (markeId) => {
+const getBookmakerPrice = async (marketId) => {
   try {
-    let allMarketId = markeId.toString().replace(/["']/g, "");
-    var marketUrl = `${appConfig.BASE_URL}?action=bookmakermatchodds&market_id=${allMarketId}`;
+    const allMarketId = marketId.toString().replace(/["']/g, "");
+    const marketUrl = `${appConfig.BASE_URL}?action=bookmakermatchodds&market_id=${allMarketId}`;
     const { statusCode, data } = await commonService.fetchData(marketUrl);
-    let allData = [];
-    if (statusCode === 200) {
-      for (const market of data) {
-        let findMarket = await Market.findOne({ marketId: market["marketId"] });
-        let min, max;
-        if (findMarket.minStake != 0 || findMarket.maxStake != 0) {
-          min = findMarket.minStake;
-          max = findMarket.maxStake;
-        } else {
-          let findEvent = await Event.findOne({ _id: findMarket.eventId });
-          min = findEvent.minStake;
-          max = findEvent.maxStake;
-        }
-        if (market["runners"]) {
-          allData.push({
-            marketId: market["marketId"],
-            min,
-            max,
-            matchOdds: market["runners"].map(function (item) {
+
+    if (statusCode !== 200 || !data.length) {
+      return [];
+    }
+
+    const allData = await Promise.all(
+      data.map(async (dataItem) => {
+        const market = await Market.findOne({ marketId: dataItem.marketId });
+
+        const { minStake, maxStake } =
+          market.minStake !== 0 || market.maxStake !== 0 ? market : await Event.findOne({ _id: market.eventId });
+
+        const matchOdds = dataItem.runners
+          ? dataItem.runners.map((item) => {
               delete item.ex;
               return item;
-            }),
-          });
-        } else {
-          allData.push({
-            marketId: market["marketId"],
-            matchOdds: {},
-          });
-        }
-      }
-    }
+            })
+          : [];
+
+        return { marketId: dataItem.marketId, min: minStake, max: maxStake, matchOdds };
+      })
+    );
+
     return allData;
   } catch (e) {
     return e;
