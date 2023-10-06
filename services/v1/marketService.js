@@ -247,7 +247,7 @@ const getFencyPrice = async (eventId) => {
     const oldRunnerIds = new Set(marketRunners.map((runner) => runner.selectionId));
 
     const newRunnersToAdd = data.reduce((acc, obj) => {
-      if (!oldRunnerIds.has(obj.SelectionId)) {
+      if (!oldRunnerIds.has(Number(obj.SelectionId))) {
         acc.push({
           marketId: market._id,
           selectionId: obj.SelectionId,
@@ -258,32 +258,31 @@ const getFencyPrice = async (eventId) => {
     }, []);
 
     const oldRunnerIdsToRemove = marketRunners.reduce((acc, obj) => {
-      if (!data.some((obj2) => obj.selectionId === obj2.SelectionId)) {
+      if (!data.some((obj2) => obj.selectionId === Number(obj2.SelectionId))) {
         acc.push(obj.selectionId);
       }
       return acc;
     }, []);
 
-    await Promise.all([
+    const [newRunners] = await Promise.all([
+      ...newRunnersToAdd.map((obj) => MarketRunner.create(obj)),
       MarketRunner.updateMany(
         { selectionId: { $in: oldRunnerIdsToRemove }, marketId: new mongoose.Types.ObjectId(market._id) },
         { status: RUNNER_STATUS.IN_ACTIVE }
       ),
-      ...newRunnersToAdd.map((obj) => MarketRunner.create(obj)),
     ]);
 
     const sortedData = new ArrayProto(data).sortByKeyAsc({ key: "RunnerName" });
+    const allRunners = marketRunners.concat(newRunners);
 
-    if (newRunnersToAdd.length) {
-      for (const dataItem of sortedData) {
-        const filterData = marketRunners.find((item) => item.selectionId === dataItem.SelectionId);
-        if (filterData) {
-          dataItem.runnerId = filterData._id;
-          dataItem.marketId = filterData.marketId;
-          if (!dataItem.min) {
-            dataItem.min = String(market.minStake);
-            dataItem.max = String(market.maxStake);
-          }
+    for (const dataItem of sortedData) {
+      const runner = allRunners.find((item) => item.selectionId === Number(dataItem.SelectionId));
+      if (runner) {
+        dataItem.runnerId = runner._id;
+        dataItem.marketId = runner.marketId;
+        if (!dataItem.min) {
+          dataItem.min = String(market.minStake);
+          dataItem.max = String(market.maxStake);
         }
       }
     }
