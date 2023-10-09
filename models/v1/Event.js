@@ -16,7 +16,8 @@ const eventSchema = new mongoose.Schema({
   competitionId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "competition",
-    required: [true, "Competition is Required!"], index: true
+    required: [true, "Competition is Required!"],
+    index: true,
   },
 
   betDelay: { type: Number, default: 1 },
@@ -86,6 +87,9 @@ const eventSchema = new mongoose.Schema({
 
   // Check event is live
   isLive: { type: Boolean, default: false, index: true },
+
+  // Video steam id
+  videoStreamId: { type: String, default: null },
 });
 
 eventSchema.plugin(timestampPlugin);
