@@ -251,6 +251,18 @@ async function userActivityRequest(req) {
   return req;
 }
 
+async function changePasswordRequest(req) {
+  const validationSchema = Yup.object().shape({
+    loginUserId: Yup.string().required().test("userId", "Given _id is not valid!", isValidObjectId),
+    oldPassword: Yup.string().required(),
+    newPassword: Yup.string().required()
+  });
+
+  await validationSchema.validate(req.body);
+
+  return req;
+}
+
 export default {
   userListingRequest,
   createUserRequest,
@@ -258,4 +270,5 @@ export default {
   fetchUserBalanceRequest,
   cloneUserRequest,
   userActivityRequest,
+  changePasswordRequest
 };
