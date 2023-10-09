@@ -538,10 +538,26 @@ const getActiveEvent = async (req, res) => {
 
     const findEvent = await Event.aggregate([
       {
+        $lookup: {
+          from: "competitions",
+          localField: "competitionId",
+          foreignField: "_id",
+          as: "competition",
+        },
+      },
+      {
+        $unwind: {
+          path: "$competition",
+          preserveNullAndEmptyArrays: true,
+        },
+      },
+      {
         $project: {
           "name": 1,
           "completed": 1,
           "isActive": 1,
+          "competition.isActive": 1,
+          "competition.completed": 1,
           "matchDateTime": {
             $cond: {
               if: { $eq: ["$matchTime", null] }, then: {
@@ -584,7 +600,7 @@ const getActiveEvent = async (req, res) => {
             $gte: new Date(startOfDay),
             $lt: new Date(endOfDay),
           },
-          completed: false, isActive: false
+          completed: false, isActive: false, 'competition.isActive': true, 'competition.completed': false
         },
       }
     ]);
