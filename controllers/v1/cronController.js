@@ -38,7 +38,7 @@ const syncDetail = async (req, res) => {
   console.log("All Markets Fancy has been synced");
 
   // Respond with a 200 status code and success message
-  res.status(200).json({ message: "All data has been synced!" });
+  // res.status(200).json({ message: "All data has been synced!" });
   // } catch (e) {
   //   // Handle any errors that occurred during the sync process
   //   res.status(500).json({ error: "An error occurred" });
@@ -349,7 +349,7 @@ const getLiveEvent = async (req, res) => {
     const eventIds = findEvent.map((item) => item._id);
     await Event.updateMany({ _id: { $in: eventIds } }, { isLive: true });
     // console.log("Live event updated");
-    res.status(200).json({ message: "Live event updated." });
+    // res.status(200).json({ message: "Live event updated." });
 
   } catch (e) {
     throw new Error(e);
@@ -607,7 +607,7 @@ const getActiveEvent = async (req, res) => {
     const eventIds = findEvent.map((item) => item._id);
     await Event.updateMany({ _id: { $in: eventIds } }, { isActive: true });
     console.log("Active event updated");
-    res.status(200).json({ message: "Active event updated." });
+    // res.status(200).json({ message: "Active event updated." });
 
   } catch (e) {
     throw new Error(e);
@@ -622,7 +622,7 @@ const completeCompetition = async (req, res) => {
     await Competition.updateMany({ _id: { $in: competitionIds } }, { completed: true });
 
     console.log("Update competition completed");
-    res.status(200).json({ message: "Update competition completed." });
+    // res.status(200).json({ message: "Update competition completed." });
   }
   catch (e) {
     throw new Error(e);
