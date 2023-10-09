@@ -90,6 +90,7 @@ async function createEventRequest(req) {
       .test("matchTime", "Invalid matchTime!", (v) => isValidTime(v, "HH:mm")),
     isFavourite: Yup.boolean().nullable(true),
     isLive: Yup.boolean().nullable(true),
+    videoStreamId: Yup.string().nullable(true),
   });
 
   await validationSchema.validate(req.body);
@@ -134,6 +135,7 @@ async function updateEventRequest(req) {
     isActive: Yup.boolean(),
     isFavourite: Yup.boolean().nullable(true),
     isLive: Yup.boolean().nullable(true),
+    videoStreamId: Yup.string().nullable(true),
   });
 
   await validationSchema.validate(req.body);

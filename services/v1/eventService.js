@@ -199,6 +199,7 @@ const addEvent = async ({ ...reqBody }) => {
     isFavourite,
     matchTime,
     isLive,
+    videoStreamId,
   } = reqBody;
 
   try {
@@ -220,6 +221,7 @@ const addEvent = async ({ ...reqBody }) => {
       isFavourite,
       matchTime,
       isLive,
+      videoStreamId,
     };
 
     const newEvent = await Event.create(newEventObj);
@@ -259,6 +261,7 @@ const modifyEvent = async ({ ...reqBody }) => {
     event.betDeleted = reqBody.betDeleted;
     event.isFavourite = reqBody.isFavourite;
     event.isLive = reqBody.isLive;
+    event.videoStreamId = reqBody.videoStreamId;
 
     if (event.completed == false && (reqBody.completed == true || reqBody.completed == "true")) {
       event.isLive = false;
@@ -761,12 +764,9 @@ const completedEventList = async ({ startDate, endDate }) => {
   try {
     let startOfDay, endOfDay;
     if (startDate && endDate) {
-      startOfDay = new Date(
-        new Date(startDate).setUTCHours(23, 59, 59, 999)
-      ).toISOString();
+      startOfDay = new Date(new Date(startDate).setUTCHours(23, 59, 59, 999)).toISOString();
       endOfDay = new Date(new Date(endDate).setUTCHours(0, 0, 0, 0)).toISOString();
-    }
-    else {
+    } else {
       startOfDay = new Date(
         new Date(new Date().setDate(new Date().getDate() - 1)).setUTCHours(23, 59, 59, 999)
       ).toISOString();
@@ -776,55 +776,62 @@ const completedEventList = async ({ startDate, endDate }) => {
     const findEvent = await Event.aggregate([
       {
         $project: {
-          "name": 1,
-          "completed": 1,
-          "isActive": 1,
-          "matchDateTime": {
+          name: 1,
+          completed: 1,
+          isActive: 1,
+          matchDateTime: {
             $cond: {
-              if: { $eq: ["$matchTime", null] }, then: {
+              if: { $eq: ["$matchTime", null] },
+              then: {
                 $dateFromString: {
                   dateString: {
-                    $concat: [{
-                      $dateToString: {
-                        format: "%Y-%m-%d %H:%M",
-                        date: {
-                          $toDate: "$matchDate"
-                        }
-                      }
-                    }]
+                    $concat: [
+                      {
+                        $dateToString: {
+                          format: "%Y-%m-%d %H:%M",
+                          date: {
+                            $toDate: "$matchDate",
+                          },
+                        },
+                      },
+                    ],
                   },
-                  format: "%Y-%m-%d %H:%M"
-                }
-              }, else: {
+                  format: "%Y-%m-%d %H:%M",
+                },
+              },
+              else: {
                 $dateFromString: {
                   dateString: {
-                    $concat: [{
-                      $dateToString: {
-                        format: "%Y-%m-%d",
-                        date: {
-                          $toDate: "$matchDate"
-                        }
-                      }
-                    }, " ", "$matchTime"]
+                    $concat: [
+                      {
+                        $dateToString: {
+                          format: "%Y-%m-%d",
+                          date: {
+                            $toDate: "$matchDate",
+                          },
+                        },
+                      },
+                      " ",
+                      "$matchTime",
+                    ],
                   },
-                  format: "%Y-%m-%d %H:%M"
-                }
-              }
-
-            }
-          }
-        }
+                  format: "%Y-%m-%d %H:%M",
+                },
+              },
+            },
+          },
+        },
       },
       {
         $match: {
-          "matchDateTime": {
+          matchDateTime: {
             $gte: new Date(startOfDay),
             $lte: new Date(endOfDay),
           },
-          completed: true
+          completed: true,
         },
       },
-      { $sort: { matchDateTime: -1 } }
+      { $sort: { matchDateTime: -1 } },
     ]);
     return findEvent;
   } catch (e) {
@@ -844,5 +851,5 @@ export default {
   getEventMatchData,
   getEventMatchDataFront,
   getMatchStake,
-  completedEventList
+  completedEventList,
 };
