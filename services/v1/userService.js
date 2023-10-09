@@ -1,7 +1,7 @@
 import mongoose, { isValidObjectId } from "mongoose";
 import ErrorResponse from "../../lib/error-handling/error-response.js";
 import { generatePaginationQueries, generateSearchFilters } from "../../lib/helpers/pipeline.js";
-import { encryptPassword, getTrimmedUser, transferCloneParentFields } from "../../lib/io-guards/auth.js";
+import { encryptPassword, getTrimmedUser, transferCloneParentFields, validatePassword } from "../../lib/io-guards/auth.js";
 import { generateTransactionCode, validateTransactionCode } from "../../lib/io-guards/transaction-code.js";
 import AppModule from "../../models/v1/AppModule.js";
 import User, { SETTLEMENT_DURATION, USER_ACCESSIBLE_ROLES, USER_ROLE } from "../../models/v1/User.js";
@@ -610,6 +610,30 @@ const fetchHydratedUser = async (_id) => {
   }
 };
 
+const changePassword = async ({ user, ...reqBody }) => {
+  try {
+    // Check if user id exists
+    const existingUser = await User.findOne({ _id: reqBody.loginUserId });
+    if (!existingUser) {
+      throw new Error("The provided credentials are incorrect. Please try again.");
+    }
+
+    // Check if password is valid
+    const isValidPassword = await validatePassword(reqBody.oldPassword, existingUser.password);
+    if (!isValidPassword) {
+      throw new Error("Old password is incorrect!");
+    }
+
+    existingUser.password = await encryptPassword(reqBody.newPassword);
+    await existingUser.save();
+    const user = getTrimmedUser(existingUser.toJSON(), ["transactionCode"]);
+
+    return user;
+  } catch (e) {
+    throw new ErrorResponse(e.message).status(200);
+  }
+};
+
 export default {
   fetchAllUsers,
   fetchUserId,
@@ -620,4 +644,5 @@ export default {
   fetchBalance,
   cloneUser,
   fetchHydratedUser,
+  changePassword
 };

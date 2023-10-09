@@ -24,4 +24,6 @@ route(router, "post", "/getAppModulesList", userController.getAppModulesList);
 route(router, "post", "/getUserActivity", userController.getUserActivity);
 route(router, "post", "/getUserActivityTypes", userController.getUserActivityTypes);
 
+route(router, "post", "/changePassword", userController.changePassword);
+
 export default router;

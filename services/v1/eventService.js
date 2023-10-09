@@ -592,7 +592,7 @@ const getEventMatchDataFront = async ({ eventId, user }) => {
     }
 
     const sortedMarkets = [];
-    const order = ["Match Odds", "Bookmaker", "Normal"];
+    const order = ["Match Odds", "Bookmaker", "Normal", "Over/Under 2.5 Goals", "Over/Under 1.5 Goals"];
     for (var i = 0; i < event[0].market.length; i++) {
       if (event[0].market[i].minStake === 0) {
         event[0].market[i].minStake = event[0].minStake;

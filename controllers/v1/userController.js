@@ -169,6 +169,14 @@ const getUserActivityTypes = async (req, res) => {
   return res.status(200).json({ success: true, data: userActivityTypes });
 };
 
+const changePassword = async (req, res) => {
+  const { user, body } = await userRequest.changePasswordRequest(req);
+
+  const users = await userService.changePassword({ user, ...body });
+
+  return res.status(200).json({ success: true, data: users });
+};
+
 export default {
   getAllUser,
   getUserById,
@@ -183,4 +191,5 @@ export default {
   getHydratedUser,
   getUserActivity,
   getUserActivityTypes,
+  changePassword
 };
