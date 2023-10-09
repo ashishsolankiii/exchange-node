@@ -52,9 +52,10 @@ initSocket(server);
 // Cron Job for sync market
 cron.schedule("0 2 * * *", async function () {
   // For market sync data
-  await cronController.syncDetail();
-  await cronController.getActiveEvent();
-  await cronController.completeCompetition();
+
+  await Promise.all([cronController.syncDetail(),
+  cronController.getActiveEvent(),
+  cronController.completeCompetition()]);
 });
 
 // Cron Job for live event
