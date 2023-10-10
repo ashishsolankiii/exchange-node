@@ -166,6 +166,7 @@ async function syncEvents(competitionIds) {
           matchDate: event.event.openDate,
           matchTime: event.event.openDate.slice(11, 16),
           marketCount: event.marketCount,
+          countryCode: event.event.countryCode,
         };
 
         eventObjArray.push(eventObj);
@@ -206,12 +207,37 @@ async function syncMarket(eventApiIds) {
   }, {});
 
   //Get all events information
-  var allEvents = await Event.find({ apiEventId: { $in: eventApiIds } });
+  var allEvents = await Event.aggregate([
+    {
+      $lookup: {
+        from: "sports",
+        localField: "sportId",
+        foreignField: "_id",
+        as: "sport",
+        pipeline: [
+          {
+            $project: {
+              name: 1
+            },
+          },
+        ],
+      },
+    },
+    {
+      $unwind: {
+        path: "$sport",
+        preserveNullAndEmptyArrays: true,
+      },
+    },
+    {
+      $match: { apiEventId: { $in: eventApiIds } }
+    }
+  ]);
+
 
   // Iterate through each competition to fetch events for it
   for (const eventApiId of eventApiIds) {
     var eventDetail = allEvents.find((event) => event.apiEventId == eventApiId);
-
     // Construct the URL to fetch events data for the current competition
     var marketUrl = `${appConfig.BASE_URL}?action=market&event_id=${eventApiId}`;
 
@@ -223,7 +249,7 @@ async function syncMarket(eventApiIds) {
       // Iterate through each event data for the current competition
       for (const market of data) {
         var type_id = "";
-        if (market.marketName === "Match Odds") {
+        if (market.marketName === "Match Odds" || eventDetail.sport.name == 'Horse Racing' || eventDetail.sport.name == 'Greyhound Racing') {
           type_id = betCategoryIdMap[DEFAULT_CATEGORIES[0]];
         } else if (market.marketName === "Match Odds-BOOK MAKER-M") {
           type_id = betCategoryIdMap[DEFAULT_CATEGORIES[1]];

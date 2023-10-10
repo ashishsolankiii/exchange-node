@@ -90,6 +90,9 @@ const eventSchema = new mongoose.Schema({
 
   // Video steam id
   videoStreamId: { type: String, default: null },
+
+  // Country code
+  countryCode: { type: String, default: null },
 });
 
 eventSchema.plugin(timestampPlugin);
