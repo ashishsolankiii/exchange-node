@@ -169,7 +169,7 @@ const sportWiseMatchList = async (sportId) => {
               $match: { typeId: matchOddCategory._id },
             },
             {
-              $project: { marketId: 1, competitionId: 1 },
+              $project: { marketId: 1, competitionId: 1, startDate: 1 },
             },
           ],
         },
@@ -178,6 +178,7 @@ const sportWiseMatchList = async (sportId) => {
         $addFields: {
           marketId: { $first: "$market.marketId" },
           competitionId: { $first: "$market.competitionId" },
+          time: { $dateToString: { format: "%H:%M", date: { $first: "$market.startDate" } } },
         },
       },
       {
@@ -196,7 +197,12 @@ const sportWiseMatchList = async (sportId) => {
           matchDate: 1,
           isLive: 1,
           marketId: 1,
+          market: 1,
+          time: 1
         },
+      },
+      {
+        $unset: ["market"],
       },
     ]);
 
