@@ -1,4 +1,4 @@
-import BetCategory, { DEFAULT_CATEGORIES } from "../../models/v1/BetCategory.js";
+import BetCategory, { BET_CATEGORIES, DEFAULT_CATEGORIES } from "../../models/v1/BetCategory.js";
 import Competition from "../../models/v1/Competition.js";
 import Event from "../../models/v1/Event.js";
 import MarketRunner from "../../models/v1/MarketRunner.js";
@@ -497,12 +497,25 @@ async function syncMarketFancy(eventApiIds) {
     // Check if the API request was successful (status code 200)
     if (statusCode === 200 && Array.isArray(data)) {
       var type_id = betCategoryIdMap[DEFAULT_CATEGORIES[2]];
+      var type_id_fancy1 = betCategoryIdMap[BET_CATEGORIES.FANCY1];
 
       //Add or Upsert market in DB
       const marketObj = {
         name: "Normal",
         typeId: type_id,
-        // marketId: eventDetail.marketId,
+        apiEventId: eventDetail.apiEventId,
+        eventId: eventDetail._id,
+        apiCompetitionId: eventDetail.apiCompetitionId,
+        competitionId: eventDetail.competitionId,
+        apiSportId: eventDetail.apiSportId,
+        sportId: eventDetail.sportId,
+        startDate: eventDetail.matchDate,
+      };
+
+      //Add or Upsert market in DB
+      const fency1MarketObj = {
+        name: "Fancy1",
+        typeId: type_id_fancy1,
         apiEventId: eventDetail.apiEventId,
         eventId: eventDetail._id,
         apiCompetitionId: eventDetail.apiCompetitionId,
@@ -520,19 +533,34 @@ async function syncMarketFancy(eventApiIds) {
         apiEventId: eventDetail.apiEventId,
       };
 
+      var marketQueryFancy1 = {
+        typeId: type_id_fancy1,
+        apiSportId: eventDetail.apiSportId,
+        apiCompetitionId: eventDetail.apiCompetitionId,
+        apiEventId: eventDetail.apiEventId,
+      };
+
       var marketData = await Market.findOneAndUpdate(marketQuery, { $set: marketObj }, { upsert: true, new: true });
+      var marketDataFancy1 = await Market.findOneAndUpdate(marketQueryFancy1, { $set: fency1MarketObj }, { upsert: true, new: true });
       // Iterate through each event data for the current competition
       for (const market of data) {
         //Save Market Runners data in DB
+        let marketId = "";
+        if (market.gtype) {
+          if (market.gtype == "fancy1") { marketId = marketDataFancy1._id }
+          else {
+            marketId = marketData._id
+          }
+        }
         var marketRunnerObj = {
-          marketId: marketData._id,
+          marketId: marketId,
           selectionId: market.SelectionId,
           runnerName: market.RunnerName,
         };
 
         //Market Runner Create Or Update
         var marketRunnerQuery = {
-          marketId: marketData._id,
+          marketId: marketId,
           selectionId: market.selectionId,
         };
 
