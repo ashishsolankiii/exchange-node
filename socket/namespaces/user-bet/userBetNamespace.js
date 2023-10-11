@@ -3,6 +3,12 @@ import { validateAuth, validateUser } from "../../middlewares/userMiddleware.js"
 
 async function handleConnection(socket) {
   try {
+    /**
+     * NOTE: This namespace is used to emit below events
+     *
+     * 1. event:bet:${userId}
+     */
+
     socket.on("event:bet", async ({ eventId }, callback) => {
       if (!eventId) {
         throw new Error("eventId is required.");

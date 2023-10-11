@@ -47,6 +47,9 @@ const betComplete = async (req, res) => {
   };
   io.eventNotification.to("event:notification").emit("event:complete", notification);
 
+  const userBetsAndPls = await betService.fetchAllUserBetsAndPls({ eventId: event._id, userId: req.user._id });
+  io.userBet.emit(`event:bet:${req.user._id}`, userBetsAndPls);
+
   res.status(201).json({ success: true, data: { details: completeBet } });
 };
 
@@ -55,6 +58,10 @@ const betCompleteFancy = async (req, res) => {
   const { body } = await betRequest.betCompleteFancyRequest(req);
 
   const completeBet = await betService.completeBetFency({ ...body });
+
+  const { eventId: event } = await Market.findById(body.marketId).populate("eventId").select("eventId");
+  const userBetsAndPls = await betService.fetchAllUserBetsAndPls({ eventId: event._id, userId: req.user._id });
+  io.userBet.emit(`event:bet:${req.user._id}`, userBetsAndPls);
 
   res.status(201).json({ success: true, data: { details: completeBet } });
 };

@@ -15,6 +15,7 @@ import permissionRoutes from "./routes/permissionRoutes.js";
 import scriptRoutes from "./routes/scriptRoutes.js";
 import sportRoutes from "./routes/sportRoutes.js";
 import sportsBetCategoryRoutes from "./routes/sportsBetCategoryRoutes.js";
+import testRoutes from "./routes/testRoutes.js";
 import themeSettingRoutes from "./routes/themeSettingRoutes.js";
 import themeUserRoutes from "./routes/themeUserRoutes.js";
 import transactionActivityRoutes from "./routes/transactionActivityRoutes.js";
@@ -52,5 +53,6 @@ app.use("/script", scriptRoutes);
 app.use("/casino", casinoRoutes);
 app.use("/casinoGame", casinoGameRoutes);
 app.use("/market", marketRoutes);
+app.use("/test", testRoutes);
 
 export default app;
