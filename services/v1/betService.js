@@ -207,9 +207,9 @@ const addBet = async ({ user: loggedInUser, ...reqBody }) => {
   try {
     const findMarket = await Market.findById(reqBody.marketId);
 
-    if (!findMarket.startDate || moment(findMarket.startDate).isAfter(moment())) {
-      throw new Error("Failed to place bet.");
-    }
+    // if (!findMarket.startDate || moment(findMarket.startDate).isAfter(moment())) {
+    //   throw new Error("Failed to place bet.");
+    // }
 
     let winLossCalculation;
     if (findMarket) {
