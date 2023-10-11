@@ -221,6 +221,8 @@ const addBet = async ({ user: loggedInUser, ...reqBody }) => {
           winLossCalculation = await bookmakersBet(loggedInUser, reqBody);
         } else if (findBetType.name == BET_CATEGORIES.FANCY) {
           winLossCalculation = await fancyBet(loggedInUser, reqBody);
+        } else if (findBetType.name == BET_CATEGORIES.FANCY1) {
+          winLossCalculation = await fancyBet1(loggedInUser, reqBody);
         } else {
           throw new Error("Market Type not found.");
         }
@@ -505,6 +507,132 @@ async function fancyBet(loggedInUser, reqBody) {
 
   const potentialWin = reqBody.isBack ? reqBody.stake * (reqBody.odds / 100) : reqBody.stake;
   const potentialLoss = reqBody.isBack ? -reqBody.stake : -(reqBody.stake * (reqBody.odds / 100));
+
+  const bets = await Bet.aggregate([
+    {
+      $match: {
+        eventId: new mongoose.Types.ObjectId(reqBody.eventId),
+        marketId: new mongoose.Types.ObjectId(reqBody.marketId),
+        runnerId: new mongoose.Types.ObjectId(reqBody.runnerId),
+        userId: new mongoose.Types.ObjectId(user._id),
+        betOrderStatus: BET_ORDER_STATUS.PLACED,
+        betResultStatus: BET_RESULT_STATUS.RUNNING,
+      },
+    },
+    { $sort: { createdAt: 1 } },
+  ]);
+
+  let pl = 0;
+  let totalPreviousLoss = 0;
+
+  bets.forEach((bet) => {
+    if (bet.isBack) {
+      pl += bet.potentialWin;
+    } else {
+      pl += bet.potentialLoss;
+    }
+  });
+
+  let requiredExposure = 0;
+
+  if (pl < 0) {
+    totalPreviousLoss += pl;
+  }
+
+  if (reqBody.isBack) {
+    requiredExposure = pl + potentialWin;
+  } else {
+    requiredExposure = pl + potentialLoss;
+  }
+
+  const newExposure = user.exposure + totalPreviousLoss + Math.abs(requiredExposure);
+
+  if (user.balance < Math.abs(requiredExposure)) {
+    throw new Error("Insufficient balance.");
+  }
+
+  if (newExposure > user.exposureLimit) {
+    throw new Error("Exposure limit reached.");
+  }
+
+  const event = await Event.findById(reqBody.eventId, {
+    maxStake: 1,
+    minStake: 1,
+    isActive: 1,
+    isDeleted: 1,
+    betLock: 1,
+  });
+  if (!(event && event.isActive && !event?.isDeleted && !event.betLock)) {
+    throw new Error("Event closed.");
+  }
+
+  const market = await Market.findById(reqBody.marketId, { maxStake: 1, minStake: 1 });
+  if (!market) {
+    throw new Error("Market not found.");
+  }
+  if (Number(runner.max > 0) && Number(runner.min) > 0) {
+    if (Number(reqBody.stake) < Number(runner.min) || Number(reqBody.stake) > Number(runner.max)) {
+      throw new Error("Invalid stake.");
+    }
+  } else if (market.maxStake > 0 && market.minStake > 0) {
+    if (Number(reqBody.stake) < market.minStake || Number(reqBody.stake) > market.maxStake) {
+      throw new Error("Invalid stake.");
+    }
+  } else {
+    if (Number(reqBody.stake) < event.minStake || Number(reqBody.stake) > event.maxStake) {
+      throw new Error("Invalid stake.");
+    }
+  }
+  let potentialWinLoss = {
+    potentialWin,
+    potentialLoss,
+    newExposure,
+  };
+  return potentialWinLoss;
+}
+
+// Add bet fancy logic
+async function fancyBet1(loggedInUser, reqBody) {
+  // Market Validation
+  const data = await marketService.getFencyPriceByRunner(reqBody.runnerId);
+  if (!data) {
+    throw new Error("Market not found.");
+  }
+  const matchOdds = data;
+  const runner = matchOdds.find((runner) => Number(runner.SelectionId) === Number(reqBody.runnerSelectionId));
+  if (!runner) {
+    throw new Error("Runner not found.");
+  }
+
+  if (reqBody.isBack) {
+    if (
+      runner.BackPrice1 != Number(reqBody.odds) &&
+      runner.BackPrice2 != Number(reqBody.odds) &&
+      runner.BackPrice3 != Number(reqBody.odds)
+    ) {
+      throw new Error("Bet not confirmed, Odds changed!");
+    }
+  } else {
+    if (
+      runner.LayPrice1 != Number(reqBody.odds) &&
+      runner.LayPrice2 != Number(reqBody.odds) &&
+      runner.LayPrice3 != Number(reqBody.odds)
+    ) {
+      throw new Error("Bet not confirmed, Odds changed!");
+    }
+  }
+
+  // User Validation
+  const user = await User.findById(loggedInUser._id);
+  if (!user) {
+    throw new Error("User not found.");
+  }
+  if (!(user.role === USER_ROLE.USER && user.isActive && !user?.isDeleted && !user.isBetLock)) {
+    throw new Error("Invalid request.");
+  }
+
+  const potentialWin = reqBody.isBack ? reqBody.stake * reqBody.odds - reqBody.stake : reqBody.stake;
+  const potentialLoss = reqBody.isBack ? -reqBody.stake : -(reqBody.stake * reqBody.odds - reqBody.stake);
 
   const bets = await Bet.aggregate([
     {
