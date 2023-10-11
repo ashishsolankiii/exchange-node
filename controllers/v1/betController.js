@@ -1,5 +1,7 @@
+import Market from "../../models/v1/Market.js";
 import betRequest from "../../requests/v1/betRequest.js";
 import betService from "../../services/v1/betService.js";
+import { io } from "../../socket/index.js";
 
 // Create a new bet
 const createBet = async (req, res) => {
@@ -36,6 +38,14 @@ const betComplete = async (req, res) => {
   const { body } = await betRequest.betCompleteRequest(req);
 
   const completeBet = await betService.completeBet({ ...body });
+
+  const { eventId: event } = await Market.findById(body.marketId).populate("eventId").select("eventId");
+  const notification = {
+    _id: event._id,
+    name: event.name,
+    matchDateTime: event.matchDate,
+  };
+  io.eventNotification.to("event:notification").emit("event:complete", notification);
 
   res.status(201).json({ success: true, data: { details: completeBet } });
 };
@@ -100,7 +110,6 @@ const getCompleteBetEventWise = async (req, res) => {
   res.status(201).json({ success: true, data: { details: getCurrentBet } });
 };
 
-
 export default {
   createBet,
   getAllBet,
@@ -112,5 +121,5 @@ export default {
   getRunnerPls,
   getCurrentBetsUserwise,
   getRunnerPlsFancy,
-  getCompleteBetEventWise
+  getCompleteBetEventWise,
 };

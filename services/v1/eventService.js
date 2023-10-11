@@ -998,5 +998,5 @@ export default {
   getEventMatchDataFront,
   getMatchStake,
   completedEventList,
-  getRacingMatchData
+  getRacingMatchData,
 };
