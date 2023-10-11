@@ -117,9 +117,9 @@ const getMatchOdds = async (markeId) => {
 
         const matchOdds = dataItem.runners
           ? dataItem.runners.map((item) => {
-              delete item.ex;
-              return item;
-            })
+            delete item.ex;
+            return item;
+          })
           : [];
 
         return { marketId: dataItem.marketId, min: minStake, max: maxStake, matchOdds };
@@ -230,8 +230,10 @@ const syncMarketByEventId = async ({ eventId }) => {
 const getFencyPrice = async (eventId) => {
   try {
     const marketUrl = `${appConfig.BASE_URL}?action=fancy&event_id=${eventId}`;
-    const [market, { statusCode, data = [] }] = await Promise.all([
+
+    const [market, marketFancy1, { statusCode, data = [] }] = await Promise.all([
       Market.findOne({ apiEventId: eventId, name: "Normal" }),
+      Market.findOne({ apiEventId: eventId, name: "Fancy1" }),
       commonService.fetchData(marketUrl),
     ]);
 
@@ -240,16 +242,26 @@ const getFencyPrice = async (eventId) => {
     }
 
     const marketRunners = await MarketRunner.find({
-      marketId: market._id,
+      marketId: {
+        $in: [market._id, marketFancy1._id]
+      },
       status: { $ne: RUNNER_STATUS.IN_ACTIVE },
     });
 
     const oldRunnerIds = new Set(marketRunners.map((runner) => runner.selectionId));
-
     const newRunnersToAdd = data.reduce((acc, obj) => {
       if (!oldRunnerIds.has(Number(obj.SelectionId))) {
+        let marketId = ""
+        if (obj.gtype) {
+          if (obj.gtype == "fancy1") {
+            marketId = marketFancy1._id
+          }
+          else {
+            marketId = market._id
+          }
+        }
         acc.push({
-          marketId: market._id,
+          marketId: marketId,
           selectionId: obj.SelectionId,
           runnerName: obj.RunnerName,
         });
@@ -270,19 +282,41 @@ const getFencyPrice = async (eventId) => {
         { selectionId: { $in: oldRunnerIdsToRemove }, marketId: new mongoose.Types.ObjectId(market._id) },
         { status: RUNNER_STATUS.IN_ACTIVE }
       ),
+      MarketRunner.updateMany(
+        { selectionId: { $in: oldRunnerIdsToRemove }, marketId: new mongoose.Types.ObjectId(marketFancy1._id) },
+        { status: RUNNER_STATUS.IN_ACTIVE }
+      ),
     ]);
 
     const sortedData = new ArrayProto(data).sortByKeyAsc({ key: "RunnerName" });
     const allRunners = marketRunners.concat(newRunners);
 
     for (const dataItem of sortedData) {
+      let typeName = "";
+      let typeId = "";
+      let min = "";
+      let max = "";
+      if (dataItem.gtype == "fancy1") {
+        typeName = marketFancy1.name;
+        typeId = marketFancy1._id;
+        min = marketFancy1.minStake;
+        max = marketFancy1.maxStake;
+      }
+      else {
+        typeName = market.name;
+        typeId = market._id;
+        min = market.minStake;
+        max = market.maxStake;
+      }
       const runner = allRunners.find((item) => item.selectionId === Number(dataItem.SelectionId));
       if (runner) {
         dataItem.runnerId = runner._id;
         dataItem.marketId = runner.marketId;
+        dataItem.typeName = typeName;
+        dataItem.typeId = typeId;
         if (!dataItem.min) {
-          dataItem.min = String(market.minStake);
-          dataItem.max = String(market.maxStake);
+          dataItem.min = String(min);
+          dataItem.max = String(max);
         }
       }
     }
@@ -329,9 +363,9 @@ const getBookmakerPrice = async (marketId) => {
 
         const matchOdds = dataItem.runners
           ? dataItem.runners.map((item) => {
-              delete item.ex;
-              return item;
-            })
+            delete item.ex;
+            return item;
+          })
           : [];
 
         return { marketId: dataItem.marketId, min: minStake, max: maxStake, matchOdds };
