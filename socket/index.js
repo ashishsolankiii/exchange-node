@@ -1,5 +1,6 @@
 import { Server } from "socket.io";
 import { appConfig } from "../config/app.js";
+import eventNotificationNamespace from "./namespaces/event-notification/eventNotificationNamespace.js";
 import marketNamespace from "./namespaces/market/marketNamespace.js";
 import userBetNamespace from "./namespaces/user-bet/userBetNamespace.js";
 import userNamespace from "./namespaces/user/userNamespace.js";
@@ -8,6 +9,7 @@ let io = {
   user: null,
   market: null,
   userBet: null,
+  eventNotification: null,
 };
 
 const initSocket = (server) => {
@@ -23,6 +25,9 @@ const initSocket = (server) => {
 
   io.userBet = io.of("/io/user-bet");
   userBetNamespace.connect(io.userBet);
+
+  io.eventNotification = io.of("/io/event-notification");
+  eventNotificationNamespace.connect(io.eventNotification);
 };
 
 export { initSocket, io };
