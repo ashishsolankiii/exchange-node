@@ -19,6 +19,15 @@ const updateMarket = async (req, res) => {
   res.status(200).json({ success: true, data: { details: updatedMarket } });
 };
 
+// Update a market runner
+const updateMarketRunner = async (req, res) => {
+  const { body } = await marketRequest.updateMarketRunnerRequest(req);
+
+  const updatedMarket = await marketService.modifyMarketRunner({ ...body });
+
+  res.status(200).json({ success: true, data: { details: updatedMarket } });
+};
+
 //  Pass eventId and sync Matchodds, Bookmaker and Fancy
 const syncMarketByEvent = async (req, res) => {
   const { eventId } = req.body;
@@ -34,5 +43,6 @@ const syncMarketByEvent = async (req, res) => {
 export default {
   createMarket,
   updateMarket,
-  syncMarketByEvent
+  syncMarketByEvent,
+  updateMarketRunner
 };

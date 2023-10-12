@@ -985,6 +985,138 @@ const completedEventList = async ({ startDate, endDate }) => {
   }
 };
 
+const getAllBetResultData = async ({ eventId, user }) => {
+  try {
+    const event = await Event.aggregate([
+      {
+        $match: {
+          _id: new mongoose.Types.ObjectId(eventId),
+        },
+      },
+      {
+        $lookup: {
+          from: "sports",
+          localField: "sportId",
+          foreignField: "_id",
+          as: "sport",
+          pipeline: [
+            {
+              $project: { name: 1 },
+            },
+          ],
+        },
+      },
+      {
+        $unwind: {
+          path: "$sport",
+          preserveNullAndEmptyArrays: true,
+        },
+      },
+      {
+        $lookup: {
+          from: "competitions",
+          localField: "competitionId",
+          foreignField: "_id",
+          as: "competition",
+          pipeline: [
+            {
+              $project: { name: 1 },
+            },
+          ],
+        },
+      },
+      {
+        $unwind: {
+          path: "$competition",
+          preserveNullAndEmptyArrays: true,
+        },
+      },
+      {
+        $lookup: {
+          from: "markets",
+          localField: "_id",
+          foreignField: "eventId",
+          as: "market",
+          pipeline: [
+            {
+              $lookup: {
+                from: "market_runners",
+                localField: "_id",
+                foreignField: "marketId",
+                as: "market_runner",
+                pipeline: [
+                  {
+                    $project: { runnerName: 1, priority: 1, selectionId: 1, minStake: 1, maxStake: 1, winScore: 1 },
+                  },
+                ],
+              },
+            },
+            {
+              $lookup: {
+                from: "bet_categories",
+                localField: "typeId",
+                foreignField: "_id",
+                as: "bet_category",
+                pipeline: [
+                  {
+                    $project: { name: 1 },
+                  },
+                ],
+              },
+            },
+            {
+              $unwind: {
+                path: "$bet_category",
+                preserveNullAndEmptyArrays: true,
+              },
+            },
+          ],
+        },
+      },
+      {
+        $unwind: {
+          path: "$bet_category",
+          preserveNullAndEmptyArrays: true,
+        },
+      },
+      {
+        $set: {
+          sportsName: "$sport.name",
+          competitionName: "$competition.name",
+        },
+      },
+      {
+        $unset: ["sport", "competition"],
+      },
+    ]);
+
+    let betLock = false;
+    const loggedInUser = await User.findOne({ _id: user._id }, { role: 1 });
+    if (loggedInUser.role === USER_ROLE.USER) {
+      if (event[0].betLock === true) {
+        betLock = true;
+      } else {
+        betLock = await getBetLock(user._id);
+      }
+    }
+
+    const sortedMarkets = [];
+    const order = ["Match Odds", "Bookmaker", "Normal", "Over/Under 2.5 Goals", "Over/Under 1.5 Goals", "Fancy1"];
+    for (var i = 0; i < event[0].market.length; i++) {
+      event[0].market[i].betLock = betLock;
+      const index = order.indexOf(event[0].market[i].name);
+      if (index !== -1) {
+        sortedMarkets[index] = event[0].market[i];
+      }
+    }
+    event[0].market = sortedMarkets.filter((market) => !!market);
+
+    return event[0];
+  } catch (e) {
+    throw new ErrorResponse(e.message).status(200);
+  }
+};
+
 export default {
   fetchAllEvent,
   fetchEventId,
@@ -999,4 +1131,5 @@ export default {
   getMatchStake,
   completedEventList,
   getRacingMatchData,
+  getAllBetResultData
 };
