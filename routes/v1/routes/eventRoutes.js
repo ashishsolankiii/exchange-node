@@ -17,5 +17,6 @@ route(router, "post", "/getEventMatchDataFront", eventController.getEventMatchDa
 route(router, "post", "/getRacingMatchData", eventController.getRacingMatchData);
 route(router, "post", "/getMatchWiseWinLoss", eventController.getMatchWiseWinLoss);
 route(router, "post", "/completedEventList", eventController.completedEventList);
+route(router, "post", "/getAllBetResultData", eventController.getAllBetResultData);
 
 export default router;

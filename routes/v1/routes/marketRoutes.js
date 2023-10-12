@@ -7,5 +7,6 @@ const router = express.Router();
 route(router, "post", "/createMarket", marketController.createMarket);
 route(router, "post", "/updateMarket", marketController.updateMarket);
 route(router, "post", "/syncMarketByEvent", marketController.syncMarketByEvent);
+route(router, "post", "/updateMarketRunner", marketController.updateMarketRunner);
 
 export default router;

@@ -25,7 +25,13 @@ const marketRunnerSchema = new mongoose.Schema({
 
   priority: { type: Number, default: 0 },
 
-  status: { type: String, default: null },
+  status: { type: String, default: RUNNER_STATUS.ACTIVE },
+
+  minStake: { type: Number, default: 0 },
+
+  maxStake: { type: Number, default: 0 },
+
+  betDelay: { type: Number, default: 1 },
 
   winScore: { type: Number, default: null },
 });
