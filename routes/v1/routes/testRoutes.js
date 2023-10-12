@@ -18,10 +18,9 @@ route(router, "post", "/revert", async (req, res) => {
 
     const market = await Market.findById(marketId).populate("typeId");
     const marketType = market.typeId.name;
-    // market.winnerRunnerId = null;
-    // await market.save();
-    // await User.findByIdAndUpdate("65268d34ad28b75dd7d4df1d", { $set: { balance: 5000, userPl: 0, exposure: 0 } });
-    // await Bet.deleteMany({ marketId: market._id });
+    if (!market.winnerRunnerId) {
+      throw new Error("Result not declared.");
+    }
 
     const userBets = await Bet.aggregate([
       {
@@ -42,7 +41,7 @@ route(router, "post", "/revert", async (req, res) => {
     for (const userId of userIds) {
       const bets = await Bet.find({ userId, marketId, betResultStatus: { $ne: BET_RESULT_STATUS.RUNNING } });
 
-      if (marketType === BET_CATEGORIES.MATCH_ODDS) {
+      if ([BET_CATEGORIES.MATCH_ODDS, BET_CATEGORIES.BOOKMAKER].includes(marketType)) {
         const marketRunners = await MarketRunner.find({ marketId: new mongoose.Types.ObjectId(marketId) });
         const runner1 = marketRunners[0]._id;
         const runner2 = marketRunners[1]._id;
@@ -90,8 +89,7 @@ route(router, "post", "/revert", async (req, res) => {
             }
           }
 
-          // console.log(bet);
-          // console.log(userPl);
+          console.log(userPl);
           bet.betResultStatus = BET_RESULT_STATUS.RUNNING;
           bet.betPl = 0;
           await bet.save();
@@ -102,34 +100,34 @@ route(router, "post", "/revert", async (req, res) => {
 
         const plDiff = userPl - user.userPl;
         const losingPotential = Math.min(...Object.values(runners).map((runner) => runner.pl));
-        // console.log("before", "exposure", user.exposure, "userPl", user.userPl, "balance", user.balance);
+        console.log("before", "exposure", user.exposure, "userPl", user.userPl, "balance", user.balance);
         user.exposure += Math.abs(losingPotential);
         user.userPl = userPl;
         user.balance = userBalance;
-        // console.log("after", "exposure", user.exposure, "userPl", user.userPl, "balance", user.balance);
+        console.log("after", "exposure", user.exposure, "userPl", user.userPl, "balance", user.balance);
 
         const parentUser = await User.findById(user.parentId);
-        // console.log(
-        //   "before",
-        //   "exposure",
-        //   parentUser.exposure,
-        //   "userPl",
-        //   parentUser.userPl,
-        //   "balance",
-        //   parentUser.balance
-        // );
+        console.log(
+          "before",
+          "exposure",
+          parentUser.exposure,
+          "userPl",
+          parentUser.userPl,
+          "balance",
+          parentUser.balance
+        );
         parentUser.balance = parentUser.balance + plDiff;
         parentUser.userPl = parentUser.userPl + plDiff;
-        // console.log(
-        //   "after",
-        //   "exposure",
-        //   parentUser.exposure,
-        //   "userPl",
-        //   parentUser.userPl,
-        //   "balance",
-        //   parentUser.balance
-        // );
-        // console.log(plDiff);
+        console.log(
+          "after",
+          "exposure",
+          parentUser.exposure,
+          "userPl",
+          parentUser.userPl,
+          "balance",
+          parentUser.balance
+        );
+        console.log(plDiff);
 
         const updatedUser = await user.save();
         const userDetails = getTrimmedUser(updatedUser);
@@ -138,15 +136,11 @@ route(router, "post", "/revert", async (req, res) => {
         const updatedParentUser = await parentUser.save();
         const parentUserDetails = getTrimmedUser(updatedParentUser);
         io.user.emit(`user:${parentUserDetails._id}`, parentUserDetails);
+
+        market.winnerRunnerId = null;
+        await market.save();
       }
     }
-
-    // const temp = {};
-
-    // for (const bet of bets) {
-    // bet.betResultStatus = BET_RESULT_STATUS.WON;
-    // await bet.save();
-    // }
 
     res.send("reverted");
   } catch (e) {
