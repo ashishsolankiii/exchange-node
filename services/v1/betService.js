@@ -1209,10 +1209,27 @@ const getChildUserData = async ({ userId, filterUserId }) => {
 
 const getCurrentBetsUserwise = async ({ ...reqBody }) => {
   try {
-    const { loginUserId, page, perPage, sortBy, direction, betType, betResultStatus } = reqBody;
+    const { loginUserId, page, perPage, sortBy, direction, betType, betResultStatus, startDate, endDate } = reqBody;
+    let startOfDay, endOfDay;
+    if (startDate && endDate) {
+      startOfDay = new Date(new Date(startDate).setUTCHours(0, 0, 0, 0)).toISOString();
+      endOfDay = new Date(new Date(endDate).setUTCHours(23, 59, 59, 999)).toISOString();
+    }
+    else {
+      if (startDate) {
+        startOfDay = new Date(new Date(startDate).setUTCHours(0, 0, 0, 0)).toISOString();
+        endOfDay = new Date(new Date().setUTCHours(23, 59, 59, 999)).toISOString();
+      }
+      else if (endDate) {
+        startOfDay = new Date(new Date().setUTCHours(0, 0, 0, 0)).toISOString();
+        endOfDay = new Date(new Date(endDate).setUTCHours(23, 59, 59, 999)).toISOString();
+      }
+      else {
+        startOfDay = new Date(new Date().setUTCHours(0, 0, 0, 0)).toISOString();
+        endOfDay = new Date(new Date().setUTCHours(23, 59, 59, 999)).toISOString();
+      }
+    }
 
-    const startOfDay = new Date(new Date().setUTCHours(0, 0, 0, 0)).toISOString();
-    const endOfDay = new Date(new Date().setUTCHours(23, 59, 59, 999)).toISOString();
 
     // Pagination and Sorting
     const sortDirection = direction === "asc" ? 1 : -1;

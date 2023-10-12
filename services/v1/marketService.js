@@ -211,6 +211,29 @@ const modifyMarket = async ({ ...reqBody }) => {
 };
 
 /**
+ * update market runner in the database
+ */
+const modifyMarketRunner = async ({ ...reqBody }) => {
+  try {
+    const market = await MarketRunner.findById(reqBody._id);
+
+    if (!market) {
+      throw new Error("Market Runer not found.");
+    }
+
+    market.betDelay = reqBody.betDelay;
+    market.minStake = reqBody.minStake;
+    market.maxStake = reqBody.maxStake;
+    market.status = reqBody.status;
+    await market.save();
+
+    return market;
+  } catch (e) {
+    throw new ErrorResponse(e.message).status(200);
+  }
+};
+
+/**
  * sync market by event id in the database
  */
 const syncMarketByEventId = async ({ eventId }) => {
@@ -314,7 +337,7 @@ const getFencyPrice = async (eventId) => {
         dataItem.marketId = runner.marketId;
         dataItem.typeName = typeName;
         dataItem.typeId = typeId;
-        if (!dataItem.min) {
+        if (min != 0 || !dataItem.min) {
           dataItem.min = String(min);
           dataItem.max = String(max);
         }
@@ -387,4 +410,5 @@ export default {
   getFencyPrice,
   getBookmakerPrice,
   getFencyPriceByRunner,
+  modifyMarketRunner
 };

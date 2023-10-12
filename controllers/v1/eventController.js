@@ -111,6 +111,17 @@ const getEventMatchDataFront = async (req, res) => {
   res.status(200).json({ success: true, data: { details: GetEventMatchData } });
 };
 
+const getAllBetResultData = async (req, res) => {
+  const { eventId } = req.body;
+  const user = req.user;
+  const GetAllBetResultData = await eventService.getAllBetResultData({
+    eventId,
+    user,
+  });
+
+  res.status(200).json({ success: true, data: { details: GetAllBetResultData } });
+};
+
 const getRacingMatchData = async (req, res) => {
   const { marketId } = req.body;
   const user = req.user;
@@ -155,5 +166,6 @@ export default {
   getEventMatchDataFront,
   getMatchWiseWinLoss,
   completedEventList,
-  getRacingMatchData
+  getRacingMatchData,
+  getAllBetResultData
 };

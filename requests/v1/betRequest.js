@@ -38,6 +38,8 @@ async function getAllBetRequest(req) {
   req.body.marketId = req.body.marketId || null;
   req.body.betType = req.body.betType || null;
   req.body.username = req.body.username || null;
+  req.body.startDate = req.body?.startDate || null;
+  req.body.endDate = req.body?.endDate || null;
 
   const validationSchema = Yup.object().shape({
     page: Yup.number().nullable(true),
@@ -60,6 +62,8 @@ async function getAllBetRequest(req) {
 
     betType: Yup.string().nullable(true),
     username: Yup.string().nullable(true),
+    startDate: Yup.date().nullable(true),
+    endDate: Yup.date().nullable(true),
   });
 
   await validationSchema.validate(req.body);

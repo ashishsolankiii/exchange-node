@@ -46,8 +46,21 @@ async function updateMarketRequest(req) {
 
   return req;
 }
+async function updateMarketRunnerRequest(req) {
+  const validationSchema = Yup.object().shape({
+    _id: Yup.string().required().test("_id", "Given _id is not valid!", isValidObjectId),
+    betDelay: Yup.number().nullable(true),
+    minStake: Yup.number().nullable(true),
+    maxStake: Yup.number().nullable(true),
+    status: Yup.string().nullable(true)
+  });
 
+  await validationSchema.validate(req.body);
+
+  return req;
+}
 export default {
   createMarketRequest,
   updateMarketRequest,
+  updateMarketRunnerRequest
 };
