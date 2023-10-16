@@ -1,10 +1,9 @@
-import Market from "../../models/v1/Market.js";
 import betRequest from "../../requests/v1/betRequest.js";
 import betPlService from "../../services/v1/bet/betPlService.js";
+import betResultService from "../../services/v1/bet/betResultService.js";
 import placeBetService from "../../services/v1/bet/placeBetService.js";
 import runningBetService from "../../services/v1/bet/runningBetService.js";
 import betService from "../../services/v1/betService.js";
-import { io } from "../../socket/index.js";
 
 // Create a new bet
 const createBet = async (req, res) => {
@@ -43,31 +42,16 @@ const getUserEventBets = async (req, res) => {
 const betComplete = async (req, res) => {
   const { body } = await betRequest.betCompleteRequest(req);
 
-  const completeBet = await betService.completeBet({ ...body });
+  const result = await betResultService.generateMatchOddsResult({ ...body });
 
-  const { eventId: event } = await Market.findById(body.marketId).populate("eventId").select("eventId");
-  const notification = {
-    _id: event._id,
-    name: event.name,
-    matchDateTime: event.matchDate,
-  };
-  io.eventNotification.to("event:notification").emit("event:complete", notification);
-
-  const userBetsAndPls = await betService.fetchAllUserBetsAndPls({ eventId: event._id, userId: req.user._id });
-  io.userBet.emit(`event:bet:${req.user._id}`, userBetsAndPls);
-
-  res.status(201).json({ success: true, data: { details: completeBet } });
+  res.status(201).json({ success: true, data: { details: result } });
 };
 
 // Bet complete fancy
 const betCompleteFancy = async (req, res) => {
   const { body } = await betRequest.betCompleteFancyRequest(req);
 
-  const completeBet = await betService.completeBetFency({ ...body });
-
-  const { eventId: event } = await Market.findById(body.marketId).populate("eventId").select("eventId");
-  const userBetsAndPls = await betService.fetchAllUserBetsAndPls({ eventId: event._id, userId: req.user._id });
-  io.userBet.emit(`event:bet:${req.user._id}`, userBetsAndPls);
+  const completeBet = await betResultService.generateFancyResult({ ...body });
 
   res.status(201).json({ success: true, data: { details: completeBet } });
 };
@@ -117,7 +101,7 @@ const getRunnerPlsFancy = async (req, res) => {
 
 const getCurrentBetsUserwise = async (req, res) => {
   const { body } = await betRequest.getCurrentBetsUserwise(req);
-  const getCurrentBet = await betService.getCurrentBetsUserwise({ ...body });
+  const getCurrentBet = await runningBetService.fetchUserBetHistory({ ...body });
 
   res.status(201).json({ success: true, data: { details: getCurrentBet } });
 };

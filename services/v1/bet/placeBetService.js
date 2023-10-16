@@ -18,7 +18,7 @@ import runningBetService from "./runningBetService.js";
  * 2. Fancy1
  */
 const calculateFancyPotientialPl = async (params) => {
-  const { marketType, marketOdds, runnerScore, runnerSelectionId, odds, stake, isBack } = params;
+  const { marketType, marketOdds, runnerSelectionId, odds, stake, isBack } = params;
 
   const [selectedRunner] = marketOdds;
 
@@ -31,19 +31,24 @@ const calculateFancyPotientialPl = async (params) => {
 
   const maxRunners = 3;
 
-  for (let i = 1; i <= maxRunners; i++) {
-    backPrices.push(selectedRunner[`BackPrice${i}`]?.toFixed(3) || 0);
-    layPrices.push(selectedRunner[`LayPrice${i}`]?.toFixed(3) || 0);
+  if (marketType.name === BET_CATEGORIES.FANCY) {
+    for (let i = 1; i <= maxRunners; i++) {
+      backPrices.push(selectedRunner[`BackSize${i}`]?.toFixed(3) || 0);
+      layPrices.push(selectedRunner[`LaySize${i}`]?.toFixed(3) || 0);
+    }
+  } else if (marketType.name === BET_CATEGORIES.FANCY1) {
+    for (let i = 1; i <= maxRunners; i++) {
+      backPrices.push(selectedRunner[`BackPrice${i}`]?.toFixed(3) || 0);
+      layPrices.push(selectedRunner[`LayPrice${i}`]?.toFixed(3) || 0);
+    }
   }
 
-  const selectedOdd = marketType.name === BET_CATEGORIES.FANCY ? odds : runnerScore;
-
   if (isBack) {
-    if (!backPrices.includes(selectedOdd.toFixed(3))) {
+    if (!backPrices.includes(odds.toFixed(3))) {
       throw new Error("Bet not confirmed, Odds changed!");
     }
   } else {
-    if (!layPrices.includes(selectedOdd.toFixed(3))) {
+    if (!layPrices.includes(odds.toFixed(3))) {
       throw new Error("Bet not confirmed, Odds changed!");
     }
   }

@@ -4,8 +4,8 @@ import Bet, { BET_ORDER_STATUS, BET_RESULT_STATUS } from "../../../models/v1/Bet
 import { BET_CATEGORIES } from "../../../models/v1/BetCategory.js";
 import betPlService from "./betPlService.js";
 
-const fetchAllBets = async (params) => {
-  const { page, perPage, sortBy, direction, searchQuery, eventId, marketId, betType, username } = params;
+const fetchAllBets = async (reqBody) => {
+  const { page, perPage, sortBy, direction, searchQuery, eventId, marketId, betType, username } = reqBody;
 
   // Pagination and Sorting
   const sortDirection = direction === "asc" ? 1 : -1;
@@ -155,8 +155,8 @@ const fetchAllBets = async (params) => {
 };
 
 // Fetch user bet history
-const fetchUserBetHistory = async (params) => {
-  const { loginUserId, page, perPage, sortBy, direction, betType, betResultStatus, startDate, endDate } = params;
+const fetchUserBetHistory = async (reqBody) => {
+  const { loginUserId, page, perPage, sortBy, direction, betType, betResultStatus, startDate, endDate } = reqBody;
 
   let startOfDay, endOfDay;
 
@@ -356,8 +356,8 @@ const fetchUserBetHistory = async (params) => {
 };
 
 // Fetch all user Bets for an Event
-async function fetchUserEventBets(params) {
-  const { eventId, userId } = params;
+async function fetchUserEventBets(reqBody) {
+  const { eventId, userId } = reqBody;
 
   const eventBets = await Bet.aggregate([
     {
@@ -502,11 +502,7 @@ async function fetchAllUserBetsAndPls({ eventId, userId }) {
     }
   }
 
-  const promises = [];
-  promises.push(fetchUserEventBets({ eventId, userId }));
-  promises.push(Promise.all(plPromises));
-
-  const [marketBets, marketPls] = await Promise.all(promises);
+  const [marketBets, marketPls] = await Promise.all([fetchUserEventBets({ eventId, userId }), Promise.all(plPromises)]);
 
   return { marketBets, marketPls };
 }

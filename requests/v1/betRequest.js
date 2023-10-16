@@ -88,10 +88,13 @@ async function betCompleteRequest(req) {
 
 async function betCompleteFancyRequest(req) {
   const validationSchema = Yup.object().shape({
+    marketId: Yup.string()
+      .required()
+      .test("marketId", "Invalid marketId!", (v) => !v || isValidObjectId),
     marketRunnerId: Yup.string()
       .required()
       .test("marketRunnerId", "Invalid market runner id!", (v) => !v || isValidObjectId),
-    winScore: Yup.number().required()
+    winScore: Yup.number().required(),
   });
 
   await validationSchema.validate(req.body);
@@ -179,5 +182,5 @@ export default {
   settlementRequest,
   getRunnerPlsRequest,
   getCurrentBetsUserwise,
-  getCompleteBetEventWise
+  getCompleteBetEventWise,
 };
