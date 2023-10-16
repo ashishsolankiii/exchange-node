@@ -113,6 +113,12 @@ const getCompleteBetEventWise = async (req, res) => {
   res.status(201).json({ success: true, data: { details: getCurrentBet } });
 };
 
+const revertResult = async (req, res) => {
+  const result = await betResultService.revertResult(req.body);
+
+  res.status(200).json({ success: true, data: { details: result } });
+};
+
 export default {
   createBet,
   getAllBet,
@@ -125,4 +131,5 @@ export default {
   getCurrentBetsUserwise,
   getRunnerPlsFancy,
   getCompleteBetEventWise,
+  revertResult,
 };
