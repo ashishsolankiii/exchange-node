@@ -1,4 +1,3 @@
-import moment from "moment";
 import mongoose from "mongoose";
 import ErrorResponse from "../../lib/error-handling/error-response.js";
 import { generatePaginationQueries, generateSearchFilters } from "../../lib/helpers/pipeline.js";
@@ -1018,14 +1017,14 @@ const completeBet = async ({ ...reqBody }) => {
         {
           name: BET_CATEGORIES.FANCY,
         },
-        { _id: 1 }
+        { _id: 1 },
       );
       let fencyMarket = await Market.findOne(
         {
           typeId: findFencyType._id,
           eventId: findMarket.eventId,
         },
-        { _id: 1 }
+        { _id: 1 },
       ).sort({ startDate: 1 });
       const findBetNotComplete = await Market.count({
         eventId: findMarket.eventId,
@@ -1092,7 +1091,7 @@ const completeBetFency = async ({ ...reqBody }) => {
         {
           name: BET_CATEGORIES.FANCY,
         },
-        { _id: 1 }
+        { _id: 1 },
       );
       let fencyMarket = await Market.findOne({
         _id: findMarketRunner.marketId,
@@ -1214,22 +1213,18 @@ const getCurrentBetsUserwise = async ({ ...reqBody }) => {
     if (startDate && endDate) {
       startOfDay = new Date(new Date(startDate).setUTCHours(0, 0, 0, 0)).toISOString();
       endOfDay = new Date(new Date(endDate).setUTCHours(23, 59, 59, 999)).toISOString();
-    }
-    else {
+    } else {
       if (startDate) {
         startOfDay = new Date(new Date(startDate).setUTCHours(0, 0, 0, 0)).toISOString();
         endOfDay = new Date(new Date().setUTCHours(23, 59, 59, 999)).toISOString();
-      }
-      else if (endDate) {
+      } else if (endDate) {
         startOfDay = new Date(new Date().setUTCHours(0, 0, 0, 0)).toISOString();
         endOfDay = new Date(new Date(endDate).setUTCHours(23, 59, 59, 999)).toISOString();
-      }
-      else {
+      } else {
         startOfDay = new Date(new Date().setUTCHours(0, 0, 0, 0)).toISOString();
         endOfDay = new Date(new Date().setUTCHours(23, 59, 59, 999)).toISOString();
       }
     }
-
 
     // Pagination and Sorting
     const sortDirection = direction === "asc" ? 1 : -1;

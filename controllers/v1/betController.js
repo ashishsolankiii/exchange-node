@@ -1,5 +1,6 @@
 import Market from "../../models/v1/Market.js";
 import betRequest from "../../requests/v1/betRequest.js";
+import placeBetService from "../../services/v1/bet/placeBetService.js";
 import betService from "../../services/v1/betService.js";
 import { io } from "../../socket/index.js";
 
@@ -7,7 +8,8 @@ import { io } from "../../socket/index.js";
 const createBet = async (req, res) => {
   const { body } = await betRequest.createBetRequest(req);
 
-  const newBet = await betService.addBet({ user: req.user, ...body });
+  // const newBet = await betService.addBet({ user: req.user, ...body });
+  const newBet = await placeBetService.createBet({ user: req.user, ...body });
 
   res.status(201).json({ success: true, data: { details: newBet } });
 };
