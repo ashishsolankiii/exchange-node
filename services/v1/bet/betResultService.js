@@ -11,7 +11,7 @@ import betPlService from "./betPlService.js";
 import runningBetService from "./runningBetService.js";
 
 // Updates userPl and balance of all parents upto SUPER_ADMIN
-const updateParentPls = async (userId, userPl) => {
+async function updateParentPls(userId, userPl) {
   const user = await User.findById(userId);
 
   if (!(user && user.role !== USER_ROLE.SYSTEM_OWNER)) {
@@ -43,10 +43,10 @@ const updateParentPls = async (userId, userPl) => {
       io.user.emit(`user:${user._id}`, trimmedUser);
     });
   }
-};
+}
 
 // Emit event result notification to all users
-const emitResultNotification = async ({ eventId }) => {
+async function emitResultNotification({ eventId }) {
   const event = await Event.findById(eventId);
 
   const notification = {
@@ -56,10 +56,10 @@ const emitResultNotification = async ({ eventId }) => {
   };
 
   io.eventNotification.to("event:notification").emit("event:complete", notification);
-};
+}
 
 // Check if all markets of an event are completed
-const completeEvent = async ({ market }) => {
+async function completeEvent({ market }) {
   const eventMarkets = await Market.aggregate([
     {
       $match: {
@@ -103,10 +103,10 @@ const completeEvent = async ({ market }) => {
   if (!hasOpenMarkets) {
     await Event.findByIdAndUpdate(market.eventId, { completed: true });
   }
-};
+}
 
 // Generate result for Fancy and Fancy1
-const generateFancyResult = async (params) => {
+async function generateFancyResult(params) {
   const { marketId, marketRunnerId, winScore } = params;
 
   const [marketRunner, market] = await Promise.all([MarketRunner.findById(marketRunnerId), Market.findById(marketId)]);
@@ -192,10 +192,10 @@ const generateFancyResult = async (params) => {
   await MarketRunner.findByIdAndUpdate(marketRunnerId, { winScore });
 
   await Promise.all([completeEvent({ market }), emitResultNotification({ eventId: market.eventId })]);
-};
+}
 
 // Generate result for Match Odds and Bookmaker
-const generateMatchOddsResult = async (reqBody) => {
+async function generateMatchOddsResult(reqBody) {
   const { marketId, winRunnerId } = reqBody;
 
   const market = await Market.findById(marketId);
@@ -270,10 +270,10 @@ const generateMatchOddsResult = async (reqBody) => {
   await Market.findByIdAndUpdate(marketId, { winnerRunnerId: winRunnerId });
 
   await Promise.all([completeEvent({ market }), emitResultNotification({ eventId: market.eventId })]);
-};
+}
 
 // Emit Users data, Bets and Pls
-const emitUserData = async ({ userId, eventId }) => {
+async function emitUserData({ userId, eventId }) {
   const user = await User.findById(userId);
   const trimmedUser = getTrimmedUser(user);
 
@@ -281,10 +281,10 @@ const emitUserData = async ({ userId, eventId }) => {
 
   io.userBet.emit(`event:bet:${userId}`, userBetsAndPls);
   io.user.emit(`user:${userId}`, trimmedUser);
-};
+}
 
 // Revert result for Match Odds and Bookmaker
-const revertMatchOddsResult = async ({ market, userBet }) => {
+async function revertMatchOddsResult({ market, userBet }) {
   let userPl = 0;
 
   // Update all user bets
@@ -325,10 +325,10 @@ const revertMatchOddsResult = async ({ market, userBet }) => {
   await Promise.all([user.save(), market.save(), updateParentPls(user._id, userPl)]);
 
   await emitUserData({ userId: user._id, eventId: market.eventId });
-};
+}
 
 // Revert result for Fancy and Fancy1
-const revertFancyResult = async ({ market, marketRunner, userBet }) => {
+async function revertFancyResult({ market, marketRunner, userBet }) {
   let userPl = 0;
 
   // Update all user bets
@@ -361,10 +361,10 @@ const revertFancyResult = async ({ market, marketRunner, userBet }) => {
   await Promise.all([user.save(), marketRunner.save(), updateParentPls(user._id, userPl)]);
 
   await emitUserData({ userId: user._id, eventId: market.eventId });
-};
+}
 
 // Revert Market / Runner result
-const revertResult = async (reqBody) => {
+async function revertResult(reqBody) {
   const { marketId, marketRunnerId } = reqBody;
 
   const market = await Market.findById(marketId).populate("typeId");
@@ -433,7 +433,7 @@ const revertResult = async (reqBody) => {
   );
 
   return { message: "Reverted" };
-};
+}
 
 export default {
   generateMatchOddsResult,
