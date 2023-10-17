@@ -8,5 +8,6 @@ const router = express.Router();
 route(router, "post", "/getMatchOdds", scriptController.getMatchOdds, false);
 route(router, "post", "/getFencyPrice", scriptController.getFencyPrice, false);
 route(router, "post", "/getBookmakerPrice", scriptController.getBookmakerPrice, false);
+route(router, "post", "/getLiveScore", scriptController.getLiveScore, false);
 
 export default router;

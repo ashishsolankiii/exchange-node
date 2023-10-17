@@ -27,8 +27,18 @@ const getBookmakerPrice = async (req, res) => {
   }
 };
 
+const getLiveScore = async (req, res) => {
+  try {
+    const allData = await marketService.liveScore(req.body.eventId);
+    res.status(200).json({ message: "Live score get successfully!", data: allData });
+  } catch (e) {
+    res.status(500).json({ error: "An error occurred" });
+  }
+};
+
 export default {
   getMatchOdds,
   getFencyPrice,
-  getBookmakerPrice
+  getBookmakerPrice,
+  getLiveScore
 };

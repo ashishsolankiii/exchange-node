@@ -6,6 +6,7 @@ const marketGetters = new Map();
 marketGetters.set("match_odds", marketService.getMatchOdds);
 marketGetters.set("bookamkers", marketService.getBookmakerPrice);
 marketGetters.set("fancy", marketService.getFencyPrice);
+marketGetters.set("live_score", marketService.liveScore);
 
 export const getMarketData = async (market) => {
   const getter = marketGetters.get(market.type);
