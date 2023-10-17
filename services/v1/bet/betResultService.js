@@ -260,7 +260,6 @@ const generateMatchOddsResult = async (reqBody) => {
       eventId: market.eventId,
       userId: userBet._id,
     });
-    console.log(userBetsAndPls);
     io.userBet.emit(`event:bet:${userBet._id}`, userBetsAndPls);
     io.user.emit(`user:${userBet._id}`, trimmedUser);
   }
@@ -298,65 +297,54 @@ const revertResult = async (reqBody) => {
 
   for (const userBet of userBets) {
     if ([BET_CATEGORIES.MATCH_ODDS, BET_CATEGORIES.BOOKMAKER].includes(marketType)) {
-      const user = await User.findById(userBet._id);
-      let userPl = user.userPl;
-      let userBalance = user.balance;
+      let userPl = 0;
 
-      // console.log(userPl);
+      const userBetPromises = [];
       for (const bet of userBet.bets) {
-        userPl = bet.betResultStatus === BET_RESULT_STATUS.WON ? userPl - bet.betPl : userPl + Math.abs(bet.betPl);
-        userBalance =
-          bet.betResultStatus === BET_RESULT_STATUS.WON ? userBalance - bet.betPl : userBalance + Math.abs(bet.betPl);
+        userPl = bet.betResultStatus === BET_RESULT_STATUS.WON ? userPl - bet.betPl : Math.abs(userPl + bet.betPl);
 
-        // console.log(userPl);
         bet.betResultStatus = BET_RESULT_STATUS.RUNNING;
         bet.betPl = 0;
-        await Bet.findByIdAndUpdate(bet._id, bet);
+
+        userBetPromises.push(Bet.findByIdAndUpdate(bet._id, bet));
 
         const userBetsAndPls = await runningBetService.fetchAllUserBetsAndPls({
           eventId: bet.eventId,
           userId: userBet._id,
         });
+
         io.userBet.emit(`event:bet:${userBet._id}`, userBetsAndPls);
       }
 
-      const plDiff = userPl - user.userPl;
-      const runnerPls = await betPlService.fetchRunningMultiRunnerOddPl({ userId: userBet._id, marketId });
-      const losingPotential = runnerPls.length ? Math.min(...runnerPls.map((runner) => runner?.pl || 0)) : 0;
+      // Update all user bets
+      await Promise.all(userBetPromises);
 
-      console.log("before", "exposure", user.exposure, "userPl", user.userPl, "balance", user.balance);
+      // Get user and current used running pls
+      const [user, currentPls] = await Promise.all([
+        User.findById(userBet._id),
+        betPlService.fetchRunningMultiRunnerOddPl({ userId: userBet._id, marketId }),
+      ]);
 
-      user.exposure += Math.abs(losingPotential);
-      user.userPl = userPl;
-      user.balance = userBalance;
+      const losingPotential = currentPls.length
+        ? Math.abs(Math.min(...currentPls.map((runner) => runner?.pl || 0)))
+        : 0;
 
-      console.log("after", "exposure", user.exposure, "userPl", user.userPl, "balance", user.balance);
-
-      const parentUser = await User.findById(user.parentId);
-      console.log(
-        "before",
-        "exposure",
-        parentUser.exposure,
-        "userPl",
-        parentUser.userPl,
-        "balance",
-        parentUser.balance
-      );
-      parentUser.balance = parentUser.balance + plDiff;
-      parentUser.userPl = parentUser.userPl + plDiff;
-      console.log("after", "exposure", parentUser.exposure, "userPl", parentUser.userPl, "balance", parentUser.balance);
-      console.log(plDiff);
-
-      const updatedUser = await user.save();
-      const userDetails = getTrimmedUser(updatedUser);
-      io.user.emit(`user:${updatedUser._id}`, userDetails);
-
-      const updatedParentUser = await parentUser.save();
-      const parentUserDetails = getTrimmedUser(updatedParentUser);
-      io.user.emit(`user:${parentUserDetails._id}`, parentUserDetails);
+      user.exposure += losingPotential;
+      user.userPl += userPl;
+      user.balance += userPl;
 
       market.winnerRunnerId = null;
-      await market.save();
+
+      const [updatedUser] = await Promise.all([user.save(), market.save(), updateParentPls(user._id, userPl)]);
+
+      // Emit user bet data
+      const trimmedUser = getTrimmedUser(updatedUser);
+      const userBetsAndPls = await runningBetService.fetchAllUserBetsAndPls({
+        eventId: market.eventId,
+        userId: userBet._id,
+      });
+      io.userBet.emit(`event:bet:${userBet._id}`, userBetsAndPls);
+      io.user.emit(`user:${userBet._id}`, trimmedUser);
     }
   }
 
