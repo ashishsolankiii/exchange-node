@@ -401,6 +401,19 @@ const getBookmakerPrice = async (marketId) => {
   }
 };
 
+const liveScore = async (eventId) => {
+  try {
+    const liveScoreUrl = `${appConfig.BASE_URL}?action=score&match_id=${eventId}`;
+    const { statusCode, data } = await commonService.fetchData(liveScoreUrl);
+    if (!(statusCode === 200 && data.length)) {
+      return [];
+    }
+    return data;
+  } catch (e) {
+    return e;
+  }
+};
+
 export default {
   syncMarkets,
   getMatchOdds,
@@ -410,5 +423,6 @@ export default {
   getFencyPrice,
   getBookmakerPrice,
   getFencyPriceByRunner,
-  modifyMarketRunner
+  modifyMarketRunner,
+  liveScore
 };
