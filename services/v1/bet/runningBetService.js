@@ -4,7 +4,8 @@ import Bet, { BET_ORDER_STATUS, BET_RESULT_STATUS } from "../../../models/v1/Bet
 import { BET_CATEGORIES } from "../../../models/v1/BetCategory.js";
 import betPlService from "./betPlService.js";
 
-const fetchAllBets = async (reqBody) => {
+// Fetch all bets for listing page
+async function fetchAllBets(reqBody) {
   const { page, perPage, sortBy, direction, searchQuery, eventId, marketId, betType, username } = reqBody;
 
   // Pagination and Sorting
@@ -152,10 +153,10 @@ const fetchAllBets = async (reqBody) => {
   }
 
   return data;
-};
+}
 
 // Fetch user bet history
-const fetchUserBetHistory = async (reqBody) => {
+async function fetchUserBetHistory(reqBody) {
   const { loginUserId, page, perPage, sortBy, direction, betType, betResultStatus, startDate, endDate } = reqBody;
 
   let startOfDay, endOfDay;
@@ -353,7 +354,7 @@ const fetchUserBetHistory = async (reqBody) => {
   }
 
   return data;
-};
+}
 
 // Fetch all user Bets for an Event
 async function fetchUserEventBets(reqBody) {

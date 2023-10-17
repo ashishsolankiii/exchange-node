@@ -17,7 +17,7 @@ import runningBetService from "./runningBetService.js";
  * 1. Fancy
  * 2. Fancy1
  */
-const calculateFancyPotientialPl = async (params) => {
+async function calculateFancyPotientialPl(params) {
   const { marketType, marketOdds, runnerSelectionId, odds, stake, isBack } = params;
 
   const [selectedRunner] = marketOdds;
@@ -65,7 +65,7 @@ const calculateFancyPotientialPl = async (params) => {
   }
 
   return { potentialWin, potentialLoss };
-};
+}
 
 // Calcualtes Fancy PL
 async function calculateFancyPl(params) {
@@ -129,7 +129,8 @@ async function calculateMatchOddPl(params) {
   return { potentialWin, potentialLoss, newExposure };
 }
 
-const processPlaceBetRequest = async ({ user: loggedInUser, marketTypeFns, ...reqBody }) => {
+// Validate and process request body
+async function processPlaceBetRequest({ user: loggedInUser, marketTypeFns, ...reqBody }) {
   const {
     marketId,
     eventId,
@@ -247,9 +248,10 @@ const processPlaceBetRequest = async ({ user: loggedInUser, marketTypeFns, ...re
     runnerSelectionId,
     runnerScore,
   };
-};
+}
 
-const createBet = async ({ user: loggedInUser, ...reqBody }) => {
+// Place new bet
+async function createBet({ user: loggedInUser, ...reqBody }) {
   const marketTypeFns = {
     [BET_CATEGORIES.MATCH_ODDS]: {
       calculatePl: calculateMatchOddPl, // Main function to calculate potential win and loss
@@ -333,7 +335,7 @@ const createBet = async ({ user: loggedInUser, ...reqBody }) => {
   io.user.emit(`user:${user._id}`, getTrimmedUser(updatedUser));
 
   return newBet;
-};
+}
 
 export default {
   createBet,

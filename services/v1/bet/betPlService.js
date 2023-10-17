@@ -2,7 +2,8 @@ import mongoose from "mongoose";
 import Bet, { BET_ORDER_STATUS, BET_RESULT_STATUS } from "../../../models/v1/Bet.js";
 import MarketRunner from "../../../models/v1/MarketRunner.js";
 
-const calcualteMultiRunnerOddPl = async ({ bets, marketId }) => {
+// Calculates PLs of markets having multiple runners and odds
+async function calcualteMultiRunnerOddPl({ bets, marketId }) {
   const marketRunners = await MarketRunner.find({ marketId });
 
   const runnerMap = new Map();
@@ -39,9 +40,10 @@ const calcualteMultiRunnerOddPl = async ({ bets, marketId }) => {
   }
 
   return Array.from(runnerMap.values());
-};
+}
 
-const calcualteSingleRunnerOddPl = async ({ bets }) => {
+// Calcualtes PLs of markets having single runner and odds
+async function calcualteSingleRunnerOddPl({ bets }) {
   let backLoss = 0;
   let backProfit = 0;
   let layLoss = 0;
@@ -62,9 +64,10 @@ const calcualteSingleRunnerOddPl = async ({ bets }) => {
   const pl = totalPl < 0 ? totalPl : 0;
 
   return pl;
-};
+}
 
-const fetchRunningMultiRunnerOddPl = async ({ userId, marketId, mockBet = null }) => {
+// Fetches PLs of markets having multiple runners and odds
+async function fetchRunningMultiRunnerOddPl({ userId, marketId, mockBet = null }) {
   const bets = await Bet.aggregate([
     {
       $match: {
@@ -87,9 +90,10 @@ const fetchRunningMultiRunnerOddPl = async ({ userId, marketId, mockBet = null }
     bets: allBets,
     marketId,
   });
-};
+}
 
-const fetchRunningSingleRunnerOddPl = async ({ userId, marketId, mockBet = null }) => {
+// Fetches PLs of markets having single runner and odds
+async function fetchRunningSingleRunnerOddPl({ userId, marketId, mockBet = null }) {
   const bets = await Bet.aggregate([
     {
       $match: {
@@ -112,7 +116,7 @@ const fetchRunningSingleRunnerOddPl = async ({ userId, marketId, mockBet = null 
     bets: allBets,
     marketId,
   });
-};
+}
 
 export default {
   calcualteMultiRunnerOddPl,
