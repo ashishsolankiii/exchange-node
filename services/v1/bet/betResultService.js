@@ -148,9 +148,9 @@ const generateFancyResult = async (params) => {
       const updatedBet = { ...bet };
 
       if (isBack) {
-        updatedBet.betPl = runnerScore <= winScore ? potentialWin : potentialLoss;
+        updatedBet.betPl = Number(winScore) >= runnerScore ? potentialWin : potentialLoss;
       } else {
-        updatedBet.betPl = runnerScore > winScore ? potentialWin : potentialLoss;
+        updatedBet.betPl = Number(winScore) < runnerScore ? potentialWin : potentialLoss;
       }
 
       updatedBet.betResultStatus = updatedBet.betPl > 0 ? BET_RESULT_STATUS.WON : BET_RESULT_STATUS.LOST;
@@ -269,13 +269,127 @@ const generateMatchOddsResult = async (reqBody) => {
   await Promise.all([completeEvent({ market }), emitResultNotification({ eventId: market.eventId })]);
 };
 
+const emitUserData = async ({ userId, eventId }) => {
+  const user = await User.findById(userId);
+  const trimmedUser = getTrimmedUser(user);
+
+  const userBetsAndPls = await runningBetService.fetchAllUserBetsAndPls({ eventId, userId });
+
+  io.userBet.emit(`event:bet:${userId}`, userBetsAndPls);
+  io.user.emit(`user:${userId}`, trimmedUser);
+};
+
+const revertMatchOddsResult = async ({ market, userBet }) => {
+  let userPl = 0;
+
+  // Update all user bets
+  await Promise.all(
+    userBet.bets.map((bet) => {
+      userPl = bet.betResultStatus === BET_RESULT_STATUS.WON ? userPl - bet.betPl : Math.abs(userPl + bet.betPl);
+      bet.betResultStatus = BET_RESULT_STATUS.RUNNING;
+      bet.betPl = 0;
+      return Bet.findByIdAndUpdate(bet._id, bet);
+    })
+  );
+
+  // Get user and current used running pls
+  const [user, currentPls] = await Promise.all([
+    User.findById(userBet._id),
+    betPlService.fetchRunningMultiRunnerOddPl({
+      userId: userBet._id,
+      marketId: market._id,
+    }),
+  ]);
+
+  const losingPotential = currentPls.length
+    ? Math.abs(
+        Math.min(
+          ...currentPls.map((runner) => {
+            return runner?.pl || 0;
+          })
+        )
+      )
+    : 0;
+
+  user.exposure += losingPotential;
+  user.userPl += userPl;
+  user.balance += userPl;
+
+  market.winnerRunnerId = null;
+
+  await Promise.all([user.save(), market.save(), updateParentPls(user._id, userPl)]);
+
+  await emitUserData({ userId: user._id, eventId: market.eventId });
+};
+
+const revertFancyResult = async ({ market, marketRunner, userBet }) => {
+  let userPl = 0;
+
+  // Update all user bets
+  await Promise.all(
+    userBet.bets.map((bet) => {
+      userPl = bet.betResultStatus === BET_RESULT_STATUS.WON ? userPl - bet.betPl : Math.abs(userPl + bet.betPl);
+      bet.betResultStatus = BET_RESULT_STATUS.RUNNING;
+      bet.betPl = 0;
+      return Bet.findByIdAndUpdate(bet._id, bet);
+    })
+  );
+
+  // Get user and current used running pls
+  const [user, currentPl] = await Promise.all([
+    User.findById(userBet._id),
+    betPlService.fetchRunningSingleRunnerOddPl({
+      userId: userBet._id,
+      marketId: market._id,
+    }),
+  ]);
+
+  const losingPotential = Math.abs(currentPl);
+
+  user.exposure += losingPotential;
+  user.userPl += userPl;
+  user.balance += userPl;
+
+  marketRunner.winScore = null;
+
+  await Promise.all([user.save(), marketRunner.save(), updateParentPls(user._id, userPl)]);
+
+  await emitUserData({ userId: user._id, eventId: market.eventId });
+};
+
 const revertResult = async (reqBody) => {
-  const { marketId } = reqBody;
+  const { marketId, marketRunnerId } = reqBody;
 
   const market = await Market.findById(marketId).populate("typeId");
   const marketType = market.typeId.name;
-  if (!market.winnerRunnerId) {
-    throw new Error("Result not declared yet!");
+  let marketRunner = null; // currently for Fancy and Fancy1
+
+  if (!market) {
+    throw new Error("Market not found!");
+  } else if (!marketType) {
+    throw new Error("Market type not found!");
+  }
+
+  // Match Odds and Bookmaker validations go here
+  if ([BET_CATEGORIES.MATCH_ODDS, BET_CATEGORIES.BOOKMAKER].includes(marketType)) {
+    if (!marketRunnerId.winnerRunnerId) {
+      throw new Error("Result not declared yet!");
+    }
+
+    // Fancy and Fancy1 validations go here
+  } else if ([BET_CATEGORIES.FANCY, BET_CATEGORIES.FANCY1].includes(marketType)) {
+    if (!marketRunnerId) {
+      throw new Error("marketRunnerId is required!");
+    }
+
+    marketRunner = await MarketRunner.findById(marketRunnerId);
+    if (!marketRunner) {
+      throw new Error("Market runner not found!");
+    }
+
+    if (!marketRunner.winScore) {
+      throw new Error("Result not declared yet!");
+    }
   }
 
   const userBets = await Bet.aggregate([
@@ -295,60 +409,23 @@ const revertResult = async (reqBody) => {
     },
   ]);
 
-  for (const userBet of userBets) {
-    if ([BET_CATEGORIES.MATCH_ODDS, BET_CATEGORIES.BOOKMAKER].includes(marketType)) {
-      let userPl = 0;
+  const revertFn = {
+    [BET_CATEGORIES.MATCH_ODDS]: revertMatchOddsResult,
 
-      const userBetPromises = [];
-      for (const bet of userBet.bets) {
-        userPl = bet.betResultStatus === BET_RESULT_STATUS.WON ? userPl - bet.betPl : Math.abs(userPl + bet.betPl);
+    [BET_CATEGORIES.BOOKMAKER]: revertMatchOddsResult,
 
-        bet.betResultStatus = BET_RESULT_STATUS.RUNNING;
-        bet.betPl = 0;
+    [BET_CATEGORIES.FANCY]: revertFancyResult,
 
-        userBetPromises.push(Bet.findByIdAndUpdate(bet._id, bet));
+    [BET_CATEGORIES.FANCY1]: revertFancyResult,
+  };
 
-        const userBetsAndPls = await runningBetService.fetchAllUserBetsAndPls({
-          eventId: bet.eventId,
-          userId: userBet._id,
-        });
+  await Promise.all(
+    userBets.map((userBet) => {
+      return revertFn[marketType]({ market, marketId, userBet, marketRunner });
+    })
+  );
 
-        io.userBet.emit(`event:bet:${userBet._id}`, userBetsAndPls);
-      }
-
-      // Update all user bets
-      await Promise.all(userBetPromises);
-
-      // Get user and current used running pls
-      const [user, currentPls] = await Promise.all([
-        User.findById(userBet._id),
-        betPlService.fetchRunningMultiRunnerOddPl({ userId: userBet._id, marketId }),
-      ]);
-
-      const losingPotential = currentPls.length
-        ? Math.abs(Math.min(...currentPls.map((runner) => runner?.pl || 0)))
-        : 0;
-
-      user.exposure += losingPotential;
-      user.userPl += userPl;
-      user.balance += userPl;
-
-      market.winnerRunnerId = null;
-
-      const [updatedUser] = await Promise.all([user.save(), market.save(), updateParentPls(user._id, userPl)]);
-
-      // Emit user bet data
-      const trimmedUser = getTrimmedUser(updatedUser);
-      const userBetsAndPls = await runningBetService.fetchAllUserBetsAndPls({
-        eventId: market.eventId,
-        userId: userBet._id,
-      });
-      io.userBet.emit(`event:bet:${userBet._id}`, userBetsAndPls);
-      io.user.emit(`user:${userBet._id}`, trimmedUser);
-    }
-  }
-
-  return "reverted";
+  return { message: "Reverted" };
 };
 
 export default {

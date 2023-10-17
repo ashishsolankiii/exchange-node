@@ -88,11 +88,6 @@ async function calculateFancyPl(params) {
   return { potentialWin, potentialLoss, newExposure };
 }
 
-// Calcualtes Fancy1 PL
-const calculateFancy1Pl = async (params) => {
-  return await calculateFancyPl(params);
-};
-
 // Calcualtes Match Odds PL
 async function calculateMatchOddPl(params) {
   const { marketOdds, user, market, runnerSelectionId, odds, stake, isBack } = params;
@@ -132,10 +127,6 @@ async function calculateMatchOddPl(params) {
   const newExposure = user.exposure - exposureInUse + requiredExposure;
 
   return { potentialWin, potentialLoss, newExposure };
-}
-
-async function calculateBookmakerPl(params) {
-  return await calculateMatchOddPl(params);
 }
 
 const processPlaceBetRequest = async ({ user: loggedInUser, marketTypeFns, ...reqBody }) => {
@@ -261,24 +252,24 @@ const processPlaceBetRequest = async ({ user: loggedInUser, marketTypeFns, ...re
 const createBet = async ({ user: loggedInUser, ...reqBody }) => {
   const marketTypeFns = {
     [BET_CATEGORIES.MATCH_ODDS]: {
-      calculatePl: calculateMatchOddPl,
-      getMarketOdds: marketService.getMatchOdds,
-      marketOddParam: reqBody.apiMarketId,
+      calculatePl: calculateMatchOddPl, // Main function to calculate potential win and loss
+      getMarketOdds: marketService.getMatchOdds, // Market data
+      marketOddParam: reqBody.apiMarketId, // Market data parameters
     },
     [BET_CATEGORIES.BOOKMAKER]: {
-      calculatePl: calculateBookmakerPl,
-      getMarketOdds: marketService.getBookmakerPrice,
-      marketOddParam: reqBody.apiMarketId,
+      calculatePl: calculateMatchOddPl, // Main function to calculate potential win and loss
+      getMarketOdds: marketService.getBookmakerPrice, // Market data
+      marketOddParam: reqBody.apiMarketId, // Market data parameters
     },
     [BET_CATEGORIES.FANCY]: {
-      calculatePl: calculateFancyPl,
-      getMarketOdds: marketService.getFencyPriceByRunner,
-      marketOddParam: reqBody.runnerId,
+      calculatePl: calculateFancyPl, // Main function to calculate potential win and loss
+      getMarketOdds: marketService.getFencyPriceByRunner, // Market data
+      marketOddParam: reqBody.runnerId, // Market data parameters
     },
     [BET_CATEGORIES.FANCY1]: {
-      calculatePl: calculateFancy1Pl,
-      getMarketOdds: marketService.getFencyPriceByRunner,
-      marketOddParam: reqBody.runnerId,
+      calculatePl: calculateFancyPl, // Main function to calculate potential win and loss
+      getMarketOdds: marketService.getFencyPriceByRunner, // Market data
+      marketOddParam: reqBody.runnerId, // Market data parameters
     },
   };
 
