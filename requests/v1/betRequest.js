@@ -174,6 +174,19 @@ async function getCompleteBetEventWise(req) {
   return req;
 }
 
+async function reverResultRequest(req) {
+  const validationSchema = Yup.object().shape({
+    marketId: Yup.string()
+      .required()
+      .test("marketId", "Invalid marketId!", (v) => !v || isValidObjectId),
+    marketRunnerId: Yup.string(),
+  });
+
+  await validationSchema.validate(req.body);
+
+  return req;
+}
+
 export default {
   createBetRequest,
   getAllBetRequest,
@@ -183,4 +196,5 @@ export default {
   getRunnerPlsRequest,
   getCurrentBetsUserwise,
   getCompleteBetEventWise,
+  reverResultRequest,
 };

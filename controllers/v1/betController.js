@@ -114,7 +114,9 @@ const getCompleteBetEventWise = async (req, res) => {
 };
 
 const revertResult = async (req, res) => {
-  const result = await betResultService.revertResult(req.body);
+  const { body } = await betRequest.reverResultRequest(req);
+
+  const result = await betResultService.revertResult({ ...body, user: req.user });
 
   res.status(200).json({ success: true, data: { details: result } });
 };
