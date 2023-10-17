@@ -45,6 +45,7 @@ const updateParentPls = async (userId, userPl) => {
   }
 };
 
+// Emit event result notification to all users
 const emitResultNotification = async ({ eventId }) => {
   const event = await Event.findById(eventId);
 
@@ -104,6 +105,7 @@ const completeEvent = async ({ market }) => {
   }
 };
 
+// Generate result for Fancy and Fancy1
 const generateFancyResult = async (params) => {
   const { marketId, marketRunnerId, winScore } = params;
 
@@ -192,6 +194,7 @@ const generateFancyResult = async (params) => {
   await Promise.all([completeEvent({ market }), emitResultNotification({ eventId: market.eventId })]);
 };
 
+// Generate result for Match Odds and Bookmaker
 const generateMatchOddsResult = async (reqBody) => {
   const { marketId, winRunnerId } = reqBody;
 
@@ -269,6 +272,7 @@ const generateMatchOddsResult = async (reqBody) => {
   await Promise.all([completeEvent({ market }), emitResultNotification({ eventId: market.eventId })]);
 };
 
+// Emit Users data, Bets and Pls
 const emitUserData = async ({ userId, eventId }) => {
   const user = await User.findById(userId);
   const trimmedUser = getTrimmedUser(user);
@@ -279,6 +283,7 @@ const emitUserData = async ({ userId, eventId }) => {
   io.user.emit(`user:${userId}`, trimmedUser);
 };
 
+// Revert result for Match Odds and Bookmaker
 const revertMatchOddsResult = async ({ market, userBet }) => {
   let userPl = 0;
 
@@ -322,6 +327,7 @@ const revertMatchOddsResult = async ({ market, userBet }) => {
   await emitUserData({ userId: user._id, eventId: market.eventId });
 };
 
+// Revert result for Fancy and Fancy1
 const revertFancyResult = async ({ market, marketRunner, userBet }) => {
   let userPl = 0;
 
@@ -357,6 +363,7 @@ const revertFancyResult = async ({ market, marketRunner, userBet }) => {
   await emitUserData({ userId: user._id, eventId: market.eventId });
 };
 
+// Revert Market / Runner result
 const revertResult = async (reqBody) => {
   const { marketId, marketRunnerId } = reqBody;
 
