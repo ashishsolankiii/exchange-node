@@ -379,7 +379,7 @@ async function revertResult(reqBody) {
 
   // Match Odds and Bookmaker validations go here
   if ([BET_CATEGORIES.MATCH_ODDS, BET_CATEGORIES.BOOKMAKER].includes(marketType)) {
-    if (!marketRunnerId.winnerRunnerId) {
+    if (!market.winnerRunnerId) {
       throw new Error("Result not declared yet!");
     }
 
@@ -392,9 +392,7 @@ async function revertResult(reqBody) {
     marketRunner = await MarketRunner.findById(marketRunnerId);
     if (!marketRunner) {
       throw new Error("Market runner not found!");
-    }
-
-    if (!marketRunner.winScore) {
+    } else if (!marketRunner.winScore) {
       throw new Error("Result not declared yet!");
     }
   }
@@ -428,7 +426,7 @@ async function revertResult(reqBody) {
 
   await Promise.all(
     userBets.map((userBet) => {
-      return revertFn[marketType]({ market, marketId, userBet, marketRunner });
+      return revertFn[marketType]({ ...reqBody, userBet, market, marketRunner });
     })
   );
 
