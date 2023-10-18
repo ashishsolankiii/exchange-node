@@ -621,12 +621,12 @@ const getEventMatchDataFront = async ({ eventId, user }) => {
   }
 };
 
-const getRacingMatchData = async ({ marketId, user }) => {
+const getRacingMatchData = async ({ marketId, eventId, user }) => {
   try {
-    const event = await Market.aggregate([
+    const event = await Event.aggregate([
       {
         $match: {
-          _id: new mongoose.Types.ObjectId(marketId),
+          _id: new mongoose.Types.ObjectId(eventId),
         },
       },
       {
@@ -669,58 +669,49 @@ const getRacingMatchData = async ({ marketId, user }) => {
       },
       {
         $lookup: {
-          from: "market_runners",
+          from: "markets",
           localField: "_id",
-          foreignField: "marketId",
-          as: "market_runner",
+          foreignField: "eventId",
+          as: "market",
           pipeline: [
             {
               $match: {
-                status: { $ne: RUNNER_STATUS.IN_ACTIVE },
+                _id: new mongoose.Types.ObjectId(marketId),
               },
             },
             {
-              $project: { runnerName: 1, priority: 1, selectionId: 1 },
+              $lookup: {
+                from: "market_runners",
+                localField: "_id",
+                foreignField: "marketId",
+                as: "market_runner",
+                pipeline: [
+                  {
+                    $project: { runnerName: 1, priority: 1, selectionId: 1 },
+                  },
+                ],
+              },
             },
-          ],
-        },
-      },
-      {
-        $lookup: {
-          from: "bet_categories",
-          localField: "typeId",
-          foreignField: "_id",
-          as: "bet_category",
-          pipeline: [
             {
-              $project: { name: 1 },
+              $lookup: {
+                from: "bet_categories",
+                localField: "typeId",
+                foreignField: "_id",
+                as: "bet_category",
+                pipeline: [
+                  {
+                    $project: { name: 1 },
+                  },
+                ],
+              },
             },
-          ],
-        },
-      },
-      {
-        $unwind: {
-          path: "$bet_category",
-          preserveNullAndEmptyArrays: true,
-        },
-      },
-      {
-        $lookup: {
-          from: "events",
-          localField: "eventId",
-          foreignField: "_id",
-          as: "event",
-          pipeline: [
             {
-              $project: { name: 1, minStake: 1, maxStake: 1, betLock: 1 },
+              $unwind: {
+                path: "$bet_category",
+                preserveNullAndEmptyArrays: true,
+              },
             },
           ],
-        },
-      },
-      {
-        $unwind: {
-          path: "$event",
-          preserveNullAndEmptyArrays: true,
         },
       },
       {
@@ -743,23 +734,26 @@ const getRacingMatchData = async ({ marketId, user }) => {
     let betLock = false;
     const loggedInUser = await User.findOne({ _id: user._id }, { role: 1 });
     if (loggedInUser.role === USER_ROLE.USER) {
-      if (event[0].event.betLock === true) {
+      if (event[0].betLock === true) {
         betLock = true;
       } else {
         betLock = await getBetLock(user._id);
       }
     }
 
-    if (event[0].minStake === 0) {
-      event[0].minStake = event[0].event.minStake;
+
+    for (var i = 0; i < event[0].market.length; i++) {
+      if (event[0].market[i].minStake === 0) {
+        event[0].market[i].minStake = event[0].minStake;
+      }
+      if (event[0].market[i].maxStake === 0) {
+        event[0].market[i].maxStake = event[0].maxStake;
+      }
+      if (event[0].market[i].betDelay === 0) {
+        event[0].market[i].betDelay = event[0].betDelay;
+      }
+      event[0].market[i].betLock = betLock;
     }
-    if (event[0].maxStake === 0) {
-      event[0].maxStake = event[0].event.maxStake;
-    }
-    if (event[0].betDelay === 0) {
-      event[0].betDelay = event[0].event.betDelay;
-    }
-    event[0].betLock = betLock;
 
     return event[0];
   } catch (e) {
