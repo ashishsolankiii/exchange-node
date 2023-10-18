@@ -1,13 +1,22 @@
-import betService from "../../../services/v1/betService.js";
+import runningBetService from "../../../services/v1/bet/runningBetService.js";
 import { validateAuth, validateUser } from "../../middlewares/userMiddleware.js";
 
 async function handleConnection(socket) {
   try {
+    /**
+     * NOTE: This namespace is used to emit below events
+     *
+     * 1. event:bet:${userId}
+     */
+
     socket.on("event:bet", async ({ eventId }, callback) => {
       if (!eventId) {
         throw new Error("eventId is required.");
       }
-      const betsAndPls = await betService.fetchAllUserBetsAndPls({ eventId, userId: socket.userId });
+      const betsAndPls = await runningBetService.fetchAllUserBetsAndPls({
+        eventId,
+        userId: socket.userId,
+      });
       callback(betsAndPls);
     });
   } catch (e) {

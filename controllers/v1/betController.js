@@ -1,13 +1,15 @@
-import Market from "../../models/v1/Market.js";
 import betRequest from "../../requests/v1/betRequest.js";
+import betPlService from "../../services/v1/bet/betPlService.js";
+import betResultService from "../../services/v1/bet/betResultService.js";
+import placeBetService from "../../services/v1/bet/placeBetService.js";
+import runningBetService from "../../services/v1/bet/runningBetService.js";
 import betService from "../../services/v1/betService.js";
-import { io } from "../../socket/index.js";
 
 // Create a new bet
 const createBet = async (req, res) => {
   const { body } = await betRequest.createBetRequest(req);
 
-  const newBet = await betService.addBet({ user: req.user, ...body });
+  const newBet = await placeBetService.createBet({ user: req.user, ...body });
 
   res.status(201).json({ success: true, data: { details: newBet } });
 };
@@ -16,7 +18,7 @@ const createBet = async (req, res) => {
 const getAllBet = async (req, res) => {
   const { body } = await betRequest.getAllBetRequest(req);
 
-  const newBet = await betService.fetchAllBet({ ...body });
+  const newBet = await runningBetService.fetchAllBets({ ...body });
 
   res.status(201).json({ success: true, data: { details: newBet } });
 };
@@ -28,7 +30,10 @@ const getUserEventBets = async (req, res) => {
     throw new Error("Event id is required");
   }
 
-  const eventBets = await betService.fetchUserEventBets({ eventId, userId: req.user._id });
+  const eventBets = await runningBetService.fetchUserEventBets({
+    eventId,
+    userId: req.user._id,
+  });
 
   res.status(201).json({ success: true, data: { details: eventBets } });
 };
@@ -37,24 +42,16 @@ const getUserEventBets = async (req, res) => {
 const betComplete = async (req, res) => {
   const { body } = await betRequest.betCompleteRequest(req);
 
-  const completeBet = await betService.completeBet({ ...body });
+  const result = await betResultService.generateMatchOddsResult({ ...body });
 
-  const { eventId: event } = await Market.findById(body.marketId).populate("eventId").select("eventId");
-  const notification = {
-    _id: event._id,
-    name: event.name,
-    matchDateTime: event.matchDate,
-  };
-  io.eventNotification.to("event:notification").emit("event:complete", notification);
-
-  res.status(201).json({ success: true, data: { details: completeBet } });
+  res.status(201).json({ success: true, data: { details: result } });
 };
 
 // Bet complete fancy
 const betCompleteFancy = async (req, res) => {
   const { body } = await betRequest.betCompleteFancyRequest(req);
 
-  const completeBet = await betService.completeBetFency({ ...body });
+  const completeBet = await betResultService.generateFancyResult({ ...body });
 
   res.status(201).json({ success: true, data: { details: completeBet } });
 };
@@ -83,22 +80,28 @@ const getChildUserData = async (req, res) => {
 const getRunnerPls = async (req, res) => {
   const { body } = await betRequest.getRunnerPlsRequest(req);
 
-  const getRunnerPls = await betService.fetchRunnerPls({ user: req.user, ...body });
+  const runnerPls = await betPlService.fetchRunningMultiRunnerOddPl({
+    userId: req.user._id,
+    ...body,
+  });
 
-  res.status(201).json({ success: true, data: { details: getRunnerPls } });
+  res.status(201).json({ success: true, data: { details: runnerPls } });
 };
 
 const getRunnerPlsFancy = async (req, res) => {
   const { body } = await betRequest.getRunnerPlsRequest(req);
 
-  const getRunnerPls = await betService.fetchRunnerPlsFancy({ user: req.user, ...body });
+  const runnerPls = await betPlService.fetchRunningSingleRunnerOddPl({
+    userId: req.user._id,
+    ...body,
+  });
 
-  res.status(201).json({ success: true, data: { details: getRunnerPls } });
+  res.status(201).json({ success: true, data: { details: runnerPls } });
 };
 
 const getCurrentBetsUserwise = async (req, res) => {
   const { body } = await betRequest.getCurrentBetsUserwise(req);
-  const getCurrentBet = await betService.getCurrentBetsUserwise({ ...body });
+  const getCurrentBet = await runningBetService.fetchUserBetHistory({ ...body });
 
   res.status(201).json({ success: true, data: { details: getCurrentBet } });
 };
@@ -108,6 +111,14 @@ const getCompleteBetEventWise = async (req, res) => {
   const getCurrentBet = await betService.getCompleteBetEventWise({ ...body });
 
   res.status(201).json({ success: true, data: { details: getCurrentBet } });
+};
+
+const revertResult = async (req, res) => {
+  const { body } = await betRequest.reverResultRequest(req);
+
+  const result = await betResultService.revertResult({ ...body, user: req.user });
+
+  res.status(200).json({ success: true, data: { details: result } });
 };
 
 export default {
@@ -122,4 +133,5 @@ export default {
   getCurrentBetsUserwise,
   getRunnerPlsFancy,
   getCompleteBetEventWise,
+  revertResult,
 };
