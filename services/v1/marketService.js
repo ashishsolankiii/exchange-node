@@ -268,7 +268,7 @@ const getFencyPrice = async (eventId) => {
       marketId: {
         $in: [market._id, marketFancy1._id]
       },
-      status: { $ne: RUNNER_STATUS.IN_ACTIVE },
+      // status: { $ne: RUNNER_STATUS.IN_ACTIVE },
     });
 
     const oldRunnerIds = new Set(marketRunners.map((runner) => runner.selectionId));
@@ -300,7 +300,17 @@ const getFencyPrice = async (eventId) => {
     }, []);
 
     const [newRunners] = await Promise.all([
-      ...newRunnersToAdd.map((obj) => MarketRunner.create(obj)),
+      ...newRunnersToAdd.map((obj) => {
+        let findRunnerAlreadyAdd = marketRunners.filter(item => item.selectionId == obj.selectionId && item.marketId == obj.marketId);
+        if (findRunnerAlreadyAdd.length > 0) {
+          return MarketRunner.findOneAndUpdate({ selectionId: findRunnerAlreadyAdd[0].selectionId, marketId: findRunnerAlreadyAdd[0].marketId }, { $set: { status: RUNNER_STATUS.ACTIVE } }, { upsert: true, new: true });
+        }
+        else {
+          return MarketRunner.create(obj)
+        }
+
+      }),
+
       MarketRunner.updateMany(
         { selectionId: { $in: oldRunnerIdsToRemove }, marketId: new mongoose.Types.ObjectId(market._id) },
         { status: RUNNER_STATUS.IN_ACTIVE }
@@ -310,7 +320,6 @@ const getFencyPrice = async (eventId) => {
         { status: RUNNER_STATUS.IN_ACTIVE }
       ),
     ]);
-
     const sortedData = new ArrayProto(data).sortByKeyAsc({ key: "RunnerName" });
     const allRunners = marketRunners.concat(newRunners);
 
