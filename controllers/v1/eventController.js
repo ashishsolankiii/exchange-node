@@ -123,10 +123,11 @@ const getAllBetResultData = async (req, res) => {
 };
 
 const getRacingMatchData = async (req, res) => {
-  const { marketId } = req.body;
+  const { eventId, marketId } = req.body;
   const user = req.user;
   const GetEventMatchData = await eventService.getRacingMatchData({
     marketId,
+    eventId,
     user,
   });
 
