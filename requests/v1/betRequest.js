@@ -187,6 +187,19 @@ async function reverResultRequest(req) {
   return req;
 }
 
+async function getRunAmountRequest(req) {
+  const validationSchema = Yup.object().shape({
+    loginUserId: Yup.string()
+      .required()
+      .test("userId", "Invalid userId!", (v) => !v || isValidObjectId),
+    marketRunnerId: Yup.string(),
+  });
+
+  await validationSchema.validate(req.body);
+
+  return req;
+}
+
 export default {
   createBetRequest,
   getAllBetRequest,
@@ -197,4 +210,5 @@ export default {
   getCurrentBetsUserwise,
   getCompleteBetEventWise,
   reverResultRequest,
+  getRunAmountRequest
 };
