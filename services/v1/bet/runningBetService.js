@@ -499,7 +499,7 @@ async function fetchAllUserBetsAndPls({ eventId, userId }) {
     if ([BET_CATEGORIES.MATCH_ODDS, BET_CATEGORIES.BOOKMAKER].includes(betMarket.betCategory)) {
       plPromises.push(betPlService.fetchRunningMultiRunnerOddPl(params));
     } else if ([BET_CATEGORIES.FANCY, BET_CATEGORIES.FANCY1].includes(betMarket.betCategory)) {
-      plPromises.push(betPlService.fetchRunningSingleRunnerOddPl(params));
+      plPromises.push(betPlService.fetchRunnerWiseSingleOddsPl(params));
     }
   }
 

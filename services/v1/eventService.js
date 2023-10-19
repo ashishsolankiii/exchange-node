@@ -613,6 +613,7 @@ const getEventMatchDataFront = async ({ eventId, user }) => {
         sortedMarkets[index] = event[0].market[i];
       }
     }
+
     event[0].market = sortedMarkets.filter((market) => !!market);
 
     return event[0];
@@ -740,7 +741,6 @@ const getRacingMatchData = async ({ marketId, eventId, user }) => {
         betLock = await getBetLock(user._id);
       }
     }
-
 
     for (var i = 0; i < event[0].market.length; i++) {
       if (event[0].market[i].minStake === 0) {
@@ -1125,5 +1125,5 @@ export default {
   getMatchStake,
   completedEventList,
   getRacingMatchData,
-  getAllBetResultData
+  getAllBetResultData,
 };

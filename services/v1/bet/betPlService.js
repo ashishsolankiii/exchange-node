@@ -43,7 +43,7 @@ async function calcualteMultiRunnerOddPl({ bets, marketId }) {
 }
 
 // Calcualtes PLs of markets having single runner and odds
-async function calcualteSingleRunnerOddPl({ bets }) {
+function calcualteSingleRunnerOddPl({ bets }) {
   let backLoss = 0;
   let backProfit = 0;
   let layLoss = 0;
@@ -112,10 +112,39 @@ async function fetchRunningSingleRunnerOddPl({ userId, marketId, mockBet = null 
     return 0;
   }
 
-  return await calcualteSingleRunnerOddPl({
-    bets: allBets,
-    marketId,
-  });
+  return calcualteSingleRunnerOddPl({ bets: allBets });
+}
+
+// Fetches PLs of Runner by Id
+async function fetchRunnerWiseSingleOddsPl({ userId, marketId }) {
+  const runnerBets = await Bet.aggregate([
+    {
+      $match: {
+        marketId: new mongoose.Types.ObjectId(marketId),
+        userId: new mongoose.Types.ObjectId(userId),
+        betOrderStatus: BET_ORDER_STATUS.PLACED,
+        betResultStatus: BET_RESULT_STATUS.RUNNING,
+      },
+    },
+    { $sort: { createdAt: 1 } },
+    {
+      $group: {
+        _id: "$runnerId",
+        bets: {
+          $push: "$$ROOT",
+        },
+      },
+    },
+  ]);
+
+  const betPlData = [];
+  for (const runner of runnerBets) {
+    const { bets = [] } = runner;
+    const pl = calcualteSingleRunnerOddPl({ bets });
+    betPlData.push({ _id: runner._id, marketId, pl });
+  }
+
+  return betPlData;
 }
 
 export default {
@@ -123,4 +152,5 @@ export default {
   calcualteSingleRunnerOddPl,
   fetchRunningMultiRunnerOddPl,
   fetchRunningSingleRunnerOddPl,
+  fetchRunnerWiseSingleOddsPl,
 };
