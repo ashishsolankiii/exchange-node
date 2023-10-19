@@ -16,5 +16,6 @@ route(router, "post", "/getCurrentBetsUserwise", betController.getCurrentBetsUse
 route(router, "post", "/getRunnerPlsFancy", betController.getRunnerPlsFancy);
 route(router, "post", "/getCompleteBetEventWise", betController.getCompleteBetEventWise);
 route(router, "post", "/revertResult", betController.revertResult);
+route(router, "post", "/getRunAmount", betController.getRunAmount);
 
 export default router;

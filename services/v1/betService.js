@@ -153,8 +153,46 @@ const getCompleteBetEventWise = async ({ ...reqBody }) => {
   }
 };
 
+const fetchRunAmount = async ({ ...reqBody }) => {
+  try {
+    const { loginUserId, marketRunnerId } = reqBody;
+    let findBet = await Bet.find({ userId: loginUserId, runnerId: marketRunnerId, betResultStatus: BET_RESULT_STATUS.RUNNING }).sort({ runnerScore: 1 });
+    let runArray = [];
+    if (findBet.length > 0) {
+      const findFirst = findBet[0].runnerScore - 1;
+      const findLast = findBet[findBet.length - 1].runnerScore;
+      const getAllNumber = Array(findLast - findFirst + 1).fill().map((_, idx) => runArray.push({ run: findFirst + idx, amount: 0 }))
+      for (var i = 0; i < findBet.length; i++) {
+        for (var j = 0; j < runArray.length; j++) {
+          if (findBet[i].isBack == true) {
+            if (runArray[j].run >= findBet[i].runnerScore) {
+              runArray[j].amount = runArray[j].amount + findBet[i].stake;
+            }
+            else {
+              runArray[j].amount = runArray[j].amount - findBet[i].stake;
+            }
+          }
+          else {
+            if (runArray[j].run < findBet[i].runnerScore) {
+              runArray[j].amount = runArray[j].amount + findBet[i].stake;
+            }
+            else {
+              runArray[j].amount = runArray[j].amount - findBet[i].stake;
+            }
+          }
+        }
+      }
+    }
+    return runArray;
+
+  } catch (e) {
+    throw new Error(e);
+  }
+};
+
 export default {
   settlement,
   getChildUserData,
   getCompleteBetEventWise,
+  fetchRunAmount
 };

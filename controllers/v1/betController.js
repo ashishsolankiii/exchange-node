@@ -121,6 +121,16 @@ const revertResult = async (req, res) => {
   res.status(200).json({ success: true, data: { details: result } });
 };
 
+const getRunAmount = async (req, res) => {
+  const { body } = await betRequest.getRunAmountRequest(req);
+
+  const runnerPls = await betService.fetchRunAmount({
+    ...body,
+  });
+
+  res.status(201).json({ success: true, data: { details: runnerPls } });
+};
+
 export default {
   createBet,
   getAllBet,
@@ -134,4 +144,5 @@ export default {
   getRunnerPlsFancy,
   getCompleteBetEventWise,
   revertResult,
+  getRunAmount
 };
