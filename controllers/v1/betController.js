@@ -131,6 +131,21 @@ const getRunAmount = async (req, res) => {
   res.status(201).json({ success: true, data: { details: runnerPls } });
 };
 
+const getAllUserBetsAndPls = async (req, res) => {
+  const { eventId = null } = req.body;
+  const user = req.user;
+  if (!eventId) {
+    throw new Error("Event id is required");
+  }
+
+  const userBetPls = await runningBetService.fetchAllUserBetsAndPls({
+    userId: user._id,
+    eventId,
+  });
+
+  res.status(200).json({ success: true, data: { details: userBetPls } });
+};
+
 export default {
   createBet,
   getAllBet,
@@ -144,5 +159,6 @@ export default {
   getRunnerPlsFancy,
   getCompleteBetEventWise,
   revertResult,
-  getRunAmount
+  getRunAmount,
+  getAllUserBetsAndPls,
 };

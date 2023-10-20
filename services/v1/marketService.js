@@ -117,9 +117,9 @@ const getMatchOdds = async (markeId) => {
 
         const matchOdds = dataItem.runners
           ? dataItem.runners.map((item) => {
-            delete item.ex;
-            return item;
-          })
+              delete item.ex;
+              return item;
+            })
           : [];
 
         return { marketId: dataItem.marketId, min: minStake, max: maxStake, matchOdds };
@@ -266,7 +266,7 @@ const getFencyPrice = async (eventId) => {
 
     const marketRunners = await MarketRunner.find({
       marketId: {
-        $in: [market._id, marketFancy1._id]
+        $in: [market._id, marketFancy1._id],
       },
       // status: { $ne: RUNNER_STATUS.IN_ACTIVE },
     });
@@ -274,13 +274,12 @@ const getFencyPrice = async (eventId) => {
     const oldRunnerIds = new Set(marketRunners.map((runner) => runner.selectionId));
     const newRunnersToAdd = data.reduce((acc, obj) => {
       if (!oldRunnerIds.has(Number(obj.SelectionId))) {
-        let marketId = ""
+        let marketId = "";
         if (obj.gtype) {
           if (obj.gtype == "fancy1") {
-            marketId = marketFancy1._id
-          }
-          else {
-            marketId = market._id
+            marketId = marketFancy1._id;
+          } else {
+            marketId = market._id;
           }
         }
         acc.push({
@@ -301,14 +300,18 @@ const getFencyPrice = async (eventId) => {
 
     const [newRunners] = await Promise.all([
       ...newRunnersToAdd.map((obj) => {
-        let findRunnerAlreadyAdd = marketRunners.filter(item => item.selectionId == obj.selectionId && item.marketId == obj.marketId);
+        let findRunnerAlreadyAdd = marketRunners.filter(
+          (item) => item.selectionId == obj.selectionId && item.marketId == obj.marketId
+        );
         if (findRunnerAlreadyAdd.length > 0) {
-          return MarketRunner.findOneAndUpdate({ selectionId: findRunnerAlreadyAdd[0].selectionId, marketId: findRunnerAlreadyAdd[0].marketId }, { $set: { status: RUNNER_STATUS.ACTIVE } }, { upsert: true, new: true });
+          return MarketRunner.findOneAndUpdate(
+            { selectionId: findRunnerAlreadyAdd[0].selectionId, marketId: findRunnerAlreadyAdd[0].marketId },
+            { $set: { status: RUNNER_STATUS.ACTIVE } },
+            { upsert: true, new: true }
+          );
+        } else {
+          return MarketRunner.create(obj);
         }
-        else {
-          return MarketRunner.create(obj)
-        }
-
       }),
 
       MarketRunner.updateMany(
@@ -333,8 +336,7 @@ const getFencyPrice = async (eventId) => {
         typeId = marketFancy1._id;
         min = marketFancy1.minStake;
         max = marketFancy1.maxStake;
-      }
-      else {
+      } else {
         typeName = market.name;
         typeId = market._id;
         min = market.minStake;
@@ -395,9 +397,9 @@ const getBookmakerPrice = async (marketId) => {
 
         const matchOdds = dataItem.runners
           ? dataItem.runners.map((item) => {
-            delete item.ex;
-            return item;
-          })
+              delete item.ex;
+              return item;
+            })
           : [];
 
         return { marketId: dataItem.marketId, min: minStake, max: maxStake, matchOdds };
@@ -433,5 +435,5 @@ export default {
   getBookmakerPrice,
   getFencyPriceByRunner,
   modifyMarketRunner,
-  liveScore
+  liveScore,
 };
