@@ -90,7 +90,8 @@ async function calculateFancyPl(params) {
 
 // Calcualtes Match Odds PL
 async function calculateMatchOddPl(params) {
-  const { marketOdds, user, market, runnerSelectionId, odds, stake, isBack } = params;
+  const { marketOdds, user, market, runnerSelectionId, marketType, stake, isBack } = params;
+  let { odds } = params;
 
   const [{ matchOdds }] = marketOdds;
 
@@ -110,6 +111,9 @@ async function calculateMatchOddPl(params) {
       throw new Error("Bet not confirmed, Odds changed!");
     }
   }
+
+  // NOTE - Odds are different for BOOKMAKER
+  odds = marketType.name === BET_CATEGORIES.BOOKMAKER ? odds / 100 + 1 : odds;
 
   const potentialWin = isBack ? stake * odds - stake : stake;
   const potentialLoss = isBack ? -stake : -(stake * odds - stake);
