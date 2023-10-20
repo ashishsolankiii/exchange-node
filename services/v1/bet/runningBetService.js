@@ -409,6 +409,7 @@ async function fetchUserEventBets(reqBody) {
         bets: {
           $push: {
             _id: "$_id",
+            runnerId: "$runnerId",
             runner: "$marketRunner.runnerName",
             stake: "$stake",
             odds: "$odds",
