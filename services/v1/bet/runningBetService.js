@@ -409,11 +409,15 @@ async function fetchUserEventBets(reqBody) {
         bets: {
           $push: {
             _id: "$_id",
+            runnerId: "$runnerId",
             runner: "$marketRunner.runnerName",
             stake: "$stake",
             odds: "$odds",
             isBack: "$isBack",
             createdAt: "$createdAt",
+            runnerScore: "$runnerScore",
+            potentialWin: "$potentialWin",
+            potentialLoss: "$potentialLoss",
           },
         },
       },
@@ -499,7 +503,7 @@ async function fetchAllUserBetsAndPls({ eventId, userId }) {
     if ([BET_CATEGORIES.MATCH_ODDS, BET_CATEGORIES.BOOKMAKER].includes(betMarket.betCategory)) {
       plPromises.push(betPlService.fetchRunningMultiRunnerOddPl(params));
     } else if ([BET_CATEGORIES.FANCY, BET_CATEGORIES.FANCY1].includes(betMarket.betCategory)) {
-      plPromises.push(betPlService.fetchRunningSingleRunnerOddPl(params));
+      plPromises.push(betPlService.fetchRunnerWiseSingleOddsPl(params));
     }
   }
 
