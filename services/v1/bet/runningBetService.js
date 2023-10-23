@@ -437,7 +437,7 @@ async function fetchUserEventBets(reqBody) {
   return eventBets;
 }
 
-// Fetch all user Bets and Market Pls for an Event
+// Fetch all user Bets and Market Pls for the given Event
 async function fetchAllUserBetsAndPls({ eventId, userId }) {
   const betMarkets = await Bet.aggregate([
     {
