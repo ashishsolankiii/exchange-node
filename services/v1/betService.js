@@ -3,6 +3,8 @@ import ErrorResponse from "../../lib/error-handling/error-response.js";
 import { decryptTransactionCode } from "../../lib/io-guards/transaction-code.js";
 import Bet, { BET_RESULT_STATUS } from "../../models/v1/Bet.js";
 import User from "../../models/v1/User.js";
+import betPlService from "./bet/betPlService.js";
+import { BET_CATEGORIES } from "../../models/v1/BetCategory.js";
 
 const settlement = async ({ ...reqBody }) => {
   try {
@@ -190,9 +192,132 @@ const fetchRunAmount = async ({ ...reqBody }) => {
   }
 };
 
+const fetchUserExposureList = async ({ ...reqBody }) => {
+  try {
+    const { loginUserId } = reqBody;
+    let findBets = await Bet.aggregate([
+      {
+        $match: {
+          userId: new mongoose.Types.ObjectId(loginUserId),
+          betResultStatus: BET_RESULT_STATUS.RUNNING
+        },
+      },
+      {
+        $lookup: {
+          from: "markets",
+          localField: "marketId",
+          foreignField: "_id",
+          as: "market",
+          pipeline: [{ $project: { name: 1, startDate: 1, typeId: 1 } }, {
+            $lookup: {
+              from: "bet_categories",
+              localField: "typeId",
+              foreignField: "_id",
+              as: "bet_category",
+              pipeline: [
+                {
+                  $project: { name: 1 },
+                },
+              ],
+            },
+          },
+          {
+            $unwind: {
+              path: "$bet_category",
+              preserveNullAndEmptyArrays: true,
+            },
+          },],
+        },
+      },
+      {
+        $unwind: {
+          path: "$market",
+          preserveNullAndEmptyArrays: true,
+        },
+      },
+      {
+        $lookup: {
+          from: "events",
+          localField: "eventId",
+          foreignField: "_id",
+          as: "event",
+          pipeline: [{ $project: { name: 1, startDate: 1 } }],
+        },
+      },
+      {
+        $unwind: {
+          path: "$event",
+          preserveNullAndEmptyArrays: true,
+        },
+      },
+      {
+        $set: {
+          marketName: "$market.name",
+          eventName: "$event.name",
+          betCategoryName: "$market.bet_category.name",
+        },
+      },
+      {
+        $unset: ["market", "event"],
+      },
+      {
+        $group: {
+          _id: { eventId: "$eventId", marketId: "$marketId" }, marketName: { $first: '$marketName' }, eventName: { $first: '$eventName' }, betCategoryName: { $first: '$betCategoryName' }, createdAt: { $first: '$createdAt' },
+        },
+      },
+      { $sort: { createdAt: 1 } },
+    ]);
+
+    let finalExposureList = [];
+    for (var i = 0; i < findBets.length; i++) {
+      let marketId = findBets[i]._id.marketId;
+      let findEventId = finalExposureList.filter(
+        function (item, index) {
+          item.index = index;
+          return item.eventId.toString() == findBets[i]._id.eventId.toString();
+        });
+
+      if (findEventId.length > 0) {
+        if (findBets[i].betCategoryName == BET_CATEGORIES.FANCY) {
+          let getRunnerPl = await betPlService.fetchRunningSingleRunnerOddPl({ userId: loginUserId, marketId })
+          finalExposureList[finalExposureList[0].index].exposure = finalExposureList[finalExposureList[0].index].exposure + getRunnerPl;
+        }
+        else {
+          let getRunnerPl = await betPlService.fetchRunningMultiRunnerOddPl({ userId: loginUserId, marketId })
+          let exposure = 0;
+          let totalExposure = getRunnerPl.map(function (item) {
+            exposure += item.pl
+          })
+          finalExposureList[finalExposureList[0].index].exposure = finalExposureList[finalExposureList[0].index].exposure + exposure;
+        }
+      }
+      else {
+        if (findBets[i].betCategoryName == BET_CATEGORIES.FANCY) {
+          let getRunnerPl = await betPlService.fetchRunningSingleRunnerOddPl({ userId: loginUserId, marketId })
+          finalExposureList.push({ eventId: findBets[i]._id.eventId, eventName: findBets[i].eventName, exposure: getRunnerPl })
+        }
+        else {
+          let getRunnerPl = await betPlService.fetchRunningMultiRunnerOddPl({ userId: loginUserId, marketId })
+          let exposure = 0;
+          let totalExposure = getRunnerPl.map(function (item) {
+            exposure += item.pl
+          })
+          finalExposureList.push({ eventId: findBets[i]._id.eventId, eventName: findBets[i].eventName, exposure: exposure })
+        }
+
+      }
+    }
+    return finalExposureList;
+
+  } catch (e) {
+    throw new Error(e);
+  }
+};
+
 export default {
   settlement,
   getChildUserData,
   getCompleteBetEventWise,
-  fetchRunAmount
+  fetchRunAmount,
+  fetchUserExposureList
 };
