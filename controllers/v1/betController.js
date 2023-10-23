@@ -131,6 +131,15 @@ const getRunAmount = async (req, res) => {
   res.status(201).json({ success: true, data: { details: runnerPls } });
 };
 
+const getUserExposureList = async (req, res) => {
+  const { body } = await betRequest.getUserExposureListRequest(req);
+
+  const exposureList = await betService.fetchUserExposureList({
+    ...body,
+  });
+
+  res.status(201).json({ success: true, data: { details: exposureList } });
+}
 const getAllUserBetsAndPls = async (req, res) => {
   const { eventId = null } = req.body;
   const user = req.user;
@@ -160,5 +169,6 @@ export default {
   getCompleteBetEventWise,
   revertResult,
   getRunAmount,
-  getAllUserBetsAndPls,
+  getUserExposureList,
+  getAllUserBetsAndPls
 };

@@ -200,6 +200,18 @@ async function getRunAmountRequest(req) {
   return req;
 }
 
+async function getUserExposureListRequest(req) {
+  const validationSchema = Yup.object().shape({
+    loginUserId: Yup.string()
+      .required()
+      .test("userId", "Invalid userId!", (v) => !v || isValidObjectId),
+  });
+
+  await validationSchema.validate(req.body);
+
+  return req;
+}
+
 export default {
   createBetRequest,
   getAllBetRequest,
@@ -210,5 +222,6 @@ export default {
   getCurrentBetsUserwise,
   getCompleteBetEventWise,
   reverResultRequest,
-  getRunAmountRequest
+  getRunAmountRequest,
+  getUserExposureListRequest
 };
