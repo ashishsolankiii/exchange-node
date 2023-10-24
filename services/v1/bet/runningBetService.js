@@ -159,35 +159,22 @@ async function fetchAllBets(reqBody) {
 async function fetchUserBetHistory(reqBody) {
   const { loginUserId, page, perPage, sortBy, direction, betType, betResultStatus, startDate, endDate } = reqBody;
 
-  let startOfDay, endOfDay;
-
-  if (startDate && endDate) {
-    startOfDay = new Date(new Date(startDate).setUTCHours(0, 0, 0, 0)).toISOString();
-    endOfDay = new Date(new Date(endDate).setUTCHours(23, 59, 59, 999)).toISOString();
-  } else {
-    if (startDate) {
-      startOfDay = new Date(new Date(startDate).setUTCHours(0, 0, 0, 0)).toISOString();
-      endOfDay = new Date(new Date().setUTCHours(23, 59, 59, 999)).toISOString();
-    } else if (endDate) {
-      startOfDay = new Date(new Date().setUTCHours(0, 0, 0, 0)).toISOString();
-      endOfDay = new Date(new Date(endDate).setUTCHours(23, 59, 59, 999)).toISOString();
-    } else {
-      startOfDay = new Date(new Date().setUTCHours(0, 0, 0, 0)).toISOString();
-      endOfDay = new Date(new Date().setUTCHours(23, 59, 59, 999)).toISOString();
-    }
+  let startOfDay = new Date().setUTCHours(0, 0, 0, 0);
+  let endOfDay = new Date().setUTCHours(23, 59, 59, 999);
+  if (startDate) {
+    startOfDay = new Date(startDate).setUTCHours(0, 0, 0, 0);
   }
+  if (endDate) {
+    endOfDay = new Date(endDate).setUTCHours(23, 59, 59, 999);
+  }
+  startOfDay = new Date(startOfDay).toISOString();
+  endOfDay = new Date(endOfDay).toISOString();
 
   // Pagination and Sorting
   const sortDirection = direction === "asc" ? 1 : -1;
   const paginationQueries = generatePaginationQueries(page, perPage);
 
-  let filters = {
-    userId: new mongoose.Types.ObjectId(loginUserId),
-    "market.startDate": {
-      $gte: new Date(startOfDay),
-      $lt: new Date(endOfDay),
-    },
-  };
+  let filters = {};
 
   if (betType) {
     if (betType == "back") {
@@ -202,6 +189,16 @@ async function fetchUserBetHistory(reqBody) {
   }
 
   const bets = await Bet.aggregate([
+    {
+      $match: {
+        userId: new mongoose.Types.ObjectId(loginUserId),
+        createdAt: {
+          $gte: new Date(startOfDay),
+          $lt: new Date(endOfDay),
+        },
+        ...filters,
+      },
+    },
     {
       $lookup: {
         from: "events",
@@ -270,9 +267,6 @@ async function fetchUserBetHistory(reqBody) {
         path: "$market",
         preserveNullAndEmptyArrays: true,
       },
-    },
-    {
-      $match: filters,
     },
     {
       $set: {
