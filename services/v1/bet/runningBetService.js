@@ -200,6 +200,11 @@ async function fetchUserBetHistory(reqBody) {
       },
     },
     {
+      $sort: {
+        createdAt: -1,
+      },
+    },
+    {
       $lookup: {
         from: "events",
         localField: "eventId",

@@ -134,7 +134,7 @@ async function getCurrentBetsUserwise(req) {
   req.body.page = req.body?.page ? Number(req.body.page) : null;
   req.body.perPage = req.body?.perPage ? Number(req.body.perPage) : 10;
   req.body.sortBy = req.body?.sortBy ? req.body.sortBy : "createdAt";
-  req.body.direction = req.body?.direction ? req.body.direction : "asc";
+  req.body.direction = req.body?.direction ? req.body.direction : "desc";
   req.body.betType = req.body.betType || null;
   req.body.betResultStatus = req.body.betResultStatus || null;
 
@@ -223,5 +223,5 @@ export default {
   getCompleteBetEventWise,
   reverResultRequest,
   getRunAmountRequest,
-  getUserExposureListRequest
+  getUserExposureListRequest,
 };
