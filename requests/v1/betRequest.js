@@ -130,6 +130,7 @@ async function getRunnerPlsRequest(req) {
 
   return req;
 }
+
 async function getCurrentBetsUserwise(req) {
   req.body.page = req.body?.page ? Number(req.body.page) : null;
   req.body.perPage = req.body?.perPage ? Number(req.body.perPage) : 10;
