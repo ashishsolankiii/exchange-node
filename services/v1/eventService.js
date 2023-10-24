@@ -1,3 +1,4 @@
+import moment from "moment";
 import mongoose from "mongoose";
 import ErrorResponse from "../../lib/error-handling/error-response.js";
 import { generatePaginationQueries, generateSearchFilters } from "../../lib/helpers/pipeline.js";
@@ -902,15 +903,13 @@ const getMatchStake = async ({ eventId, loginUserId }) => {
 
 const completedEventList = async ({ startDate, endDate }) => {
   try {
-    let startOfDay, endOfDay;
-    if (startDate && endDate) {
-      startOfDay = new Date(new Date(startDate).setUTCHours(23, 59, 59, 999)).toISOString();
-      endOfDay = new Date(new Date(endDate).setUTCHours(0, 0, 0, 0)).toISOString();
-    } else {
-      startOfDay = new Date(
-        new Date(new Date().setDate(new Date().getDate() - 1)).setUTCHours(23, 59, 59, 999)
-      ).toISOString();
-      endOfDay = new Date(new Date().setUTCHours(0, 0, 0, 0)).toISOString();
+    let startOfDay = moment().subtract(1, "days").startOf("day").toISOString();
+    let endOfDay = moment().endOf("day").toISOString();
+    if (startDate) {
+      startOfDay = moment(startDate).startOf("day").toISOString();
+    }
+    if (endDate) {
+      endOfDay = moment(endDate).endOf("day").toISOString();
     }
 
     const findEvent = await Event.aggregate([
@@ -973,6 +972,7 @@ const completedEventList = async ({ startDate, endDate }) => {
       },
       { $sort: { matchDateTime: -1 } },
     ]);
+
     return findEvent;
   } catch (e) {
     throw new ErrorResponse(e.message).status(200);
