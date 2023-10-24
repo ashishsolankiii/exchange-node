@@ -1,7 +1,7 @@
 import mongoose from "mongoose";
 import { getTrimmedUser } from "../../../lib/io-guards/auth.js";
 import Bet, { BET_ORDER_STATUS, BET_RESULT_STATUS } from "../../../models/v1/Bet.js";
-import { BET_CATEGORIES } from "../../../models/v1/BetCategory.js";
+import BetCategory, { BET_CATEGORIES } from "../../../models/v1/BetCategory.js";
 import Event from "../../../models/v1/Event.js";
 import Market from "../../../models/v1/Market.js";
 import MarketRunner from "../../../models/v1/MarketRunner.js";
@@ -9,6 +9,30 @@ import User, { USER_ROLE } from "../../../models/v1/User.js";
 import { io } from "../../../socket/index.js";
 import betPlService from "./betPlService.js";
 import runningBetService from "./runningBetService.js";
+
+// Emit Users data, Bets and Pls
+async function emitUserData({ userId, eventId }) {
+  const user = await User.findById(userId);
+  const trimmedUser = getTrimmedUser(user);
+
+  const userBetsAndPls = await runningBetService.fetchAllUserBetsAndPls({ eventId, userId });
+
+  io.userBet.emit(`event:bet:${userId}`, userBetsAndPls);
+  io.user.emit(`user:${userId}`, trimmedUser);
+}
+
+// Emit event result notification to all users
+async function emitResultNotification({ eventId }) {
+  const event = await Event.findById(eventId);
+
+  const notification = {
+    _id: event._id,
+    name: event.name,
+    matchDateTime: event.matchDate,
+  };
+
+  io.eventNotification.to("event:notification").emit("event:complete", notification);
+}
 
 // Updates userPl and balance of all parents upto SUPER_ADMIN
 async function updateParentPls(userId, userPl) {
@@ -45,21 +69,16 @@ async function updateParentPls(userId, userPl) {
   }
 }
 
-// Emit event result notification to all users
-async function emitResultNotification({ eventId }) {
-  const event = await Event.findById(eventId);
-
-  const notification = {
-    _id: event._id,
-    name: event.name,
-    matchDateTime: event.matchDate,
-  };
-
-  io.eventNotification.to("event:notification").emit("event:complete", notification);
-}
-
 // Check if all markets of an event are completed
 async function completeEvent({ market }) {
+  // Complete Event if Match Odds Settled
+  const marketType = await BetCategory.findById(market.typeId);
+  if (marketType.name === BET_CATEGORIES.MATCH_ODDS) {
+    await Event.findByIdAndUpdate(market.eventId, { completed: true });
+    return;
+  }
+  console.log("here1");
+
   const eventMarkets = await Market.aggregate([
     {
       $match: {
@@ -254,33 +273,14 @@ async function generateMatchOddsResult(reqBody) {
     userBetPromises.push(user.save());
     userBetPromises.push(updateParentPls(user._id, userPl));
 
-    const responses = await Promise.all(userBetPromises);
+    await Promise.all(userBetPromises);
 
-    // Emit user bet data
-    const updatedUser = responses[responses.length - 2];
-    const trimmedUser = getTrimmedUser(updatedUser);
-    const userBetsAndPls = await runningBetService.fetchAllUserBetsAndPls({
-      eventId: market.eventId,
-      userId: userBet._id,
-    });
-    io.userBet.emit(`event:bet:${userBet._id}`, userBetsAndPls);
-    io.user.emit(`user:${userBet._id}`, trimmedUser);
+    await emitUserData({ userId: user._id, eventId: market.eventId });
   }
 
   await Market.findByIdAndUpdate(marketId, { winnerRunnerId: winRunnerId });
 
   await Promise.all([completeEvent({ market }), emitResultNotification({ eventId: market.eventId })]);
-}
-
-// Emit Users data, Bets and Pls
-async function emitUserData({ userId, eventId }) {
-  const user = await User.findById(userId);
-  const trimmedUser = getTrimmedUser(user);
-
-  const userBetsAndPls = await runningBetService.fetchAllUserBetsAndPls({ eventId, userId });
-
-  io.userBet.emit(`event:bet:${userId}`, userBetsAndPls);
-  io.user.emit(`user:${userId}`, trimmedUser);
 }
 
 // Revert result for Match Odds and Bookmaker
@@ -429,6 +429,10 @@ async function revertResult(reqBody) {
       return revertFn[marketType]({ ...reqBody, userBet, market, marketRunner });
     })
   );
+
+  if (marketType === BET_CATEGORIES.MATCH_ODDS) {
+    await Event.findByIdAndUpdate(market.eventId, { completed: false });
+  }
 
   return { message: "Reverted" };
 }
