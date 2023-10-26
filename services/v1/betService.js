@@ -168,7 +168,7 @@ const fetchRunAmount = async ({ ...reqBody }) => {
         for (var j = 0; j < runArray.length; j++) {
           if (findBet[i].isBack == true) {
             if (runArray[j].run >= findBet[i].runnerScore) {
-              runArray[j].amount = runArray[j].amount + findBet[i].stake;
+              runArray[j].amount = runArray[j].amount + (findBet[i].stake * (findBet[i].odds / 100));
             }
             else {
               runArray[j].amount = runArray[j].amount - findBet[i].stake;
@@ -179,7 +179,7 @@ const fetchRunAmount = async ({ ...reqBody }) => {
               runArray[j].amount = runArray[j].amount + findBet[i].stake;
             }
             else {
-              runArray[j].amount = runArray[j].amount - findBet[i].stake;
+              runArray[j].amount = runArray[j].amount - (findBet[i].stake * (findBet[i].odds / 100));
             }
           }
         }
