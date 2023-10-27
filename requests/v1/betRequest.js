@@ -40,6 +40,7 @@ async function getAllBetRequest(req) {
   req.body.username = req.body.username || null;
   req.body.startDate = req.body?.startDate || null;
   req.body.endDate = req.body?.endDate || null;
+  req.body.loginUserId = req.body.loginUserId || null;
 
   const validationSchema = Yup.object().shape({
     page: Yup.number().nullable(true),
@@ -59,6 +60,9 @@ async function getAllBetRequest(req) {
     marketId: Yup.string()
       .nullable(true)
       .test("marketId", "Invalid marketId!", (v) => !v || isValidObjectId),
+    loginUserId: Yup.string()
+      .nullable(true)
+      .test("loginUserId", "Invalid loginUserId!", (v) => !v || isValidObjectId),
 
     betType: Yup.string().nullable(true),
     username: Yup.string().nullable(true),

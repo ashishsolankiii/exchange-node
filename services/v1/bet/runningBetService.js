@@ -3,10 +3,11 @@ import { generatePaginationQueries, generateSearchFilters } from "../../../lib/h
 import Bet, { BET_ORDER_STATUS, BET_RESULT_STATUS } from "../../../models/v1/Bet.js";
 import { BET_CATEGORIES } from "../../../models/v1/BetCategory.js";
 import betPlService from "./betPlService.js";
+import userService from "../userService.js";
 
 // Fetch all bets for listing page
 async function fetchAllBets(reqBody) {
-  const { page, perPage, sortBy, direction, searchQuery, eventId, marketId, betType, username } = reqBody;
+  const { page, perPage, sortBy, direction, searchQuery, eventId, marketId, betType, username, loginUserId } = reqBody;
 
   // Pagination and Sorting
   const sortDirection = direction === "asc" ? 1 : -1;
@@ -33,7 +34,10 @@ async function fetchAllBets(reqBody) {
       filters.isBack = false;
     }
   }
-
+  if (loginUserId) {
+    let userIds = await userService.getAllChildUsers(loginUserId);
+    filters.userId = { $in: userIds }
+  }
   if (username) {
     filters["user.username"] = { $regex: username, $options: "i" };
   }

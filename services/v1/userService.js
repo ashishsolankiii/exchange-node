@@ -634,6 +634,28 @@ const changePassword = async ({ user, ...reqBody }) => {
   }
 };
 
+const getAllChildUsers = async (loginUserId) => {
+  try {
+    const userIds = [];
+    const findUser = await User.findOne({ _id: loginUserId });
+    async function getChidUsers(user, userArray) {
+      let findUsers = await User.find({ parentId: user._id });
+
+      for (var i = 0; i < findUsers.length; i++) {
+        if (findUsers[i].role == USER_ROLE.USER) {
+          userArray.push(findUsers[i]._id);
+        }
+        await getChidUsers(findUsers[i], userArray);
+      }
+    }
+    await getChidUsers(findUser, userIds);
+
+    return userIds;
+  } catch (e) {
+    throw new ErrorResponse(e.message).status(200);
+  }
+};
+
 export default {
   fetchAllUsers,
   fetchUserId,
@@ -644,5 +666,6 @@ export default {
   fetchBalance,
   cloneUser,
   fetchHydratedUser,
-  changePassword
+  changePassword,
+  getAllChildUsers
 };
