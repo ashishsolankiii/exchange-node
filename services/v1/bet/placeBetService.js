@@ -23,7 +23,7 @@ async function calculateFancyPotientialPl(params) {
   const [selectedRunner] = marketOdds;
 
   if (!selectedRunner || Number(selectedRunner.SelectionId) !== Number(runnerSelectionId)) {
-    throw new Error("Runner not found.");
+    throw new Error("Selected fancy not found or inactive!");
   }
 
   const backPrices = [];
@@ -227,7 +227,7 @@ async function processPlaceBetRequest({ user: loggedInUser, marketTypeFns, ...re
 
   // Validate runner
   if (!runner || (runner?.status && runner.status !== RUNNER_STATUS.ACTIVE)) {
-    throw new Error("Runner not found.");
+    throw new Error("Selected fancy not found or inactive!");
   } else if (Number(runner.max > 0) && Number(runner.min) > 0) {
     if (Number(stake) < Number(runner.min) || Number(stake) > Number(runner.max)) {
       throw new Error("Invalid stake.");
