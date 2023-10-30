@@ -248,7 +248,13 @@ async function generateMatchOddsResult(reqBody) {
     let userPl = 0;
 
     for (const bet of userBet.bets) {
-      const isWinner = bet.runnerId.toString() === winRunnerId.toString();
+      let isWinner;
+      if (bet.isBack == true) {
+        isWinner = bet.runnerId.toString() === winRunnerId.toString();
+      }
+      else {
+        isWinner = bet.runnerId.toString() !== winRunnerId.toString();
+      }
       const updatedBet = {
         ...bet,
         betResultStatus: isWinner ? BET_RESULT_STATUS.WON : BET_RESULT_STATUS.LOST,
@@ -308,12 +314,12 @@ async function revertMatchOddsResult({ market, userBet }) {
 
   const losingPotential = currentPls.length
     ? Math.abs(
-        Math.min(
-          ...currentPls.map((runner) => {
-            return runner?.pl || 0;
-          })
-        )
+      Math.min(
+        ...currentPls.map((runner) => {
+          return runner?.pl || 0;
+        })
       )
+    )
     : 0;
 
   user.exposure += losingPotential;
