@@ -216,10 +216,7 @@ const sportWiseMatchList = async (sportId) => {
       if (statusCode === 200 && data.length) {
         event.matchOdds = data[0].runners.map(({ back, lay, runner }) => ({ back, lay, runner }));
       }
-
-      if (!event.videoStreamId) {
-        event.videoStreamId = "";
-      }
+      event.videoStreamId = !event.videoStreamId ? "" : event.videoStreamId;
 
       return event;
     };
