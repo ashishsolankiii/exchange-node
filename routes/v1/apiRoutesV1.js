@@ -24,6 +24,7 @@ import transferTypeRoutes from "./routes/transferTypeRoutes.js";
 import userRoutes from "./routes/userRoutes.js";
 import userstakeRoutes from "./routes/userStakeRoutes.js";
 import withdrawGroupRoutes from "./routes/withdrawGroupRoutes.js";
+import promotionRoutes from "./routes/promotionRoutes.js";
 
 const app = express();
 
@@ -52,5 +53,6 @@ app.use("/script", scriptRoutes);
 app.use("/casino", casinoRoutes);
 app.use("/casinoGame", casinoGameRoutes);
 app.use("/market", marketRoutes);
+app.use("/promotion", promotionRoutes);
 
 export default app;
