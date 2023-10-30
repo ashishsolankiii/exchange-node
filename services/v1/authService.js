@@ -69,6 +69,8 @@ const loginFrontUser = async ({ username, password }) => {
     const existingUser = await User.findOne({
       username: username,
       role: USER_ROLE.USER,
+      isDeleted: false,
+      isActive: true
     });
     if (!existingUser) {
       throw new Error(errorMessage);
