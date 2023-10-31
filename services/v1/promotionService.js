@@ -70,9 +70,9 @@ const fetchPromotionId = async (_id) => {
 /**
  * create Promotion in the database
  */
-const addPromotion = async ({ title, description, rules, termsConditions, isActive }) => {
+const addPromotion = async ({ title, description, rules, termsConditions, promotionType }) => {
   try {
-    const newPromotionObj = { title, description, rules, termsConditions, isActive }
+    const newPromotionObj = { title, description, rules, termsConditions, promotionType }
     const newPromotion = await Promotion.create(newPromotionObj);
 
     return newPromotion;
@@ -84,7 +84,7 @@ const addPromotion = async ({ title, description, rules, termsConditions, isActi
 /**
  * update Promotion in the database
  */
-const modifyPromotion = async ({ _id, title, description, rules, termsConditions, isActive }) => {
+const modifyPromotion = async ({ _id, title, description, rules, termsConditions, promotionType }) => {
   try {
     const promotion = await Promotion.findOne({ _id: _id, isDeleted: false });
 
@@ -96,7 +96,7 @@ const modifyPromotion = async ({ _id, title, description, rules, termsConditions
     promotion.description = description;
     promotion.rules = rules;
     promotion.termsConditions = termsConditions;
-    promotion.isActive = isActive;
+    promotion.promotionType = promotionType;
 
     await promotion.save();
 
