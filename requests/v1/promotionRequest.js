@@ -42,7 +42,7 @@ async function createPromotionRequest(req) {
     description: Yup.string().nullable(true),
     rules: Yup.string().nullable(true),
     termsConditions: Yup.string().nullable(true),
-    isActive: Yup.string().nullable(true)
+    promotionType: Yup.string().required(),
   });
 
   await validationSchema.validate(req.body);
@@ -57,7 +57,7 @@ async function updatePromotionRequest(req) {
     description: Yup.string().nullable(true),
     rules: Yup.string().nullable(true),
     termsConditions: Yup.string().nullable(true),
-    isActive: Yup.string().nullable(true)
+    promotionType: Yup.string().required(),
   });
 
   await validationSchema.validate(req.body);

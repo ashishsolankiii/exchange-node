@@ -2,6 +2,11 @@ import mongoose from "mongoose";
 import softDeletePlugin from "../plugins/soft-delete.js";
 import timestampPlugin from "../plugins/timestamp.js";
 
+export const PROMOTION_TYPE = {
+  SPORT: "sport",
+  CASINO: "casino"
+};
+
 const promotionSchema = new mongoose.Schema({
 
   title: { type: String, required: true },
@@ -14,6 +19,9 @@ const promotionSchema = new mongoose.Schema({
 
   isActive: { type: Boolean, default: true },
 
+  promotionType: {
+    type: String, enum: Object.values(PROMOTION_TYPE), required: true
+  }
 });
 
 promotionSchema.plugin(timestampPlugin);
