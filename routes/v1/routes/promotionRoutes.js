@@ -10,6 +10,6 @@ route(router, "post", "/createPromotion", promotionController.createPromotion);
 route(router, "post", "/updatePromotion", promotionController.updatePromotion);
 route(router, "post", "/deletePromotion", promotionController.deletePromotion);
 route(router, "post", "/updatePromotionStatus", promotionController.updatePromotionStatus);
-route(router, "get", "/allPromotion", promotionController.allPromotion, false);
+route(router, "post", "/allPromotion", promotionController.allPromotion, false);
 
 export default router;

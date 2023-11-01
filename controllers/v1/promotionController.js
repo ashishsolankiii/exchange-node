@@ -1,4 +1,5 @@
 import promotionRequest from "../../requests/v1/promotionRequest.js";
+import themeSettingRequest from "../../requests/v1/themeSettingRequest.js";
 import promotionService from "../../services/v1/promotionService.js";
 
 // Get all promotions
@@ -73,8 +74,8 @@ const updatePromotionStatus = async (req, res) => {
 };
 
 const allPromotion = async (req, res) => {
-
-  const promotions = await promotionService.allPromotion();
+  const { body } = await themeSettingRequest.getThemeSettingByCurrencyAndDomainRequest(req);
+  const promotions = await promotionService.allPromotion({ ...body });
 
   res.status(200).json({ success: true, data: { details: promotions } });
 };

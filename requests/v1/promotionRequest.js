@@ -12,6 +12,7 @@ async function promotionListingRequest(req) {
   req.body.showDeleted = req.body?.showDeleted ? [true, "true"].includes(req.body.showDeleted) : false;
   req.body.showRecord = req.body?.showRecord ? req.body.showRecord?.trim() : "All";
   req.body.status = req.body?.status ? req.body.status : null;
+  req.body.userId = req.body?.userId ? req.body.userId : null;
 
   const validationSchema = Yup.object().shape({
     page: Yup.number().nullable(true),
@@ -29,6 +30,8 @@ async function promotionListingRequest(req) {
     searchQuery: Yup.string().nullable(true),
 
     status: Yup.boolean().nullable(true),
+
+    userId: Yup.string().nullable(true),
   });
 
   await validationSchema.validate(req.body);
@@ -43,6 +46,7 @@ async function createPromotionRequest(req) {
     rules: Yup.string().nullable(true),
     termsConditions: Yup.string().nullable(true),
     promotionType: Yup.string().required(),
+    userId: Yup.string().required().test("userId", "Given userId is not valid!", isValidObjectId),
   });
 
   await validationSchema.validate(req.body);
@@ -58,6 +62,7 @@ async function updatePromotionRequest(req) {
     rules: Yup.string().nullable(true),
     termsConditions: Yup.string().nullable(true),
     promotionType: Yup.string().required(),
+    userId: Yup.string().required().test("userId", "Given userId is not valid!", isValidObjectId),
   });
 
   await validationSchema.validate(req.body);
