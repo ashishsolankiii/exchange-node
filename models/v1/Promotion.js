@@ -21,7 +21,8 @@ const promotionSchema = new mongoose.Schema({
 
   promotionType: {
     type: String, enum: Object.values(PROMOTION_TYPE), required: true
-  }
+  },
+  userId: { type: mongoose.Schema.Types.ObjectId, ref: "user", required: true },
 });
 
 promotionSchema.plugin(timestampPlugin);

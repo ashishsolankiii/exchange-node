@@ -1,8 +1,12 @@
+import ErrorResponse from "../../lib/error-handling/error-response.js";
 import { generatePaginationQueries, generateSearchFilters } from "../../lib/helpers/pipeline.js";
+import Currency from "../../models/v1/Currency.js";
 import Promotion from "../../models/v1/Promotion.js";
+import mongoose from "mongoose";
+import User from "../../models/v1/User.js";
 
 // Fetch all Promotion from the database
-const fetchAllPromotion = async ({ page, perPage, sortBy, direction, showDeleted, searchQuery }) => {
+const fetchAllPromotion = async ({ page, perPage, sortBy, direction, showDeleted, searchQuery, userId }) => {
   try {
     const sortDirection = direction === "asc" ? 1 : -1;
 
@@ -11,6 +15,10 @@ const fetchAllPromotion = async ({ page, perPage, sortBy, direction, showDeleted
     const filters = {
       isDeleted: showDeleted,
     };
+
+    if (userId) {
+      filters.userId = new mongoose.Types.ObjectId(userId);
+    }
 
     if (searchQuery) {
       const fields = ["title"];
@@ -70,9 +78,9 @@ const fetchPromotionId = async (_id) => {
 /**
  * create Promotion in the database
  */
-const addPromotion = async ({ title, description, rules, termsConditions, promotionType }) => {
+const addPromotion = async ({ title, description, rules, termsConditions, promotionType, userId }) => {
   try {
-    const newPromotionObj = { title, description, rules, termsConditions, promotionType }
+    const newPromotionObj = { title, description, rules, termsConditions, promotionType, userId }
     const newPromotion = await Promotion.create(newPromotionObj);
 
     return newPromotion;
@@ -84,7 +92,7 @@ const addPromotion = async ({ title, description, rules, termsConditions, promot
 /**
  * update Promotion in the database
  */
-const modifyPromotion = async ({ _id, title, description, rules, termsConditions, promotionType }) => {
+const modifyPromotion = async ({ _id, title, description, rules, termsConditions, promotionType, userId }) => {
   try {
     const promotion = await Promotion.findOne({ _id: _id, isDeleted: false });
 
@@ -97,6 +105,7 @@ const modifyPromotion = async ({ _id, title, description, rules, termsConditions
     promotion.rules = rules;
     promotion.termsConditions = termsConditions;
     promotion.promotionType = promotionType;
+    promotion.userId = userId;
 
     await promotion.save();
 
@@ -138,9 +147,26 @@ const promotionStatusModify = async ({ _id, fieldName, status }) => {
   }
 };
 
-const allPromotion = async () => {
+const allPromotion = async ({ ...reqBody }) => {
   try {
-    let existingPromotion = await Promotion.find({ isActive: true, isDeleted: false });
+    const { countryName, domainUrl } = reqBody;
+
+    let currencyId = null;
+    const regex = new RegExp(`^${countryName}$`, "i");
+    let currency = await Currency.findOne({ countryName: { $regex: regex } }).select("_id");
+    if (!currency) {
+      currency = await Currency.findOne({ name: { $regex: "inr" } }).select("_id");
+      if (!currency) {
+        return {};
+      }
+    }
+    currencyId = currency._id;
+
+    const superAdmin = await User.findOne({ currencyId: currencyId, domainUrl: domainUrl }).select("_id");
+    if (!superAdmin) {
+      return {};
+    }
+    let existingPromotion = await Promotion.find({ isActive: true, isDeleted: false, userId: superAdmin._id });
     return existingPromotion;
   } catch (e) {
     throw new ErrorResponse(e.message).status(200);
