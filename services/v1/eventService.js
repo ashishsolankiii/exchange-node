@@ -402,9 +402,28 @@ const upcomingLiveEvents = async (type) => {
               $match: filters
             },
             {
-              $project: { name: 1, matchDate: 1, sportId: 1, sportsName: 1 },
+              $project: { name: 1, matchDate: 1, sportId: 1, sportsName: 1, competitionId: 1 },
             },
             { $sort: { matchDate: 1 } },
+            {
+              $lookup: {
+                from: "competitions",
+                localField: "competitionId",
+                foreignField: "_id",
+                as: "competition",
+                pipeline: [
+                  {
+                    $project: { name: 1 },
+                  },
+                ],
+              },
+            },
+            {
+              $unwind: {
+                path: "$competition",
+                preserveNullAndEmptyArrays: true,
+              },
+            },
             {
               $lookup: {
                 from: "markets",
@@ -427,6 +446,14 @@ const upcomingLiveEvents = async (type) => {
                 preserveNullAndEmptyArrays: true,
               },
             },
+            {
+              $set: {
+                competitionName: "$competition.name",
+              },
+            },
+            {
+              $unset: ["competition"],
+            },
           ],
         },
       },
@@ -437,6 +464,8 @@ const upcomingLiveEvents = async (type) => {
     let marketId = [];
     sport.map(f => f.event.filter(function (e) {
       e.matchOdds = [];
+      e.eventName = e.name;
+      delete e.name;
       if (e.market) {
         marketId.push(e.market?.marketId)
       }
