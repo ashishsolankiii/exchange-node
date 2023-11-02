@@ -91,6 +91,13 @@ const upcomingEvent = async (req, res) => {
   res.status(200).json({ success: true, data: { details: UpcomingEvent } });
 };
 
+const upcomingLiveEvents = async (req, res) => {
+  const { type } = req.body;
+  const UpcomingEvent = await eventService.upcomingLiveEvents(type);
+
+  res.status(200).json({ success: true, data: { details: UpcomingEvent } });
+};
+
 const getEventMatchData = async (req, res) => {
   const { eventId } = req.body;
   const GetEventMatchData = await eventService.getEventMatchData({
@@ -163,6 +170,7 @@ export default {
   updateEventStatus,
   activeAllEvent,
   upcomingEvent,
+  upcomingLiveEvents,
   getEventMatchData,
   getEventMatchDataFront,
   getMatchWiseWinLoss,
