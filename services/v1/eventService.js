@@ -4,9 +4,13 @@ import ErrorResponse from "../../lib/error-handling/error-response.js";
 import { generatePaginationQueries, generateSearchFilters } from "../../lib/helpers/pipeline.js";
 import Bet from "../../models/v1/Bet.js";
 import Event from "../../models/v1/Event.js";
+import Sport from "../../models/v1/Sport.js";
 import Market from "../../models/v1/Market.js";
 import { RUNNER_STATUS } from "../../models/v1/MarketRunner.js";
 import User, { USER_ROLE } from "../../models/v1/User.js";
+import { appConfig } from "../../config/app.js";
+import commonService from "./commonService.js";
+import BetCategory, { BET_CATEGORIES } from "../../models/v1/BetCategory.js";
 
 // Fetch all event from the database
 const fetchAllEvent = async ({ ...reqBody }) => {
@@ -357,6 +361,111 @@ const upcomingEvents = async () => {
     ]);
 
     return event;
+  } catch (e) {
+    throw new ErrorResponse(e.message).status(200);
+  }
+};
+
+const upcomingLiveEvents = async (type) => {
+  try {
+
+    const matchOddCategory = await BetCategory.findOne(
+      {
+        name: {
+          $regex: new RegExp(`^${BET_CATEGORIES.MATCH_ODDS}$`, "i"),
+        },
+      },
+      { _id: 1 }
+    );
+    if (!matchOddCategory) {
+      throw new Error("Match odds bet category not found");
+    }
+
+    let filters = {};
+    if (type == 'upcoming') {
+      filters.matchDate = {
+        $gt: new Date(),
+      }
+    }
+    else if (type == 'live') {
+      filters.isLive = true;
+    }
+    const sport = await Sport.aggregate([
+      {
+        $lookup: {
+          from: "events",
+          localField: "_id",
+          foreignField: "sportId",
+          as: "event",
+          pipeline: [
+            {
+              $match: filters
+            },
+            {
+              $project: { name: 1, matchDate: 1, sportId: 1, sportsName: 1 },
+            },
+            { $sort: { matchDate: 1 } },
+            {
+              $lookup: {
+                from: "markets",
+                localField: "_id",
+                foreignField: "eventId",
+                as: "market",
+                pipeline: [
+                  {
+                    $match: { typeId: matchOddCategory._id },
+                  },
+                  {
+                    $project: { marketId: 1 },
+                  },
+                ],
+              },
+            },
+            {
+              $unwind: {
+                path: "$market",
+                preserveNullAndEmptyArrays: true,
+              },
+            },
+          ],
+        },
+      },
+
+      { $project: { name: 1, event: 1, marketId: 1 } },
+    ]);
+
+    let marketId = [];
+    sport.map(f => f.event.filter(function (e) {
+      e.matchOdds = [];
+      if (e.market) {
+        marketId.push(e.market?.marketId)
+      }
+    }));
+
+    const perChunk = 30 // items per chunk    
+    const result = marketId.reduce((resultArray, item, index) => {
+      const chunkIndex = Math.floor(index / perChunk)
+
+      if (!resultArray[chunkIndex]) {
+        resultArray[chunkIndex] = [] // start a new chunk
+      }
+
+      resultArray[chunkIndex].push(item)
+
+      return resultArray
+    }, [])
+
+    for (var k = 0; k < result.length; k++) {
+      const marketUrl = `${appConfig.BASE_URL}?action=matchodds&market_id=${result[k].toString()}`;
+      const { statusCode, data } = await commonService.fetchData(marketUrl);
+      if (statusCode === 200 && data.length) {
+        for (var m = 0; m < data.length; m++) {
+          sport.map(f => f.event.filter(e => e.market?.marketId == data[m].marketId).map(x => x.matchOdds = data[m].runners.map(({ back, lay, runner }) => ({ back, lay, runner }))));
+        }
+      }
+    }
+
+    return sport;
   } catch (e) {
     throw new ErrorResponse(e.message).status(200);
   }
@@ -1120,6 +1229,7 @@ export default {
   eventStatusModify,
   activeEvent,
   upcomingEvents,
+  upcomingLiveEvents,
   getEventMatchData,
   getEventMatchDataFront,
   getMatchStake,
