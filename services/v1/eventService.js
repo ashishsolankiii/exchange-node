@@ -440,7 +440,15 @@ const upcomingLiveEvents = async (type) => {
               $match: filters
             },
             {
-              $project: { name: 1, matchDate: 1, sportId: 1, sportsName: 1, competitionId: 1, countryCode: 1 },
+              $set: {
+                competitionName: "$competition.name",
+              },
+            },
+            {
+              $unset: ["competition"],
+            },
+            {
+              $project: { name: 1, matchDate: 1, sportId: 1, sportsName: 1, competitionId: 1, countryCode: 1, competitionName: 1, isLive: 1 },
             },
             { $sort: { matchDate: 1 } },
             {
@@ -459,28 +467,22 @@ const upcomingLiveEvents = async (type) => {
                 ],
               },
             },
-            {
-              $set: {
-                competitionName: "$competition.name",
-              },
-            },
-            {
-              $unset: ["competition"],
-            },
+
           ],
         },
       },
-
       { $project: { name: 1, event: 1, marketId: 1 } },
     ]);
 
     let marketId = [];
     sport.map(f => f.event.filter(function (e) {
-      e.matchOdds = [];
       e.eventName = e.name;
       delete e.name;
-      if (e.market) {
-        marketId.push(e.market?.marketId)
+      if (e.market.length > 0) {
+        e.market.map(function (s) {
+          marketId.push(s.marketId);
+          s.matchOdds = []
+        })
       }
     }));
 
@@ -502,10 +504,11 @@ const upcomingLiveEvents = async (type) => {
       const { statusCode, data } = await commonService.fetchData(marketUrl);
       if (statusCode === 200 && data.length) {
         for (var m = 0; m < data.length; m++) {
-          sport.map(f => f.event.filter(e => e.market?.marketId == data[m].marketId).map(x => x.matchOdds = data[m].runners.map(({ back, lay, runner }) => ({ back, lay, runner }))));
+          sport.map(f => f.event.map(k => k.market.filter(e => e.marketId == data[m].marketId).map(x => x.matchOdds = data[m].runners.map(({ back, lay, runner }) => ({ back, lay, runner })))));
         }
       }
     }
+
 
     return sport;
   } catch (e) {
