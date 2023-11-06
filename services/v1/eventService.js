@@ -380,16 +380,35 @@ const upcomingLiveEvents = async (type) => {
     if (!matchOddCategory) {
       throw new Error("Match odds bet category not found");
     }
-
-    let filters = {};
+    const startOfDay = new Date(new Date().setUTCHours(0, 0, 0, 0)).toISOString();
+    const endOfDay = new Date(
+      new Date(new Date().setDate(new Date().getDate() + 1)).setUTCHours(23, 59, 59, 999)
+    ).toISOString();
+    let filters = {
+      isActive: true,
+      completed: false,
+      isManual: false,
+      isDeleted: false,
+      'competition.isActive': true,
+      'competition.isDeleted': false,
+      'competition.completed': false,
+      $and: [
+        { 'competition.startDate': { $ne: null } },
+        { 'competition.endDate': { $ne: null } },
+        { 'competition.endDate': { $gte: new Date(startOfDay) } },
+      ],
+    };
     if (type == 'upcoming') {
       filters.matchDate = {
         $gt: new Date(),
-      }
+        $lte: new Date(endOfDay)
+      };
     }
     else if (type == 'live') {
       filters.isLive = true;
+      filters.matchDate = { $gte: new Date(startOfDay), $lt: new Date(endOfDay) };
     }
+
     const sport = await Sport.aggregate([
       {
         $lookup: {
@@ -399,13 +418,6 @@ const upcomingLiveEvents = async (type) => {
           as: "event",
           pipeline: [
             {
-              $match: filters
-            },
-            {
-              $project: { name: 1, matchDate: 1, sportId: 1, sportsName: 1, competitionId: 1 },
-            },
-            { $sort: { matchDate: 1 } },
-            {
               $lookup: {
                 from: "competitions",
                 localField: "competitionId",
@@ -413,7 +425,7 @@ const upcomingLiveEvents = async (type) => {
                 as: "competition",
                 pipeline: [
                   {
-                    $project: { name: 1 },
+                    $project: { name: 1, isActive: 1, isDeleted: 1, completed: 1, startDate: 1, endDate: 1 },
                   },
                 ],
               },
@@ -425,6 +437,13 @@ const upcomingLiveEvents = async (type) => {
               },
             },
             {
+              $match: filters
+            },
+            {
+              $project: { name: 1, matchDate: 1, sportId: 1, sportsName: 1, competitionId: 1 },
+            },
+            { $sort: { matchDate: 1 } },
+            {
               $lookup: {
                 from: "markets",
                 localField: "_id",
@@ -435,15 +454,9 @@ const upcomingLiveEvents = async (type) => {
                     $match: { typeId: matchOddCategory._id },
                   },
                   {
-                    $project: { marketId: 1 },
+                    $project: { marketId: 1, startDate: 1 },
                   },
                 ],
-              },
-            },
-            {
-              $unwind: {
-                path: "$market",
-                preserveNullAndEmptyArrays: true,
               },
             },
             {
@@ -724,12 +737,14 @@ const getEventMatchDataFront = async ({ eventId, user }) => {
     ]);
 
     let betLock = false;
-    const loggedInUser = await User.findOne({ _id: user._id }, { role: 1 });
-    if (loggedInUser.role === USER_ROLE.USER) {
-      if (event[0].betLock === true) {
-        betLock = true;
-      } else {
-        betLock = await getBetLock(user._id);
+    if (user) {
+      const loggedInUser = await User.findOne({ _id: user._id }, { role: 1 });
+      if (loggedInUser.role === USER_ROLE.USER) {
+        if (event[0].betLock === true) {
+          betLock = true;
+        } else {
+          betLock = await getBetLock(user._id);
+        }
       }
     }
 
@@ -872,15 +887,16 @@ const getRacingMatchData = async ({ marketId, eventId, user }) => {
     ]);
 
     let betLock = false;
-    const loggedInUser = await User.findOne({ _id: user._id }, { role: 1 });
-    if (loggedInUser.role === USER_ROLE.USER) {
-      if (event[0].betLock === true) {
-        betLock = true;
-      } else {
-        betLock = await getBetLock(user._id);
+    if (user) {
+      const loggedInUser = await User.findOne({ _id: user._id }, { role: 1 });
+      if (loggedInUser.role === USER_ROLE.USER) {
+        if (event[0].betLock === true) {
+          betLock = true;
+        } else {
+          betLock = await getBetLock(user._id);
+        }
       }
     }
-
     for (var i = 0; i < event[0].market.length; i++) {
       if (event[0].market[i].minStake === 0) {
         event[0].market[i].minStake = event[0].minStake;
