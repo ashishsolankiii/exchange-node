@@ -149,15 +149,7 @@ const sportWiseMatchList = async (sportId) => {
     }
 
     const events = await Event.aggregate([
-      {
-        $match: {
-          sportId: new mongoose.Types.ObjectId(sportId),
-          isActive: true,
-          completed: false,
-          isManual: false,
-          matchDate: { $gte: new Date(startOfDay), $lt: new Date(endOfDay) },
-        },
-      },
+
       {
         $lookup: {
           from: "markets",
@@ -186,13 +178,38 @@ const sportWiseMatchList = async (sportId) => {
           localField: "competitionId",
           foreignField: "_id",
           as: "competition",
-          pipeline: [{ $project: { name: 1 } }],
+          pipeline: [
+            { $project: { name: 1, isActive: 1, isDeleted: 1, completed: 1, startDate: 1, endDate: 1 } }],
+        },
+      },
+      {
+        $unwind: {
+          path: "$competition",
+          preserveNullAndEmptyArrays: true,
+        },
+      },
+      {
+        $match: {
+          sportId: new mongoose.Types.ObjectId(sportId),
+          isActive: true,
+          completed: false,
+          isManual: false,
+          matchDate: { $gte: new Date(startOfDay), $lt: new Date(endOfDay) },
+          isDeleted: false,
+          'competition.isActive': true,
+          'competition.isDeleted': false,
+          'competition.completed': false,
+          $and: [
+            { 'competition.startDate': { $ne: null } },
+            { 'competition.endDate': { $ne: null } },
+            { 'competition.endDate': { $gte: new Date(startOfDay) } }
+          ],
         },
       },
       {
         $project: {
           eventName: "$name",
-          competitionName: { $first: "$competition.name" },
+          competitionName: "$competition.name",
           matchDate: 1,
           isLive: 1,
           marketId: 1,
