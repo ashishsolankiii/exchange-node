@@ -440,7 +440,7 @@ const upcomingLiveEvents = async (type) => {
               $match: filters
             },
             {
-              $project: { name: 1, matchDate: 1, sportId: 1, sportsName: 1, competitionId: 1 },
+              $project: { name: 1, matchDate: 1, sportId: 1, sportsName: 1, competitionId: 1, countryCode: 1 },
             },
             { $sort: { matchDate: 1 } },
             {
@@ -454,7 +454,7 @@ const upcomingLiveEvents = async (type) => {
                     $match: { typeId: matchOddCategory._id },
                   },
                   {
-                    $project: { marketId: 1, startDate: 1 },
+                    $project: { marketId: 1, startDate: 1, time: { $dateToString: { format: "%H:%M", date: "$startDate" } }, },
                   },
                 ],
               },
