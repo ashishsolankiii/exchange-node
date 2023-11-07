@@ -320,14 +320,11 @@ const activeEvent = async ({ eventIds, competitionId }) => {
 
 const upcomingEvents = async () => {
   try {
+    const startOfDay = new Date(new Date().setUTCHours(0, 0, 0, 0)).toISOString();
+    const endOfDay = new Date(
+      new Date(new Date().setDate(new Date().getDate() + 1)).setUTCHours(23, 59, 59, 999)
+    ).toISOString();
     const event = await Event.aggregate([
-      {
-        $match: {
-          matchDate: {
-            $gt: new Date(),
-          },
-        },
-      },
       {
         $lookup: {
           from: "sports",
@@ -345,6 +342,45 @@ const upcomingEvents = async () => {
         $unwind: {
           path: "$sport",
           preserveNullAndEmptyArrays: true,
+        },
+      },
+      {
+        $lookup: {
+          from: "competitions",
+          localField: "competitionId",
+          foreignField: "_id",
+          as: "competition",
+          pipeline: [
+            {
+              $project: { name: 1, isActive: 1, isDeleted: 1, completed: 1, startDate: 1, endDate: 1 },
+            },
+          ],
+        },
+      },
+      {
+        $unwind: {
+          path: "$competition",
+          preserveNullAndEmptyArrays: true,
+        },
+      },
+      {
+        $match: {
+          matchDate: {
+            $gt: new Date(),
+            $lte: new Date(endOfDay)
+          },
+          isActive: true,
+          completed: false,
+          isManual: false,
+          isDeleted: false,
+          'competition.isActive': true,
+          'competition.isDeleted': false,
+          'competition.completed': false,
+          $and: [
+            { 'competition.startDate': { $ne: null } },
+            { 'competition.endDate': { $ne: null } },
+            { 'competition.endDate': { $gte: new Date(startOfDay) } },
+          ],
         },
       },
       {
