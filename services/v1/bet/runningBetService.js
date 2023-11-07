@@ -324,7 +324,14 @@ async function fetchUserBetHistory(reqBody) {
       },
     },
     {
-      $match: filters,
+      $match: {
+        userId: new mongoose.Types.ObjectId(loginUserId),
+        createdAt: {
+          $gte: new Date(startOfDay),
+          $lt: new Date(endOfDay),
+        },
+        ...filters,
+      },
     },
     {
       $unset: ["market"],
