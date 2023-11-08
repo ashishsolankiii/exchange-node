@@ -10,11 +10,9 @@ const getSportsList = async (req, res) => {
 // Sport wise match list
 
 const getSportWiseTodayEvent = async (req, res) => {
-  const { sportId = null } = req.body;
-  if (!sportId) {
-    throw new Error("sportId is required");
-  }
-  const matchList = await exchangeHomeService.sportWiseMatchList(sportId);
+  const { sportId = null, type } = req.body;
+
+  const matchList = await exchangeHomeService.sportWiseMatchList(sportId, type);
 
   res.status(200).json({ success: true, data: matchList });
 };
