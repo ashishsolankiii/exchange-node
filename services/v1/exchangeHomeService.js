@@ -372,7 +372,7 @@ const sportWiseMatchList = async (sportId, type) => {
     ]);
 
     if (sportId) {
-      events = events[0]?.events
+      events = events[0]?.events ? events[0].events : []
     }
 
     let finalResult = {
