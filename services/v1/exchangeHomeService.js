@@ -111,11 +111,11 @@ const sportsList = async () => {
       if (sports[i].competition.length > 0) {
         for (const competition of sports[i].competition) {
           if (competition.event?.length > 0) {
-            allActiveEvent = competition.event.length;
+            allActiveEvent = allActiveEvent + competition.event.length;
             const liveEvent = competition.event.filter((event) => {
               return event.isLive;
             });
-            allLiveEvent = liveEvent.length;
+            allLiveEvent = allLiveEvent + liveEvent.length;
           }
         }
       }
@@ -129,7 +129,7 @@ const sportsList = async () => {
 };
 
 // Sport wise match list
-const sportWiseMatchList = async (sportId) => {
+const sportWiseMatchList = async (sportId, type) => {
   try {
     const startOfDay = new Date(new Date().setUTCHours(0, 0, 0, 0)).toISOString();
     const endOfDay = new Date(
@@ -148,8 +148,39 @@ const sportWiseMatchList = async (sportId) => {
       throw new Error("Match odds bet category not found");
     }
 
-    const events = await Event.aggregate([
+    let filters = {
+      isActive: true,
+      completed: false,
+      isManual: false,
+      isDeleted: false,
+      'competition.isActive': true,
+      'competition.isDeleted': false,
+      'competition.completed': false,
+      $and: [
+        { 'competition.startDate': { $ne: null } },
+        { 'competition.endDate': { $ne: null } },
+        { 'competition.endDate': { $gte: new Date(startOfDay) } },
+      ],
+    };
+    if (type == 'upcoming') {
+      filters.matchDate = {
+        $gt: new Date(),
+        $lte: new Date(endOfDay)
+      };
+    }
+    else if (type == 'live') {
+      filters.isLive = true;
+      filters.matchDate = { $gte: new Date(startOfDay), $lt: new Date(endOfDay) };
+    }
+    else {
+      filters.matchDate = { $gte: new Date(startOfDay), $lt: new Date(endOfDay) };
+    }
 
+    if (sportId) {
+      filters.sportId = new mongoose.Types.ObjectId(sportId);
+    }
+
+    let events = await Event.aggregate([
       {
         $lookup: {
           from: "markets",
@@ -189,62 +220,168 @@ const sportWiseMatchList = async (sportId) => {
         },
       },
       {
-        $match: {
-          sportId: new mongoose.Types.ObjectId(sportId),
-          isActive: true,
-          completed: false,
-          isManual: false,
-          matchDate: { $gte: new Date(startOfDay), $lt: new Date(endOfDay) },
-          isDeleted: false,
-          'competition.isActive': true,
-          'competition.isDeleted': false,
-          'competition.completed': false,
-          $and: [
-            { 'competition.startDate': { $ne: null } },
-            { 'competition.endDate': { $ne: null } },
-            { 'competition.endDate': { $gte: new Date(startOfDay) } }
-          ],
+        $lookup: {
+          from: "sports",
+          localField: "sportId",
+          foreignField: "_id",
+          as: "sport",
+          pipeline: [
+            { $project: { name: 1 } }],
         },
+      },
+      {
+        $unwind: {
+          path: "$sport",
+          preserveNullAndEmptyArrays: true,
+        },
+      },
+      {
+        $match: filters
       },
       {
         $project: {
           eventName: "$name",
           competitionName: "$competition.name",
-          matchDate: 1,
-          isLive: 1,
-          marketId: 1,
-          market: 1,
-          countryCode: 1,
-          videoStreamId: 1
+          matchDate: "$matchDate",
+          isLive: "$isLive",
+          marketId: "$marketId",
+          market: "$market",
+          countryCode: "$countryCode",
+          videoStreamId: "$videoStreamId",
+          sportId: "$sportId",
+          sportName: '$sport.name'
+        },
+      },
+      {
+        $group: {
+          _id: "$sportId",
+          sportName: { $first: "$sportName" },
+          events: { $push: "$$ROOT" }
+        }
+      }
+    ]);
+
+    if (!events.length) {
+      events = [];
+    }
+
+    const fetchEventMarketData = async (event) => {
+      const marketUrl = `${appConfig.BASE_URL}?action=matchodds&market_id=${event.market[0]?.marketId}`;
+      const { statusCode, data } = await commonService.fetchData(marketUrl);
+
+      let matchOdds;
+      if (statusCode === 200 && data.length) {
+        matchOdds = data[0].runners.map(({ back, lay, runner }) => ({ back, lay, runner }));
+      }
+      else {
+        matchOdds = []
+      }
+
+      return matchOdds;
+    };
+
+    for (var i = 0; i < events.length; i++) {
+      for (var j = 0; j < events[i].events.length; j++) {
+        events[i].events[j].matchOdds = await fetchEventMarketData(events[i].events[j]);
+      }
+    }
+
+    let newFilters = {
+      isActive: true,
+      completed: false,
+      isManual: false,
+      isDeleted: false,
+      "competitionData.isActive": true,
+      "competitionData.isDeleted": false,
+      "competitionData.completed": false,
+      $and: [
+        { 'competitionData.startDate': { $ne: null } },
+        { 'competitionData.endDate': { $ne: null } },
+        { 'competitionData.endDate': { $gte: new Date(startOfDay) } },
+      ],
+    }
+    let counts = await Event.aggregate([
+      {
+        $lookup: {
+          from: "competitions",
+          localField: "competitionId",
+          foreignField: "_id",
+          as: "competitionData",
+        },
+      },
+      {
+        $unwind: "$competitionData",
+      },
+      {
+        $facet: {
+          liveEventCount: [
+            {
+              $match: {
+                isLive: true,
+                matchDate: { $gte: new Date(startOfDay), $lt: new Date(endOfDay) },
+                ...newFilters
+              },
+            },
+            { $count: "total" },
+          ],
+          upcomingEventCount: [
+            {
+              $match: {
+                matchDate: {
+                  $gt: new Date(),
+                  $lte: new Date(endOfDay)
+                },
+                ...newFilters
+              },
+            },
+            { $count: "total" },
+          ],
+          totalEvent: [
+            {
+              $match: {
+                matchDate: { $gte: new Date(startOfDay), $lt: new Date(endOfDay) },
+                ...newFilters
+              }
+            },
+            { $count: "total" },
+          ]
+        },
+      },
+      {
+        $project: {
+          liveEventCount: {
+            $arrayElemAt: [
+              "$liveEventCount.total",
+              0,
+            ],
+          },
+          upcomingEventCount: {
+            $arrayElemAt: [
+              "$upcomingEventCount.total",
+              0,
+            ],
+          },
+          totalEvent: {
+            $arrayElemAt: [
+              "$totalEvent.total",
+              0,
+            ],
+          },
         },
       },
     ]);
 
-    if (!events.length) {
-      return [];
+    if (sportId) {
+      events = events[0]?.events
     }
 
-    const marketPromises = [];
-
-    const fetchEventMarketData = async (event) => {
-      const marketUrl = `${appConfig.BASE_URL}?action=matchodds&market_id=${event.marketId}`;
-      const { statusCode, data } = await commonService.fetchData(marketUrl);
-      event.matchOdds = [];
-      if (statusCode === 200 && data.length) {
-        event.matchOdds = data[0].runners.map(({ back, lay, runner }) => ({ back, lay, runner }));
-      }
-      event.videoStreamId = !event.videoStreamId ? "" : event.videoStreamId;
-
-      return event;
-    };
-
-    events.forEach((event) => {
-      marketPromises.push(fetchEventMarketData(event));
-    });
-
-    const data = await Promise.all(marketPromises);
-
-    return data;
+    let finalResult = {
+      totalEvent: counts[0]?.totalEvent ? counts[0].totalEvent : 0,
+      totalLiveEvent: counts[0]?.liveEventCount ? counts[0].liveEventCount : 0,
+      totalUpcomingEvent: counts[0]?.upcomingEventCount ? counts[0].upcomingEventCount : 0,
+      events
+    }
+    return finalResult;
   } catch (e) {
     throw new Error(e);
   }
