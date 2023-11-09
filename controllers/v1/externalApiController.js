@@ -120,11 +120,30 @@ const changePassword = async (req, res) => {
   return res.status(200).json({ success: true, data: users });
 };
 
+
+/**
+ * Get all user listing.
+ * @param {object} req - The request object.
+ * @param {object} res - The response object.
+ * @returns {object} Details after changing the user listing.
+ */
+const getAllUser = async (req, res) => {
+  // Destructure user and body from the request using userRequest
+  const { user, body } = await userRequest.userListingRequest(req);
+
+  // Fetch all users using userService
+  const users = await userService.fetchAllUsers({ user, ...body });
+
+  // Respond with the fetched users data
+  return res.status(200).json({ success: true, data: users });
+};
+
 // Exporting the functions as part of an object
 export default {
   userlogin,
   createUser,
   fetchUserBalance,
   createTransaction,
-  changePassword
+  changePassword,
+  getAllUser
 };
