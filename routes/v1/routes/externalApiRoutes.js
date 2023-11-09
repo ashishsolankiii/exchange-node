@@ -1,6 +1,6 @@
 import express from "express";
 import { route } from "../../../lib/error-handling/routes-error-boundary.js";
-import oauthController from "../../../controllers/v1/oauthController.js";
+import oauthController from "../../../controllers/v1/externalApiController.js";
 import userController from "../../../controllers/v1/userController.js";
 
 const router = express.Router();
