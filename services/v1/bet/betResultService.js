@@ -177,7 +177,7 @@ async function generateFancyResult(params) {
       updatedBet.betResultStatus = updatedBet.betPl > 0 ? BET_RESULT_STATUS.WON : BET_RESULT_STATUS.LOST;
 
       userPl += updatedBet.betPl;
-      userBetPromises.push(Bet.findByIdAndUpdate(bet._id, updatedBet));
+      await Bet.findByIdAndUpdate(bet._id, updatedBet);
     }
 
     // Get user and current used exposure
@@ -188,7 +188,7 @@ async function generateFancyResult(params) {
 
     const exposureInUse = Math.abs(currentPl);
 
-    user.exposure -= exposureInUse;
+    user.exposure = exposureInUse;
     user.userPl += userPl;
     user.balance += userPl;
 
