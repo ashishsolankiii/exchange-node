@@ -129,7 +129,7 @@ const sportsList = async () => {
 };
 
 // Sport wise match list
-const sportWiseMatchList = async (sportId, type) => {
+const sportWiseMatchList = async (sportId, type, userId) => {
   try {
     const startOfDay = new Date(new Date().setUTCHours(0, 0, 0, 0)).toISOString();
     const endOfDay = new Date(
@@ -171,6 +171,9 @@ const sportWiseMatchList = async (sportId, type) => {
     else if (type == 'live') {
       filters.isLive = true;
       filters.matchDate = { $gte: new Date(startOfDay), $lt: new Date(endOfDay) };
+    }
+    else if (type == 'favourite') {
+      filters['favourite.userId'] = new mongoose.Types.ObjectId(userId);
     }
     else {
       filters.matchDate = { $gte: new Date(startOfDay), $lt: new Date(endOfDay) };
@@ -236,6 +239,25 @@ const sportWiseMatchList = async (sportId, type) => {
         },
       },
       {
+        $lookup: {
+          from: "favourites",
+          localField: "_id",
+          foreignField: "eventId",
+          as: "favourite",
+          pipeline: [
+            {
+              $project: { userId: 1, eventId: 1 },
+            },
+          ],
+        },
+      },
+      {
+        $unwind: {
+          path: "$favourite",
+          preserveNullAndEmptyArrays: true,
+        },
+      },
+      {
         $match: filters
       },
       {
@@ -249,7 +271,9 @@ const sportWiseMatchList = async (sportId, type) => {
           countryCode: "$countryCode",
           videoStreamId: "$videoStreamId",
           sportId: "$sportId",
-          sportName: '$sport.name'
+          sportName: '$sport.name',
+          favourite:
+            { $cond: [{ $not: ["$favourite"] }, 0, 1] }
         },
       },
       {
@@ -313,6 +337,25 @@ const sportWiseMatchList = async (sportId, type) => {
         $unwind: "$competitionData",
       },
       {
+        $lookup: {
+          from: "favourites",
+          localField: "_id",
+          foreignField: "eventId",
+          as: "favourite",
+          pipeline: [
+            {
+              $project: { userId: 1, eventId: 1 },
+            },
+          ],
+        },
+      },
+      {
+        $unwind: {
+          path: "$favourite",
+          preserveNullAndEmptyArrays: true,
+        },
+      },
+      {
         $facet: {
           liveEventCount: [
             {
@@ -344,7 +387,17 @@ const sportWiseMatchList = async (sportId, type) => {
               }
             },
             { $count: "total" },
-          ]
+          ],
+          favouriteEventCount: [
+            {
+              $match: {
+                matchDate: { $gte: new Date(startOfDay), $lt: new Date(endOfDay) },
+                'favourite.userId': new mongoose.Types.ObjectId(userId),
+                ...newFilters
+              },
+            },
+            { $count: "total" },
+          ],
         },
       },
       {
@@ -367,6 +420,12 @@ const sportWiseMatchList = async (sportId, type) => {
               0,
             ],
           },
+          favouriteEventCount: {
+            $arrayElemAt: [
+              "$favouriteEventCount.total",
+              0,
+            ],
+          },
         },
       },
     ]);
@@ -379,6 +438,7 @@ const sportWiseMatchList = async (sportId, type) => {
       totalEvent: counts[0]?.totalEvent ? counts[0].totalEvent : 0,
       totalLiveEvent: counts[0]?.liveEventCount ? counts[0].liveEventCount : 0,
       totalUpcomingEvent: counts[0]?.upcomingEventCount ? counts[0].upcomingEventCount : 0,
+      totalFavouriteEvent: counts[0]?.favouriteEventCount ? counts[0].favouriteEventCount : 0,
       events
     }
     return finalResult;
