@@ -10,9 +10,15 @@ const getSportsList = async (req, res) => {
 // Sport wise match list
 
 const getSportWiseTodayEvent = async (req, res) => {
-  const { sportId = null, type } = req.body;
+  const { sportId = null, type, userId } = req.body;
 
-  const matchList = await exchangeHomeService.sportWiseMatchList(sportId, type);
+  if (type == 'favourite') {
+    if (!userId) {
+      throw new Error("userId is required!");
+    }
+  }
+
+  const matchList = await exchangeHomeService.sportWiseMatchList(sportId, type, userId);
 
   res.status(200).json({ success: true, data: matchList });
 };

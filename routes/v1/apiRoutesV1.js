@@ -26,6 +26,7 @@ import userstakeRoutes from "./routes/userStakeRoutes.js";
 import withdrawGroupRoutes from "./routes/withdrawGroupRoutes.js";
 import promotionRoutes from "./routes/promotionRoutes.js";
 import externalApiRoutes from "./routes/externalApiRoutes.js";
+import favouriteApiRoutes from "./routes/favouriteRoutes.js";
 
 const app = express();
 
@@ -56,5 +57,6 @@ app.use("/casinoGame", casinoGameRoutes);
 app.use("/market", marketRoutes);
 app.use("/promotion", promotionRoutes);
 app.use("/external", externalApiRoutes);
+app.use("/favourite", favouriteApiRoutes);
 
 export default app;
