@@ -248,6 +248,9 @@ const sportWiseMatchList = async (sportId, type, userId) => {
             {
               $project: { userId: 1, eventId: 1 },
             },
+            {
+              $match: { userId: new mongoose.Types.ObjectId(userId) }
+            }
           ],
         },
       },
