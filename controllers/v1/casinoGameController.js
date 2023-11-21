@@ -89,6 +89,14 @@ const showCasinoGame = async (req, res) => {
   res.status(200).json({ success: true, data: { details: showCasinoWiseGame } });
 };
 
+const getCasinoGame = async (req, res) => {
+  const { body } = await casinoGameRequest.casinoGameListRequest(req);
+
+  const casinoGames = await casinoGameService.fetchCasinoGame({ ...body });
+
+  return res.status(200).json({ success: true, data: casinoGames });
+};
+
 
 
 export default {
@@ -99,5 +107,6 @@ export default {
   deleteCasinoGame,
   updateCasinoGameStatus,
   showFavouriteGame,
-  showCasinoGame
+  showCasinoGame,
+  getCasinoGame
 };

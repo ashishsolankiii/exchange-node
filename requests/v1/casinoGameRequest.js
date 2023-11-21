@@ -59,8 +59,27 @@ async function updateCasinoGameRequest(req) {
   return req;
 }
 
+async function casinoGameListRequest(req) {
+  req.body.page = req.body?.page ? Number(req.body.page) : null;
+  req.body.perPage = req.body?.perPage ? Number(req.body.perPage) : 10;
+  req.body.casinoId = req.body?.casinoId ? req.body.casinoId : null;
+  req.body.gameType = req.body?.gameType ? req.body.gameType : null;
+
+  const validationSchema = Yup.object().shape({
+    page: Yup.number().nullable(true),
+    perPage: Yup.number(),
+    casinoId: Yup.string().nullable(true),
+    gameType: Yup.string().nullable(true)
+  });
+
+  await validationSchema.validate(req.body);
+
+  return req;
+}
+
 export default {
   casinoGameListingRequest,
   createCasinoGameRequest,
   updateCasinoGameRequest,
+  casinoGameListRequest
 };
