@@ -273,6 +273,88 @@ const showCasinoGame = async ({ casinoId }) => {
   }
 };
 
+const fetchCasinoGame = async ({ ...reqBody }) => {
+  try {
+    const {
+      page,
+      perPage,
+      casinoId,
+      gameType
+    } = reqBody;
+
+    // Pagination 
+    const paginationQueries = generatePaginationQueries(page, perPage);
+
+    // Filters
+    let filters = { isVisible: true, isDeleted: false };
+    if (casinoId) {
+      filters.casinoId = new mongoose.Types.ObjectId(casinoId);
+    }
+
+    const casinoGame = await CasinoGame.aggregate([
+      {
+        $match: filters,
+      },
+      {
+        $lookup: {
+          from: "casinos",
+          localField: "casinoId",
+          foreignField: "_id",
+          as: "casino",
+          pipeline: [
+            {
+              $project: { name: 1 },
+            },
+          ],
+        },
+      },
+      {
+        $unwind: {
+          path: "$casino",
+          preserveNullAndEmptyArrays: true,
+        },
+      },
+      {
+        $set: {
+          casinoName: "$casino.name",
+        },
+      },
+      {
+        $unset: ["casino"],
+      },
+      {
+        $facet: {
+          totalRecords: [{ $count: "count" }],
+          paginatedResults: [
+            ...paginationQueries,
+          ],
+        },
+      },
+    ]);
+
+    const data = {
+      records: [],
+      totalRecords: 0,
+    };
+
+    if (casinoGame?.length) {
+      data.records = casinoGame[0]?.paginatedResults || [];
+      data.totalRecords = casinoGame[0]?.totalRecords?.length ? casinoGame[0]?.totalRecords[0].count : 0;
+    }
+
+    for (var i = 0; i < data.records.length; i++) {
+      const existingCasinoGame = await CasinoGame.findById(data.records[i]._id)
+      data.records[i].image = await existingCasinoGame.getImageUrl(
+        CASINO_GAME_IMAGE_TYPES.CASINO_GAME_IMAGE,
+        CASINO_GAME_IMAGE_SIZES.CASINO_GAME_IMAGE.DEFAULT
+      );
+    }
+
+    return data;
+  } catch (e) {
+    throw new ErrorResponse(e.message).status(200);
+  }
+};
 
 
 export default {
@@ -283,5 +365,6 @@ export default {
   removeCasinoGame,
   casinoGameStatusModify,
   showFavouriteGame,
-  showCasinoGame
+  showCasinoGame,
+  fetchCasinoGame
 };

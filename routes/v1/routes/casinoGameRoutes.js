@@ -12,5 +12,6 @@ route(router, "post", "/deleteCasinoGame", casinoGameController.deleteCasinoGame
 route(router, "post", "/updateCasinoGameStatus", casinoGameController.updateCasinoGameStatus);
 route(router, "get", "/showFavouriteGame", casinoGameController.showFavouriteGame, false);
 route(router, "post", "/showCasinoGame", casinoGameController.showCasinoGame, false);
+route(router, "post", "/getCasinoGame", casinoGameController.getCasinoGame, false);
 
 export default router;
