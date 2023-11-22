@@ -204,6 +204,9 @@ const userSchema = new mongoose.Schema({
 
   // Auto Settlement
   isAutoSettlement: { type: Boolean, default: false },
+
+  // Failed Login Attempts
+  failedLoginAttempts: { type: Number, default: 0 }
 });
 
 userSchema.plugin(timestampPlugin);

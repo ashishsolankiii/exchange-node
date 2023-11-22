@@ -1094,7 +1094,7 @@ const getMatchStake = async ({ eventId, loginUserId }) => {
   }
 };
 
-const completedEventList = async ({ startDate, endDate }) => {
+const completedEventList = async ({ startDate, endDate, user }) => {
   try {
     let startOfDay = moment().subtract(1, "days").startOf("day").toISOString();
     let endOfDay = moment().endOf("day").toISOString();
@@ -1104,13 +1104,32 @@ const completedEventList = async ({ startDate, endDate }) => {
     if (endDate) {
       endOfDay = moment(endDate).endOf("day").toISOString();
     }
-
     const findEvent = await Event.aggregate([
+      {
+        $lookup: {
+          from: "bets",
+          localField: "_id",
+          foreignField: "eventId",
+          as: "bet",
+          pipeline: [
+            {
+              $match: { userId: new mongoose.Types.ObjectId(user) },
+            },
+          ],
+        },
+      },
+      {
+        $unwind: {
+          path: "$bet",
+          preserveNullAndEmptyArrays: true,
+        },
+      },
       {
         $project: {
           name: 1,
           completed: 1,
           isActive: 1,
+          'bet.userId': 1,
           matchDateTime: {
             $cond: {
               if: { $eq: ["$matchTime", null] },
@@ -1161,8 +1180,10 @@ const completedEventList = async ({ startDate, endDate }) => {
             $lte: new Date(endOfDay),
           },
           completed: true,
+          'bet.userId': new mongoose.Types.ObjectId(user)
         },
       },
+
       { $sort: { matchDateTime: -1 } },
     ]);
 

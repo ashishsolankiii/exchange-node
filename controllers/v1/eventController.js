@@ -153,9 +153,11 @@ const getMatchWiseWinLoss = async (req, res) => {
 
 const completedEventList = async (req, res) => {
   const { startDate, endDate } = req.body;
+  const user = req.user._id;
   const completedEventLists = await eventService.completedEventList({
     startDate,
-    endDate
+    endDate,
+    user
   });
 
   res.status(200).json({ success: true, data: { details: completedEventLists } });

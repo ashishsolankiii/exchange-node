@@ -3,6 +3,7 @@ import ErrorResponse from "../../lib/error-handling/error-response.js";
 import { generatePaginationQueries, generateSearchFilters } from "../../lib/helpers/pipeline.js";
 import CasinoGame, { CASINO_GAME_IMAGE_SIZES, CASINO_GAME_IMAGE_TYPES } from "../../models/v1/CasinoGame.js";
 import { uploadImageToS3 } from "../../lib/files/image-upload.js";
+import { GAME_TYPE } from "../../models/v1/Casino.js";
 
 const uploadCasinoGameImages = async (casinoGameId, files) => {
   const casinoGame = await CasinoGame.findById(casinoGameId);
@@ -291,10 +292,16 @@ const fetchCasinoGame = async ({ ...reqBody }) => {
       filters.casinoId = new mongoose.Types.ObjectId(casinoId);
     }
 
+    if (gameType) {
+      if (gameType == GAME_TYPE.LIVE) {
+        filters['casino.casinoType'] = GAME_TYPE.LIVE;
+      }
+      else if (gameType == GAME_TYPE.VIRTUAL) {
+        filters['casino.casinoType'] = GAME_TYPE.VIRTUAL;
+      }
+    }
+
     const casinoGame = await CasinoGame.aggregate([
-      {
-        $match: filters,
-      },
       {
         $lookup: {
           from: "casinos",
@@ -303,7 +310,7 @@ const fetchCasinoGame = async ({ ...reqBody }) => {
           as: "casino",
           pipeline: [
             {
-              $project: { name: 1 },
+              $project: { name: 1, casinoType: 1 },
             },
           ],
         },
@@ -313,6 +320,9 @@ const fetchCasinoGame = async ({ ...reqBody }) => {
           path: "$casino",
           preserveNullAndEmptyArrays: true,
         },
+      },
+      {
+        $match: filters,
       },
       {
         $set: {

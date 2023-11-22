@@ -38,6 +38,16 @@ const loginUser = async ({ username, password }) => {
     // Check if password is valid
     const isValidPassword = await validatePassword(password, existingUser.password);
     if (!isValidPassword) {
+      if (existingUser.role != USER_ROLE.SYSTEM_OWNER) {
+        let count = existingUser.failedLoginAttempts;
+        existingUser.failedLoginAttempts = count + 1;
+
+        if (count + 1 >= 5) {
+          existingUser.isActive = false;
+        }
+
+        await existingUser.save();
+      }
       throw new Error(errorMessage);
     }
 
@@ -52,6 +62,9 @@ const loginUser = async ({ username, password }) => {
     const userPermissions = await permissionService.fetchUserPermissions({
       userId: loggedInUser._id,
     });
+
+    existingUser.failedLoginAttempts = 0;
+    await existingUser.save();
 
     return { user, token, userPermissions };
   } catch (e) {
@@ -84,6 +97,14 @@ const loginFrontUser = async ({ username, password }) => {
     // Check if password is valid
     const isValidPassword = await validatePassword(password, existingUser.password);
     if (!isValidPassword) {
+      let count = existingUser.failedLoginAttempts;
+      existingUser.failedLoginAttempts = count + 1;
+
+      if (count + 1 >= 5) {
+        existingUser.isActive = false;
+      }
+
+      await existingUser.save();
       throw new Error(errorMessage);
     }
 
@@ -92,6 +113,9 @@ const loginFrontUser = async ({ username, password }) => {
     const loggedInUser = existingUser.toJSON();
 
     const user = getTrimmedUser(loggedInUser);
+
+    existingUser.failedLoginAttempts = 0;
+    await existingUser.save();
 
     return { user, token };
   } catch (e) {
