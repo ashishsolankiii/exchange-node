@@ -489,7 +489,14 @@ const removeUser = async (_id) => {
 
 const statusModify = async ({ _id, fieldName, status }) => {
   try {
-    const user = await User.findByIdAndUpdate(_id, { [fieldName]: status }, { new: true });
+    let updateColumn =
+    {
+      [fieldName]: status
+    }
+    if (fieldName == 'isActive' && status == "true") {
+      updateColumn.failedLoginAttempts = 0
+    }
+    const user = await User.findByIdAndUpdate(_id, updateColumn, { new: true });
 
     const userObj = await getTrimmedUser(user);
 

@@ -44,11 +44,14 @@ const loginUser = async ({ username, password }) => {
 
         if (count + 1 >= 5) {
           existingUser.isActive = false;
+          await existingUser.save();
+          throw new Error("Account is inactive. Please contact your support!");
         }
 
         await existingUser.save();
+        throw new Error(errorMessage);
       }
-      throw new Error(errorMessage);
+
     }
 
     const token = generateJwtToken({ _id: existingUser._id });
@@ -77,16 +80,19 @@ const loginFrontUser = async ({ username, password }) => {
     const allowedRoles = [USER_ROLE.USER];
 
     const errorMessage = "The provided credentials are incorrect. Please try again.";
+    const inactiveMessage = "Account is inactive. Please contact your support!";
 
     // Check if username exists
     const existingUser = await User.findOne({
       username: username,
       role: USER_ROLE.USER,
-      isDeleted: false,
-      isActive: true
+      isDeleted: false
     });
     if (!existingUser) {
       throw new Error(errorMessage);
+    }
+    if (existingUser?.isActive != true) {
+      throw new Error(inactiveMessage);
     }
 
     // Check if user is allowed to login
@@ -102,6 +108,8 @@ const loginFrontUser = async ({ username, password }) => {
 
       if (count + 1 >= 5) {
         existingUser.isActive = false;
+        await existingUser.save();
+        throw new Error(inactiveMessage);
       }
 
       await existingUser.save();
