@@ -1119,12 +1119,6 @@ const completedEventList = async ({ startDate, endDate, user }) => {
         },
       },
       {
-        $unwind: {
-          path: "$bet",
-          preserveNullAndEmptyArrays: true,
-        },
-      },
-      {
         $project: {
           name: 1,
           completed: 1,
@@ -1180,7 +1174,7 @@ const completedEventList = async ({ startDate, endDate, user }) => {
             $lte: new Date(endOfDay),
           },
           completed: true,
-          'bet.userId': new mongoose.Types.ObjectId(user)
+          'bet': { $exists: true, $not: { $size: 0 } }
         },
       },
 
