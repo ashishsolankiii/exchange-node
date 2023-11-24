@@ -186,6 +186,7 @@ const addUser = async ({ user, ...reqBody }) => {
     isCasinoAvailable,
     isAutoSettlement,
     transactionCode,
+    defaultMaster
   } = reqBody;
 
   try {
@@ -228,6 +229,7 @@ const addUser = async ({ user, ...reqBody }) => {
       parentId: loggedInUser.cloneParentId ? loggedInUser.cloneParentId : loggedInUser._id,
       countryCode,
       forcePasswordChange,
+      defaultMaster
     };
 
     // For Role = User add other params

@@ -106,6 +106,7 @@ async function createUserRequest(req) {
   req.body.settlementDurationType = req.body.settlementDurationType || null;
   req.body.settlementDate = req.body.settlementDate || null;
   req.body.settlementDay = req.body.settlementDay || null;
+  req.body.defaultMaster = req.body.defaultMaster || false;
 
   const user = await User.findById(req.user._id, { role: 1 });
 
@@ -131,6 +132,8 @@ async function createUserRequest(req) {
     isAutoSettlement: Yup.boolean().nullable(true),
 
     forcePasswordChange: Yup.boolean(),
+
+    defaultMaster: Yup.boolean().nullable(true),
   };
 
   const validationSchema = Yup.object().shape(schemaObj);
@@ -144,6 +147,7 @@ async function updateUserRequest(req) {
   req.body.settlementDurationType = req.body.settlementDurationType || null;
   req.body.settlementDate = req.body.settlementDate || null;
   req.body.settlementDay = req.body.settlementDay || null;
+  req.body.defaultMaster = req.body.defaultMaster || false;
 
   const schemaObj = {
     // Keep this on top so that
@@ -165,6 +169,8 @@ async function updateUserRequest(req) {
     isAutoSettlement: Yup.boolean().nullable(true),
 
     isMultiLoginUser: Yup.boolean().nullable(true),
+
+    defaultMaster: Yup.boolean().nullable(true),
   };
   if (req.body.transactionCode) {
     schemaObj.isTransactionCode = Yup.string().required("isTransactionCode flag is required.");

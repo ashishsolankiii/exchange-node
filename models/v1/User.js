@@ -206,7 +206,10 @@ const userSchema = new mongoose.Schema({
   isAutoSettlement: { type: Boolean, default: false },
 
   // Failed Login Attempts
-  failedLoginAttempts: { type: Number, default: 0 }
+  failedLoginAttempts: { type: Number, default: 0 },
+
+  // Default Master
+  defaultMaster: { type: Boolean, default: false }
 });
 
 userSchema.plugin(timestampPlugin);

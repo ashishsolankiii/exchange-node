@@ -142,6 +142,8 @@ const registerUser = async ({ username, password, fullName, currencyId, mobileNu
     const encryptedPassword = await encryptPassword(password);
     const encryptedTransactionCode = await generateTransactionCode();
 
+    const findDefaultMaster = await User.findOne({ defaultMaster: true });
+
     const newUser = {
       username,
       password: encryptedPassword,
@@ -149,6 +151,7 @@ const registerUser = async ({ username, password, fullName, currencyId, mobileNu
       currencyId,
       mobileNumber,
       transactionCode: encryptedTransactionCode,
+      parentId: findDefaultMaster._id || null
     };
 
     const createdUser = await User.create(newUser);
