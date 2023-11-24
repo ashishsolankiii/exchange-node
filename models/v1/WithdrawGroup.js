@@ -5,6 +5,8 @@ import timestampPlugin from "../plugins/timestamp.js";
 const withdrawGroupSchema = new mongoose.Schema({
   userId: { type: mongoose.Schema.Types.ObjectId, ref: "user", required: true },
 
+  parentUserId: { type: mongoose.Schema.Types.ObjectId, ref: "user", required: true },
+
   type: { type: String, required: true },
 
   remark: { type: String },

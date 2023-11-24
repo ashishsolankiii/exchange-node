@@ -1,4 +1,6 @@
 import exchangeHomeService from "../../services/v1/exchangeHomeService.js";
+import transferTypeRequest from "../../requests/v1/transferTypeRequest.js";
+import transferTypeService from "../../services/v1/transferTypeService.js";
 
 // Get sports list
 const getSportsList = async (req, res) => {
@@ -23,7 +25,18 @@ const getSportWiseTodayEvent = async (req, res) => {
   res.status(200).json({ success: true, data: matchList });
 };
 
+// Get all transferTypes for frontend
+const getTransferType = async (req, res) => {
+  const { body } = await transferTypeRequest.transferTypeListingRequest(req);
+
+  const transferTypes = await transferTypeService.fetchAllTransferType({ ...body });
+
+  return res.status(200).json({ success: true, data: transferTypes });
+};
+
+
 export default {
   getSportsList,
   getSportWiseTodayEvent,
+  getTransferType
 };
