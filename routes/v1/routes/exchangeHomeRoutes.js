@@ -6,5 +6,6 @@ const router = express.Router();
 
 route(router, "get", "/sportsList", exchangeHomeController.getSportsList, false);
 route(router, "post", "/sportWiseMatchList", exchangeHomeController.getSportWiseTodayEvent, false);
+route(router, "post", "/getTransferType", exchangeHomeController.getTransferType);
 
 export default router;

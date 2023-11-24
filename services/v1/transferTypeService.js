@@ -6,7 +6,7 @@ import TransferType from "../../models/v1/TransferType.js";
 // Fetch all TransferType from the database
 const fetchAllTransferType = async ({ ...reqBody }) => {
   try {
-    const { page, perPage, sortBy, direction, searchQuery, showDeleted, userId } = reqBody;
+    const { page, perPage, sortBy, direction, searchQuery, showDeleted, userId, parentUserId } = reqBody;
 
     // Pagination and Sorting
     const sortDirection = direction === "asc" ? 1 : -1;
@@ -21,6 +21,11 @@ const fetchAllTransferType = async ({ ...reqBody }) => {
     if (userId) {
       filters.userId = new mongoose.Types.ObjectId(userId);
     }
+
+    if (parentUserId) {
+      filters.parentUserId = new mongoose.Types.ObjectId(parentUserId);
+    }
+
     if (searchQuery) {
       const fields = ["userId", "type"];
       filters.$or = generateSearchFilters(searchQuery, fields);
@@ -92,6 +97,7 @@ const addTransferType = async ({ ...reqBody }) => {
     platformDisplayName,
     platformAddress,
     depositLink,
+    parentUserId
   } = reqBody;
 
   try {
@@ -112,6 +118,7 @@ const addTransferType = async ({ ...reqBody }) => {
       platformDisplayName,
       platformAddress,
       depositLink,
+      parentUserId
     };
 
     const newTransferType = await TransferType.create(newTransferTypeObj);
@@ -150,6 +157,7 @@ const modifyTransferType = async ({ ...reqBody }) => {
     TransferTypes.platformAddress = reqBody.platformAddress;
     TransferTypes.depositLink = reqBody.depositLink;
     TransferTypes.isActive = reqBody.isActive;
+    TransferTypes.parentUserId = reqBody.parentUserId;
 
     await TransferTypes.save();
 

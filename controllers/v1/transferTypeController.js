@@ -72,11 +72,12 @@ const updateTransferTypeStatus = async (req, res) => {
   res.status(200).json({ success: true, data: { details: updatedTransferTypeStatus } });
 };
 
+
 export default {
   getAllTransferType,
   getTransferTypeById,
   createTransferType,
   updateTransferType,
   deleteTransferType,
-  updateTransferTypeStatus,
+  updateTransferTypeStatus
 };

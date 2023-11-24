@@ -10,6 +10,7 @@ async function withdrawGroupListingRequest(req) {
   req.body.searchQuery = req.body?.searchQuery ? req.body.searchQuery?.trim() : null;
   req.body.showDeleted = req.body?.showDeleted ? [true, "true"].includes(req.body.showDeleted) : false;
   req.body.showRecord = req.body?.showRecord ? req.body.showRecord?.trim() : "All";
+  req.body.parentUserId = req.body?.parentUserId ? req.body.parentUserId : null;
 
   const validationSchema = Yup.object().shape({
     page: Yup.number().nullable(true),
@@ -25,6 +26,8 @@ async function withdrawGroupListingRequest(req) {
     direction: Yup.string().oneOf(["asc", "desc", null], "Invalid direction use 'asc' or 'desc'.").nullable(true),
 
     searchQuery: Yup.string().nullable(true),
+
+    parentUserId: Yup.string().nullable(true),
   });
 
   await validationSchema.validate(req.body);
@@ -35,6 +38,7 @@ async function withdrawGroupListingRequest(req) {
 async function createWithdrawGroupRequest(req) {
   const validationSchema = Yup.object().shape({
     userId: Yup.string().required().test("userId", "Invalid userId!", isValidObjectId),
+    parentUserId: Yup.string().required().test("parentUserId", "Invalid parentUserId!", isValidObjectId),
     type: Yup.string().required(),
     remark: Yup.string(),
     commission: Yup.number(),
@@ -51,6 +55,7 @@ async function updateWithdrawGroupRequest(req) {
   const validationSchema = Yup.object().shape({
     _id: Yup.string().required().test("_id", "Given _id is not valid!", isValidObjectId),
     userId: Yup.string().required().test("userId", "Invalid userId!", isValidObjectId),
+    parentUserId: Yup.string().required().test("parentUserId", "Invalid parentUserId!", isValidObjectId),
     type: Yup.string().required(),
     remark: Yup.string(),
     commission: Yup.number(),

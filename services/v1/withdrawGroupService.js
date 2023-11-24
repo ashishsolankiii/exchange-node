@@ -1,11 +1,12 @@
 import ErrorResponse from "../../lib/error-handling/error-response.js";
 import { generatePaginationQueries, generateSearchFilters } from "../../lib/helpers/pipeline.js";
 import WithdrawGroup from "../../models/v1/WithdrawGroup.js";
+import mongoose, { isValidObjectId } from "mongoose";
 
 // Fetch all WithdrawGroup from the database
 const fetchAllWithdrawGroup = async ({ ...reqBody }) => {
   try {
-    const { page, perPage, sortBy, direction, searchQuery, showDeleted } = reqBody;
+    const { page, perPage, sortBy, direction, searchQuery, showDeleted, parentUserId } = reqBody;
 
     // Pagination and Sorting
     const sortDirection = direction === "asc" ? 1 : -1;
@@ -21,6 +22,10 @@ const fetchAllWithdrawGroup = async ({ ...reqBody }) => {
       const fields = ["userId", "type"];
       filters.$or = generateSearchFilters(searchQuery, fields);
     }
+
+    if (parentUserId) {
+      filters.parentUserId = new mongoose.Types.ObjectId(parentUserId);
+    };
 
     const WithdrawGroups = await WithdrawGroup.aggregate([
       {
@@ -70,7 +75,7 @@ const fetchWithdrawGroupId = async (_id) => {
  * Create WithdrawGroup in the database
  */
 const addWithdrawGroup = async ({ ...reqBody }) => {
-  const { userId, type, remark, commission, minAmount, maxAmount } = reqBody;
+  const { userId, type, remark, commission, minAmount, maxAmount, parentUserId } = reqBody;
 
   try {
     const newWithdrawGroupObj = {
@@ -80,6 +85,7 @@ const addWithdrawGroup = async ({ ...reqBody }) => {
       commission,
       minAmount,
       maxAmount,
+      parentUserId
     };
 
     const newWithdrawGroup = await WithdrawGroup.create(newWithdrawGroupObj);
@@ -108,6 +114,7 @@ const modifyWithdrawGroup = async ({ ...reqBody }) => {
     withdrawGroup.minAmount = reqBody.minAmount;
     withdrawGroup.maxAmount = reqBody.maxAmount;
     withdrawGroup.isActive = reqBody.isActive;
+    withdrawGroup.parentUserId = reqBody.parentUserId;
 
     await withdrawGroup.save();
 

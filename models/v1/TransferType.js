@@ -21,6 +21,8 @@ export const PLATFORM_NAME = {
 const transferTypeSchema = new mongoose.Schema({
   userId: { type: mongoose.Schema.Types.ObjectId, ref: "user", required: true },
 
+  parentUserId: { type: mongoose.Schema.Types.ObjectId, ref: "user", required: true },
+
   type: { type: String, enum: Object.values(DEPOSIT_TYPE), required: true },
 
   name: { type: String, required: true },

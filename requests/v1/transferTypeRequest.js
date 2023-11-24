@@ -11,6 +11,7 @@ async function transferTypeListingRequest(req) {
   req.body.showDeleted = req.body?.showDeleted ? [true, "true"].includes(req.body.showDeleted) : false;
   req.body.showRecord = req.body?.showRecord ? req.body.showRecord?.trim() : "All";
   req.body.userId = req.body?.userId ? req.body.userId?.trim() : null;
+  req.body.parentUserId = req.body?.parentUserId ? req.body.parentUserId : null;
 
   const validationSchema = Yup.object().shape({
     page: Yup.number().nullable(true),
@@ -28,6 +29,8 @@ async function transferTypeListingRequest(req) {
     searchQuery: Yup.string().nullable(true),
 
     userId: Yup.string().nullable(true),
+
+    parentUserId: Yup.string().nullable(true),
   });
 
   await validationSchema.validate(req.body);
@@ -38,6 +41,7 @@ async function transferTypeListingRequest(req) {
 const generateTransferTypeValidationFields = (req) => {
   const validationFields = {
     userId: Yup.string().required().test("userId", "Invalid userId!", isValidObjectId),
+    parentUserId: Yup.string().required().test("parentUserId", "Invalid parentUserId!", isValidObjectId),
     type: Yup.string().required(),
     name: Yup.string().required(),
     minAmount: Yup.number().required(),
