@@ -286,6 +286,7 @@ const getThemeSettingByCurrencyAndDomain = async ({ ...reqBody }) => {
       welcomeMobileImage,
       welcomeDesktopImage,
       logoImage,
+      currencyId
     };
 
     return data;
