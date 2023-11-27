@@ -27,6 +27,7 @@ import withdrawGroupRoutes from "./routes/withdrawGroupRoutes.js";
 import promotionRoutes from "./routes/promotionRoutes.js";
 import externalApiRoutes from "./routes/externalApiRoutes.js";
 import favouriteApiRoutes from "./routes/favouriteRoutes.js";
+import depositRequestRoutes from "./routes/depositRequestRoutes.js";
 
 const app = express();
 
@@ -58,5 +59,6 @@ app.use("/market", marketRoutes);
 app.use("/promotion", promotionRoutes);
 app.use("/external", externalApiRoutes);
 app.use("/favourite", favouriteApiRoutes);
+app.use("/depositRequest", depositRequestRoutes);
 
 export default app;
