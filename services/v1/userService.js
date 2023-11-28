@@ -7,6 +7,7 @@ import AppModule from "../../models/v1/AppModule.js";
 import User, { SETTLEMENT_DURATION, USER_ACCESSIBLE_ROLES, USER_ROLE } from "../../models/v1/User.js";
 import transactionActivityService from "../../services/v1/transactionActivityService.js";
 import permissionService from "./permissionService.js";
+import authService from "./authService.js";
 
 // Fetch all users from the database
 const fetchAllUsers = async ({ user, ...reqBody }) => {
@@ -611,6 +612,9 @@ const fetchHydratedUser = async (_id) => {
     }
 
     user = await getTrimmedUser(user);
+
+    const superUserId = await authService.getSuperAdminUserId(user._id);
+    user.superUserId = superUserId;
     user.scKey = await permissionService.fetchUserActivePermissions({ userId: user._id });
 
     return user;
