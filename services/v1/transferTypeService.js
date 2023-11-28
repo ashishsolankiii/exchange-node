@@ -1,12 +1,46 @@
 import mongoose from "mongoose";
 import ErrorResponse from "../../lib/error-handling/error-response.js";
 import { generatePaginationQueries, generateSearchFilters } from "../../lib/helpers/pipeline.js";
-import TransferType from "../../models/v1/TransferType.js";
+import TransferType, { QR_IMAGE_SIZES, QR_IMAGE_TYPES } from "../../models/v1/TransferType.js";
+import { checkImageExist } from "../../lib/helpers/images.js";
+import { IMAGE_FORMATS, deleteImageFromS3, uploadImageToS3 } from "../../lib/files/image-upload.js";
+
+
+const uploadTransferTypeImages = async (transferTypeId, files) => {
+  const transferType = await TransferType.findById(transferTypeId);
+
+  const { qrImage } = files;
+
+  const imagePromises = [];
+
+  // Generates image size promises for given type
+  const imageSizePromises = (transferType, image, type, name = "") => {
+    const imagePromises = [];
+    const sizes = [
+      QR_IMAGE_SIZES[type].ORIGINAL,
+      QR_IMAGE_SIZES[type].DEFAULT,
+      QR_IMAGE_SIZES[type].THUMBNAIL,
+    ];
+    sizes.forEach((size) => {
+      const path = transferType.generateImagePath(type, size, name);
+      imagePromises.push(uploadImageToS3({ image, path, size, format: IMAGE_FORMATS.PNG }));
+    });
+    return imagePromises;
+  };
+
+  // Welcome Image Mobile
+  if (qrImage) {
+    imagePromises.push(...imageSizePromises(transferType, qrImage, QR_IMAGE_TYPES.QR_IMAGE));
+  }
+
+  await Promise.all(imagePromises);
+};
+
 
 // Fetch all TransferType from the database
 const fetchAllTransferType = async ({ ...reqBody }) => {
   try {
-    const { page, perPage, sortBy, direction, searchQuery, showDeleted, userId, parentUserId } = reqBody;
+    const { page, perPage, sortBy, direction, searchQuery, showDeleted, userId, parentUserId, transferType } = reqBody;
 
     // Pagination and Sorting
     const sortDirection = direction === "asc" ? 1 : -1;
@@ -24,6 +58,10 @@ const fetchAllTransferType = async ({ ...reqBody }) => {
 
     if (parentUserId) {
       filters.parentUserId = new mongoose.Types.ObjectId(parentUserId);
+    }
+
+    if (transferType) {
+      filters.transferType = transferType
     }
 
     if (searchQuery) {
@@ -59,6 +97,14 @@ const fetchAllTransferType = async ({ ...reqBody }) => {
       data.totalRecords = TransferTypes[0]?.totalRecords?.length ? TransferTypes[0]?.totalRecords[0].count : 0;
     }
 
+    for (var i = 0; i < data.records.length; i++) {
+      const existingTransferTypeRequest = await TransferType.findById(data.records[i]._id);
+      const transferTypeImage = await checkImageExist(
+        await existingTransferTypeRequest.getImageUrl(QR_IMAGE_TYPES.QR_IMAGE, QR_IMAGE_SIZES.QR_IMAGE.DEFAULT)
+      );
+      data.records[i].transferTypeImage = transferTypeImage
+    }
+
     return data;
   } catch (e) {
     throw new ErrorResponse(e.message).status(200);
@@ -70,7 +116,20 @@ const fetchAllTransferType = async ({ ...reqBody }) => {
  */
 const fetchTransferTypeId = async (_id) => {
   try {
-    return await TransferType.findById(_id);
+    const existingTransferType = await TransferType.findById(_id);
+    if (!existingTransferType) {
+      return [];
+    }
+    // QR Image
+    const qrImage = await checkImageExist(
+      await existingTransferType.getImageUrl(QR_IMAGE_TYPES.QR_IMAGE, QR_IMAGE_SIZES.QR_IMAGE.DEFAULT)
+    );
+
+    const data = {
+      ...existingTransferType._doc,
+      qrImage,
+    };
+    return data;
   } catch (e) {
     throw new ErrorResponse(e.message).status(200);
   }
@@ -79,7 +138,7 @@ const fetchTransferTypeId = async (_id) => {
 /**
  * Create TransferType in the database
  */
-const addTransferType = async ({ ...reqBody }) => {
+const addTransferType = async ({ files, ...reqBody }) => {
   const {
     userId,
     type,
@@ -97,7 +156,8 @@ const addTransferType = async ({ ...reqBody }) => {
     platformDisplayName,
     platformAddress,
     depositLink,
-    parentUserId
+    parentUserId,
+    transferType
   } = reqBody;
 
   try {
@@ -118,11 +178,12 @@ const addTransferType = async ({ ...reqBody }) => {
       platformDisplayName,
       platformAddress,
       depositLink,
-      parentUserId
+      parentUserId,
+      transferType
     };
 
     const newTransferType = await TransferType.create(newTransferTypeObj);
-
+    await uploadTransferTypeImages(newTransferType._id, files);
     return newTransferType;
   } catch (e) {
     throw new ErrorResponse(e.message).status(200);
@@ -132,7 +193,7 @@ const addTransferType = async ({ ...reqBody }) => {
 /**
  * update TransferType in the database
  */
-const modifyTransferType = async ({ ...reqBody }) => {
+const modifyTransferType = async ({ files, ...reqBody }) => {
   try {
     const TransferTypes = await TransferType.findById(reqBody._id);
 
@@ -158,9 +219,10 @@ const modifyTransferType = async ({ ...reqBody }) => {
     TransferTypes.depositLink = reqBody.depositLink;
     TransferTypes.isActive = reqBody.isActive;
     TransferTypes.parentUserId = reqBody.parentUserId;
+    TransferTypes.transferType = reqBody.transferType;
 
     await TransferTypes.save();
-
+    await uploadTransferTypeImages(TransferTypes._id, files);
     return TransferTypes;
   } catch (e) {
     throw new ErrorResponse(e.message).status(200);

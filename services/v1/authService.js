@@ -118,9 +118,13 @@ const loginFrontUser = async ({ username, password }) => {
 
     const token = generateJwtToken({ _id: existingUser._id });
 
+    const superUserId = await getSuperAdminUserId(existingUser._id);
+
     const loggedInUser = existingUser.toJSON();
 
     const user = getTrimmedUser(loggedInUser);
+
+    user.superUserId = superUserId;
 
     existingUser.failedLoginAttempts = 0;
     await existingUser.save();
@@ -196,6 +200,31 @@ const resetPassword = async ({ userId, oldPassword, newPassword, isForceChangePa
     const user = getTrimmedUser(existingUser.toJSON(), ["transactionCode"]);
 
     return user;
+  } catch (e) {
+    throw new ErrorResponse(e.message).status(200);
+  }
+};
+
+const getSuperAdminUserId = async (userId) => {
+  try {
+    const user = await User.findById(userId);
+
+    if (!(user && user.role !== USER_ROLE.SYSTEM_OWNER)) {
+      return;
+    }
+
+    let iterationCount = 0;
+    const maxIterationCount = Object.keys(USER_ROLE).length - 1; // Don't include SYSTEM_OWNER
+
+    let currentParent = await User.findById(user.parentId);
+    let finalParent;
+    while (iterationCount < maxIterationCount && currentParent && currentParent.role !== USER_ROLE.SYSTEM_OWNER) {
+      finalParent = currentParent._id;
+      currentParent = await User.findById(currentParent.parentId);
+      iterationCount++;
+    }
+
+    return finalParent;
   } catch (e) {
     throw new ErrorResponse(e.message).status(200);
   }

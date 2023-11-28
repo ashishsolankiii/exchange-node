@@ -212,6 +212,18 @@ const transferRequestStatusModify = async ({ _id, fieldName, status }) => {
         } else {
           findUser.balance = findUser.balance - TransferRequests.amount;
           findUser.save();
+
+          let withdrawPoints = new Transaction({
+            points: TransferRequests.amount,
+            balancePoints: findUser.balance - TransferRequests.amount,
+            type: "debit",
+            remark: "Withdraw Points",
+            userId: findUser._id,
+            fromId: findUser._id,
+            fromtoName: findUser.username + " / " + findUser.username,
+          });
+
+          await withdrawPoints.save();
         }
       }
 

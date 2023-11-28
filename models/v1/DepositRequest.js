@@ -18,13 +18,15 @@ export const DEPOSIT_SCREENSHOT_IMAGE_SIZES = {
   [DEPOSIT_SCREENSHOT_IMAGE_TYPES.DEPOSIT_SCREENSHOT]: {
     ...IMAGE_SIZES,
     // avg aspect ratio = 4.27:1
-    DEFAULT: "400_94",
-    THUMBNAIL: "200_47",
+    DEFAULT: "500_500",
+    THUMBNAIL: "200_133",
   },
 };
 
 const depositRequestSchema = new mongoose.Schema({
   userId: { type: mongoose.Schema.Types.ObjectId, ref: "user", required: true },
+
+  parentUserId: { type: mongoose.Schema.Types.ObjectId, ref: "user", required: true },
 
   transferTypeId: { type: mongoose.Schema.Types.ObjectId, ref: "transfer_type", required: true },
 
