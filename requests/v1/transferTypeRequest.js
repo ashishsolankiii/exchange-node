@@ -12,6 +12,7 @@ async function transferTypeListingRequest(req) {
   req.body.showRecord = req.body?.showRecord ? req.body.showRecord?.trim() : "All";
   req.body.userId = req.body?.userId ? req.body.userId?.trim() : null;
   req.body.parentUserId = req.body?.parentUserId ? req.body.parentUserId : null;
+  req.body.transferType = req.body?.transferType ? req.body.transferType : null;
 
   const validationSchema = Yup.object().shape({
     page: Yup.number().nullable(true),
@@ -31,6 +32,8 @@ async function transferTypeListingRequest(req) {
     userId: Yup.string().nullable(true),
 
     parentUserId: Yup.string().nullable(true),
+
+    parentUserId: Yup.string().nullable(true),
   });
 
   await validationSchema.validate(req.body);
@@ -47,6 +50,7 @@ const generateTransferTypeValidationFields = (req) => {
     minAmount: Yup.number().required(),
     maxAmount: Yup.number().required(),
     description: Yup.string().nullable(true),
+    transferType: Yup.string().required(),
   };
 
   if (req.body.type === DEPOSIT_TYPE.CASH) {

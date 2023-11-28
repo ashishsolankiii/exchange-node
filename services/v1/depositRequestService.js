@@ -5,6 +5,7 @@ import DepositRequest, { STATUS, DEPOSIT_SCREENSHOT_IMAGE_SIZES, DEPOSIT_SCREENS
 import User from "../../models/v1/User.js";
 import { checkImageExist } from "../../lib/helpers/images.js";
 import { IMAGE_FORMATS, deleteImageFromS3, uploadImageToS3 } from "../../lib/files/image-upload.js";
+import Transaction from "../../models/v1/Transaction.js";
 
 const uploadDepositImages = async (depositRequestId, files) => {
   const depositRequest = await DepositRequest.findById(depositRequestId);
@@ -40,7 +41,7 @@ const uploadDepositImages = async (depositRequestId, files) => {
 // Fetch all DepositRequest from the database
 const fetchAllDepositRequest = async ({ ...reqBody }) => {
   try {
-    const { page, perPage, sortBy, direction, searchQuery, showDeleted, userId, requestedUserId, status } = reqBody;
+    const { page, perPage, sortBy, direction, searchQuery, showDeleted, userId, parentUserId, status } = reqBody;
 
     // Pagination and Sorting
     const sortDirection = direction === "asc" ? 1 : -1;
@@ -57,6 +58,10 @@ const fetchAllDepositRequest = async ({ ...reqBody }) => {
 
     if (status) {
       filters.status = status;
+    }
+
+    if (parentUserId) {
+      filters.parentUserId = new mongoose.Types.ObjectId(parentUserId);
     }
 
     if (searchQuery) {
@@ -163,7 +168,7 @@ const fetchDepositRequestId = async (_id) => {
  * Create DepositRequest in the database
  */
 const addDepositRequest = async ({ files, ...reqBody }) => {
-  const { userId, transferTypeId, utrTransactionId, amount } = reqBody;
+  const { userId, transferTypeId, utrTransactionId, amount, parentUserId } = reqBody;
 
   try {
     const newDepositRequestObj = {
@@ -171,6 +176,7 @@ const addDepositRequest = async ({ files, ...reqBody }) => {
       transferTypeId,
       utrTransactionId,
       amount,
+      parentUserId
     };
 
     const newDepositRequest = await DepositRequest.create(newDepositRequestObj);
@@ -242,6 +248,18 @@ const depositRequestStatusModify = async ({ _id, fieldName, status }) => {
         } else {
           findUser.balance = findUser.balance + DepositRequests.amount;
           findUser.save();
+
+          let depositPoints = new Transaction({
+            points: DepositRequests.amount,
+            balancePoints: findUser.balance + DepositRequests.amount,
+            type: "credit",
+            remark: "Deposit Points",
+            userId: findUser._id,
+            fromId: findUser._id,
+            fromtoName: findUser.username + " / " + findUser.username,
+          });
+
+          await depositPoints.save();
         }
       }
 

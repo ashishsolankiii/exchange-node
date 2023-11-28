@@ -27,7 +27,7 @@ const getTransferTypeById = async (req, res) => {
 const createTransferType = async (req, res) => {
   const { body } = await transferTypeRequest.createTransferTypeRequest(req);
 
-  const newTransferType = await transferTypeService.addTransferType({ ...body });
+  const newTransferType = await transferTypeService.addTransferType({ files: req.files, ...body });
 
   res.status(201).json({ success: true, data: { details: newTransferType } });
 };
@@ -36,7 +36,7 @@ const createTransferType = async (req, res) => {
 const updateTransferType = async (req, res) => {
   const { body } = await transferTypeRequest.updateTransferTypeRequest(req);
 
-  const updatedTransferType = await transferTypeService.modifyTransferType({ ...body });
+  const updatedTransferType = await transferTypeService.modifyTransferType({ files: req.files, ...body });
 
   res.status(200).json({ success: true, data: { details: updatedTransferType } });
 };

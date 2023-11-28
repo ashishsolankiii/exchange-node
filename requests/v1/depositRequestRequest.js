@@ -10,6 +10,7 @@ async function depositRequestListingRequest(req) {
   req.body.searchQuery = req.body?.searchQuery ? req.body.searchQuery?.trim() : null;
   req.body.showDeleted = req.body?.showDeleted ? [true, "true"].includes(req.body.showDeleted) : false;
   req.body.userId = req.body?.userId ? req.body.userId?.trim() : null;
+  req.body.parentUserId = req.body?.parentUserId ? req.body.parentUserId?.trim() : null;
   req.body.status = req.body?.status ? req.body.status : null;
 
   const additionalSortKeys = ["requestedUserName", "transferTypeName", "withdrawGroupName"];
@@ -32,6 +33,7 @@ async function depositRequestListingRequest(req) {
 
     searchQuery: Yup.string().nullable(true),
     userId: Yup.string().nullable(true),
+    parentUserId: Yup.string().nullable(true),
     status: Yup.string().nullable(true),
   });
 
@@ -46,7 +48,8 @@ async function createDepositRequestRequest(req) {
     transferTypeId: Yup.string().required().test("transferTypeId", "Invalid transferTypeId!", isValidObjectId),
     amount: Yup.number().required(),
     status: Yup.string().nullable(true),
-    utrTransactionId: Yup.string().required()
+    utrTransactionId: Yup.string().required(),
+    parentUserId: Yup.string().required().test("parentUserId", "Invalid parentUserId!", isValidObjectId),
   });
 
   await validationSchema.validate(req.body);
