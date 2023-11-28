@@ -55,7 +55,7 @@ const fetchAllTransferRequest = async ({ ...reqBody }) => {
       },
       {
         $lookup: {
-          from: "deposit_types",
+          from: "transfer_types",
           localField: "transferTypeId",
           foreignField: "_id",
           as: "transferType",
