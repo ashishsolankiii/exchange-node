@@ -7,7 +7,7 @@ import User from "../../models/v1/User.js";
 // Fetch all TransferRequest from the database
 const fetchAllTransferRequest = async ({ ...reqBody }) => {
   try {
-    const { page, perPage, sortBy, direction, searchQuery, showDeleted, userId, requestedUserId, status } = reqBody;
+    const { page, perPage, sortBy, direction, searchQuery, showDeleted, userId, parentUserId, status } = reqBody;
 
     // Pagination and Sorting
     const sortDirection = direction === "asc" ? 1 : -1;
@@ -21,8 +21,8 @@ const fetchAllTransferRequest = async ({ ...reqBody }) => {
     if (userId) {
       filters.userId = new mongoose.Types.ObjectId(userId);
     }
-    if (requestedUserId) {
-      filters.requestedUserId = new mongoose.Types.ObjectId(requestedUserId);
+    if (parentUserId) {
+      filters.parentUserId = new mongoose.Types.ObjectId(parentUserId);
     }
 
     if (status) {
@@ -41,7 +41,7 @@ const fetchAllTransferRequest = async ({ ...reqBody }) => {
       {
         $lookup: {
           from: "users",
-          localField: "requestedUserId",
+          localField: "userId",
           foreignField: "_id",
           as: "user",
           pipeline: [{ $project: { username: 1 } }],
@@ -67,21 +67,21 @@ const fetchAllTransferRequest = async ({ ...reqBody }) => {
           transferTypeName: "$transferType.type",
         },
       },
-      {
-        $lookup: {
-          from: "withdraw_groups",
-          localField: "withdrawGroupId",
-          foreignField: "_id",
-          as: "withdrawGroup",
-          pipeline: [{ $project: { type: 1 } }],
-        },
-      },
-      { $unwind: "$withdrawGroup" },
-      {
-        $addFields: {
-          withdrawGroupName: "$withdrawGroup.type",
-        },
-      },
+      // {
+      //   $lookup: {
+      //     from: "withdraw_groups",
+      //     localField: "withdrawGroupId",
+      //     foreignField: "_id",
+      //     as: "withdrawGroup",
+      //     pipeline: [{ $project: { type: 1 } }],
+      //   },
+      // },
+      // { $unwind: "$withdrawGroup" },
+      // {
+      //   $addFields: {
+      //     withdrawGroupName: "$withdrawGroup.type",
+      //   },
+      // },
       {
         $facet: {
           totalRecords: [{ $count: "count" }],
@@ -127,7 +127,7 @@ const fetchTransferRequestId = async (_id) => {
  * Create TransferRequest in the database
  */
 const addTransferRequest = async ({ ...reqBody }) => {
-  const { userId, transferTypeId, withdrawGroupId, amount, requestedUserId } = reqBody;
+  const { userId, transferTypeId, withdrawGroupId, amount, parentUserId } = reqBody;
 
   try {
     var findUser = await User.findById(userId);
@@ -140,7 +140,7 @@ const addTransferRequest = async ({ ...reqBody }) => {
       transferTypeId,
       withdrawGroupId,
       amount,
-      requestedUserId,
+      parentUserId,
     };
 
     const newTransferRequest = await TransferRequest.create(newTransferRequestObj);
@@ -163,7 +163,7 @@ const modifyTransferRequest = async ({ ...reqBody }) => {
     }
 
     TransferRequests.userId = reqBody.userId;
-    TransferRequests.requestedUserId = reqBody.requestedUserId;
+    TransferRequests.parentUserId = reqBody.parentUserId;
     TransferRequests.transferTypeId = reqBody.transferTypeId;
     TransferRequests.withdrawGroupId = reqBody.withdrawGroupId;
     TransferRequests.amount = reqBody.amount;

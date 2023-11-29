@@ -4,7 +4,6 @@ import { generatePaginationQueries, generateSearchFilters } from "../../lib/help
 import { encryptPassword, generateJwtToken, getTrimmedUser, validatePassword } from "../../lib/io-guards/auth.js";
 import TransactionUser from "../../models/v1/TransactionUser.js";
 import User from "../../models/v1/User.js";
-import authService from "./authService.js";
 
 /**
  * Create Transaction User in the database
@@ -171,12 +170,12 @@ const loginTransactionUser = async ({ username, password }) => {
     if (!isValidPassword) {
       throw new Error(errorMessage);
     }
-    const superUserId = await authService.getSuperAdminUserId(existingUser.userId);
+
     let user = {
       _id: existingUser._id,
       name: existingUser.name,
       username: existingUser.username,
-      superUserId: superUserId,
+      superUserId: existingUser.userId,
     };
 
     const token = generateJwtToken({ _id: existingUser._id });

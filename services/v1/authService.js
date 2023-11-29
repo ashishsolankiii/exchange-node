@@ -120,11 +120,14 @@ const loginFrontUser = async ({ username, password }) => {
 
     const superUserId = await getSuperAdminUserId(existingUser._id);
 
+    const masterUserId = await getMasterUserId(existingUser._id);
+
     const loggedInUser = existingUser.toJSON();
 
     const user = getTrimmedUser(loggedInUser);
 
     user.superUserId = superUserId;
+    user.masterUserId = masterUserId;
 
     existingUser.failedLoginAttempts = 0;
     await existingUser.save();
@@ -135,18 +138,22 @@ const loginFrontUser = async ({ username, password }) => {
   }
 };
 
-const registerUser = async ({ username, password, fullName, currencyId, mobileNumber }) => {
+const registerUser = async ({ username, password, fullName, currencyId, mobileNumber, domainUrl }) => {
   try {
     // Check if currency exists
+    const encryptedPassword = await encryptPassword(password);
+    const encryptedTransactionCode = await generateTransactionCode();
+
+
     const currency = await Currency.findById(currencyId);
     if (!currency) {
       throw new Error("Currency not found!");
     }
 
-    const encryptedPassword = await encryptPassword(password);
-    const encryptedTransactionCode = await generateTransactionCode();
-
-    const findDefaultMaster = await User.findOne({ defaultMaster: true });
+    const superAdmin = await User.findOne({ currencyId: currencyId, domainUrl: domainUrl });
+    if (!superAdmin) {
+      return {};
+    }
 
     const newUser = {
       username,
@@ -155,7 +162,7 @@ const registerUser = async ({ username, password, fullName, currencyId, mobileNu
       currencyId,
       mobileNumber,
       transactionCode: encryptedTransactionCode,
-      parentId: findDefaultMaster._id || null
+      parentId: superAdmin.defaultMasterUserId || null
     };
 
     const createdUser = await User.create(newUser);
@@ -225,6 +232,35 @@ const getSuperAdminUserId = async (userId) => {
     }
 
     return finalParent;
+  } catch (e) {
+    throw new ErrorResponse(e.message).status(200);
+  }
+};
+
+const getMasterUserId = async (userId) => {
+  try {
+    const user = await User.findById(userId);
+
+    if (!(user && user.role !== USER_ROLE.SYSTEM_OWNER)) {
+      return;
+    }
+
+    let currentParent = await User.findById(user.parentId);
+    let finalMasterId = "";
+    let finalSuperUser = "";
+    while (currentParent && currentParent.role !== USER_ROLE.SYSTEM_OWNER) {
+      if (currentParent.role == USER_ROLE.MASTER) {
+        finalMasterId = currentParent._id;
+      }
+      finalSuperUser = currentParent;
+      currentParent = await User.findById(currentParent.parentId);
+    }
+
+    if (finalMasterId == "") {
+      finalMasterId = finalSuperUser.defaultMasterUserId;
+    }
+
+    return finalMasterId;
   } catch (e) {
     throw new ErrorResponse(e.message).status(200);
   }

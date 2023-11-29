@@ -209,7 +209,7 @@ const userSchema = new mongoose.Schema({
   failedLoginAttempts: { type: Number, default: 0 },
 
   // Default Master
-  defaultMaster: { type: Boolean, default: false }
+  defaultMasterUserId: { type: mongoose.Schema.Types.ObjectId, default: null, ref: "user" },
 });
 
 userSchema.plugin(timestampPlugin);

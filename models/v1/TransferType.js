@@ -51,9 +51,9 @@ const transferTypeSchema = new mongoose.Schema({
 
   name: { type: String, required: true },
 
-  minAmount: { type: Number, default: 0, required: true },
+  minAmount: { type: Number, default: 0 },
 
-  maxAmount: { type: Number, default: 0, required: true },
+  maxAmount: { type: Number, default: 0 },
 
   description: { type: String },
 

@@ -26,4 +26,6 @@ route(router, "post", "/getUserActivityTypes", userController.getUserActivityTyp
 
 route(router, "post", "/changePassword", userController.changePassword);
 
+route(router, "post", "/getSuperAdminMasters", userController.getSuperAdminMasters);
+
 export default router;

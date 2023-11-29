@@ -32,6 +32,8 @@ async function userRegisterRequest(req) {
       .test("currencyId", "Invalid currencyId!", isValidObjectId),
 
     mobileNumber: Yup.string().length(10).required(),
+
+    domainUrl: Yup.string().nullable(true),
   });
 
   await validationSchema.validate(req.body);
