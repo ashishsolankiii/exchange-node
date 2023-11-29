@@ -177,6 +177,19 @@ const changePassword = async (req, res) => {
   return res.status(200).json({ success: true, data: users });
 };
 
+const getSuperAdminMasters = async (req, res) => {
+
+  const { _id = null } = req.body;
+
+  if (!_id) {
+    throw new ErrorResponse("_id is required!").status(200);
+  }
+
+  const users = await userService.fetchSuperAdminMasters(_id);
+
+  return res.status(200).json({ success: true, data: users });
+};
+
 export default {
   getAllUser,
   getUserById,
@@ -191,5 +204,6 @@ export default {
   getHydratedUser,
   getUserActivity,
   getUserActivityTypes,
-  changePassword
+  changePassword,
+  getSuperAdminMasters
 };

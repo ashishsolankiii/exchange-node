@@ -187,7 +187,7 @@ const addUser = async ({ user, ...reqBody }) => {
     isCasinoAvailable,
     isAutoSettlement,
     transactionCode,
-    defaultMaster
+    defaultMasterUserId
   } = reqBody;
 
   try {
@@ -230,7 +230,7 @@ const addUser = async ({ user, ...reqBody }) => {
       parentId: loggedInUser.cloneParentId ? loggedInUser.cloneParentId : loggedInUser._id,
       countryCode,
       forcePasswordChange,
-      defaultMaster
+      defaultMasterUserId
     };
 
     // For Role = User add other params
@@ -669,6 +669,30 @@ const getAllChildUsers = async (loginUserId) => {
   }
 };
 
+const fetchSuperAdminMasters = async (_id) => {
+  try {
+    const userIds = [];
+    const findUser = await User.findOne({ _id: _id });
+    async function getChidUsers(user, userArray) {
+      let findUsers = await User.find({ parentId: user._id });
+
+      for (var i = 0; i < findUsers.length; i++) {
+        if (findUsers[i].role == USER_ROLE.MASTER) {
+          userArray.push({ _id: findUsers[i]._id, username: findUsers[i]?.username });
+        }
+        await getChidUsers(findUsers[i], userArray);
+      }
+    }
+    await getChidUsers(findUser, userIds);
+    const data = {
+      records: userIds
+    }
+    return data;
+  } catch (e) {
+    throw new ErrorResponse(e.message).status(200);
+  }
+};
+
 export default {
   fetchAllUsers,
   fetchUserId,
@@ -680,5 +704,6 @@ export default {
   cloneUser,
   fetchHydratedUser,
   changePassword,
-  getAllChildUsers
+  getAllChildUsers,
+  fetchSuperAdminMasters
 };

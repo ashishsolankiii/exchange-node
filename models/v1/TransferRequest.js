@@ -11,7 +11,7 @@ export const STATUS = {
 const transferRequestSchema = new mongoose.Schema({
   userId: { type: mongoose.Schema.Types.ObjectId, ref: "user", required: true },
 
-  requestedUserId: { type: mongoose.Schema.Types.ObjectId, ref: "user", required: true },
+  parentUserId: { type: mongoose.Schema.Types.ObjectId, ref: "user", required: true },
 
   transferTypeId: { type: mongoose.Schema.Types.ObjectId, ref: "transfer_type", required: true },
 

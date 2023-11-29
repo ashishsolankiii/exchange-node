@@ -47,8 +47,8 @@ const generateTransferTypeValidationFields = (req) => {
     parentUserId: Yup.string().required().test("parentUserId", "Invalid parentUserId!", isValidObjectId),
     type: Yup.string().required(),
     name: Yup.string().required(),
-    minAmount: Yup.number().required(),
-    maxAmount: Yup.number().required(),
+    minAmount: Yup.number().nullable(true),
+    maxAmount: Yup.number().nullable(true),
     description: Yup.string().nullable(true),
     transferType: Yup.string().required(),
   };
