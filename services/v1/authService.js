@@ -271,5 +271,6 @@ export default {
   loginFrontUser,
   registerUser,
   resetPassword,
-  getSuperAdminUserId
+  getSuperAdminUserId,
+  getMasterUserId
 };
