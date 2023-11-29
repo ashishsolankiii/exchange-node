@@ -614,7 +614,9 @@ const fetchHydratedUser = async (_id) => {
     user = await getTrimmedUser(user);
 
     const superUserId = await authService.getSuperAdminUserId(user._id);
+    const masterUserId = await authService.getMasterUserId(user._id);
     user.superUserId = superUserId;
+    user.masterUserId = masterUserId;
     user.scKey = await permissionService.fetchUserActivePermissions({ userId: user._id });
 
     return user;
