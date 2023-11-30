@@ -21,6 +21,7 @@ async function eventListingRequest(req) {
       ? JSON.parse(req.body.fields)
       : req.body.fields
     : null;
+  req.body.eventStatus = req.body?.eventStatus || null;
 
   const validationSchema = Yup.object().shape({
     page: Yup.number().nullable(true),
@@ -52,6 +53,8 @@ async function eventListingRequest(req) {
     competitionId: Yup.string()
       .nullable(true)
       .test("competitionId", "Invalid competitionId!", (v) => !v || isValidObjectId),
+
+    eventStatus: Yup.string().nullable(true),
   });
 
   await validationSchema.validate(req.body);

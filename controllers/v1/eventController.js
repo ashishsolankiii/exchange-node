@@ -3,6 +3,7 @@ import eventService from "../../services/v1/eventService.js";
 
 // Get all events
 const getAllEvent = async (req, res) => {
+  // console.log("reqreqreq", req);
   const { body } = await eventRequest.eventListingRequest(req);
 
   const events = await eventService.fetchAllEvent({ ...body });
