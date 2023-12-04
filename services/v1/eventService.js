@@ -28,6 +28,7 @@ const fetchAllEvent = async ({ ...reqBody }) => {
       sportId,
       competitionId,
       fields,
+      eventStatus,
     } = reqBody;
 
     let fromDate, toDate;
@@ -80,6 +81,18 @@ const fetchAllEvent = async ({ ...reqBody }) => {
 
     if (completed) {
       filters.completed = [true, "true"].includes(completed);
+    }
+
+    if (eventStatus === "Live") {
+      filters.isLive = true;
+    } else if (eventStatus === "Completed") {
+      filters.completed = true;
+    } else if (eventStatus === "Settled") {
+      filters.isSettled = true;
+    } else if (eventStatus === "Upcoming") {
+      filters.isLive = false;
+      filters.completed = false;
+      filters.isSettled = false;
     }
 
     const event = await Event.aggregate([
@@ -522,7 +535,7 @@ const upcomingLiveEvents = async (type) => {
       }
     }));
 
-    const perChunk = 30 // items per chunk    
+    const perChunk = 30 // items per chunk
     const result = marketId.reduce((resultArray, item, index) => {
       const chunkIndex = Math.floor(index / perChunk)
 
