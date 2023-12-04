@@ -3,6 +3,7 @@ import ErrorResponse from "../../lib/error-handling/error-response.js";
 import { generatePaginationQueries, generateSearchFilters } from "../../lib/helpers/pipeline.js";
 import TransferRequest, { STATUS } from "../../models/v1/TransferRequest.js";
 import User from "../../models/v1/User.js";
+import Transaction from "../../models/v1/Transaction.js";
 
 // Fetch all TransferRequest from the database
 const fetchAllTransferRequest = async ({ ...reqBody }) => {
@@ -211,7 +212,7 @@ const transferRequestStatusModify = async ({ _id, fieldName, status }) => {
           throw new Error("Given amount exceed the available balance!");
         } else {
           findUser.balance = findUser.balance - TransferRequests.amount;
-          findUser.save();
+          await findUser.save();
 
           let withdrawPoints = new Transaction({
             points: TransferRequests.amount,

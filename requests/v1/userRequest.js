@@ -106,7 +106,7 @@ async function createUserRequest(req) {
   req.body.settlementDurationType = req.body.settlementDurationType || null;
   req.body.settlementDate = req.body.settlementDate || null;
   req.body.settlementDay = req.body.settlementDay || null;
-  req.body.defaultMasterUserId = req.body.defaultMasterUserId || false;
+  req.body.defaultMasterUserId = req.body.defaultMasterUserId || null;
 
   const user = await User.findById(req.user._id, { role: 1 });
 
@@ -147,7 +147,7 @@ async function updateUserRequest(req) {
   req.body.settlementDurationType = req.body.settlementDurationType || null;
   req.body.settlementDate = req.body.settlementDate || null;
   req.body.settlementDay = req.body.settlementDay || null;
-  req.body.defaultMasterUserId = req.body.defaultMasterUserId || false;
+  req.body.defaultMasterUserId = req.body.defaultMasterUserId || null;
 
   const schemaObj = {
     // Keep this on top so that
