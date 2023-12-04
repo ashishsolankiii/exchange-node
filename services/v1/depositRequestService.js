@@ -247,7 +247,7 @@ const depositRequestStatusModify = async ({ _id, fieldName, status }) => {
           throw new Error("User Not Found!");
         } else {
           findUser.balance = findUser.balance + DepositRequests.amount;
-          findUser.save();
+          await findUser.save();
 
           let depositPoints = new Transaction({
             points: DepositRequests.amount,
