@@ -248,7 +248,7 @@ const getThemeSettingByCurrencyAndDomain = async ({ ...reqBody }) => {
     }
     currencyId = currency._id;
 
-    const superAdmin = await User.findOne({ currencyId: currencyId, domainUrl: domainUrl }).select("_id");
+    const superAdmin = await User.findOne({ currencyId: currencyId, domainUrl: domainUrl }, { "_id": 1, "businessType": 1 });
     if (!superAdmin) {
       return {};
     }
@@ -286,7 +286,8 @@ const getThemeSettingByCurrencyAndDomain = async ({ ...reqBody }) => {
       welcomeMobileImage,
       welcomeDesktopImage,
       logoImage,
-      currencyId
+      currencyId,
+      businessType: superAdmin.businessType || null
     };
 
     return data;
