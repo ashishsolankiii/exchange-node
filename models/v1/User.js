@@ -28,6 +28,11 @@ export const SETTLEMENT_DAY = {
   SUNDAY: "sunday",
 };
 
+export const BUSINESS_TYPE = {
+  B2B: "b2b",
+  B2C: "b2c"
+};
+
 export const USER_ACCESSIBLE_ROLES = {
   [USER_ROLE.SYSTEM_OWNER]: Object.values(USER_ROLE),
 
@@ -210,6 +215,9 @@ const userSchema = new mongoose.Schema({
 
   // Default Master
   defaultMasterUserId: { type: mongoose.Schema.Types.ObjectId, default: null, ref: "user" },
+
+  // Business Type
+  businessType: { type: String, enum: [...Object.values(BUSINESS_TYPE), null], default: null },
 });
 
 userSchema.plugin(timestampPlugin);

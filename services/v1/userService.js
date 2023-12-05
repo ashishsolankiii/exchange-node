@@ -187,7 +187,8 @@ const addUser = async ({ user, ...reqBody }) => {
     isCasinoAvailable,
     isAutoSettlement,
     transactionCode,
-    defaultMasterUserId
+    defaultMasterUserId,
+    businessType
   } = reqBody;
 
   try {
@@ -230,7 +231,8 @@ const addUser = async ({ user, ...reqBody }) => {
       parentId: loggedInUser.cloneParentId ? loggedInUser.cloneParentId : loggedInUser._id,
       countryCode,
       forcePasswordChange,
-      defaultMasterUserId
+      defaultMasterUserId,
+      businessType
     };
 
     // For Role = User add other params
@@ -615,8 +617,11 @@ const fetchHydratedUser = async (_id) => {
 
     const superUserId = await authService.getSuperAdminUserId(user._id);
     const masterUserId = await authService.getMasterUserId(user._id);
+
+    let superUser = await User.findById(superUserId).select("businessType");
     user.superUserId = superUserId;
     user.masterUserId = masterUserId;
+    user.businessType = superUser.businessType;
     user.scKey = await permissionService.fetchUserActivePermissions({ userId: user._id });
 
     return user;
