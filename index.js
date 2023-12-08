@@ -64,6 +64,12 @@ cron.schedule("* * * * *", async function () {
   await cronController.getLiveEvent();
 });
 
+// Cron Job for Active competition event
+cron.schedule("0 */6 * * *", async function () {
+  // For market sync data
+  await cronController.activeCompetitionEvent();
+});
+
 server.listen(appConfig.PORT, () => {
   console.log(`Server running on port: ${appConfig.PORT}`);
 });
