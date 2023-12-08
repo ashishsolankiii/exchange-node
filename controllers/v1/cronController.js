@@ -683,6 +683,20 @@ const completeCompetition = async (req, res) => {
   }
 }
 
+// Active competition event
+const activeCompetitionEvent = async (req, res) => {
+  try {
+    const findCompetition = await Competition.find({ endDate: { $gt: new Date() }, completed: false, isActive: true });
+    const competitionIds = findCompetition.map((item) => item._id);
+    await Event.updateMany({ competitionId: { $in: competitionIds } }, { isActive: true });
+
+    console.log("Active competition event");
+  }
+  catch (e) {
+    throw new Error(e);
+  }
+}
+
 export default {
   syncDetail,
   getLiveEvent,
@@ -690,5 +704,6 @@ export default {
   syncMarketBookmakers,
   syncMarketFancy,
   getActiveEvent,
-  completeCompetition
+  completeCompetition,
+  activeCompetitionEvent
 };
