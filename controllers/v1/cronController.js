@@ -607,11 +607,9 @@ const getActiveEvent = async (req, res) => {
       },
       {
         $project: {
-          "name": 1,
           "completed": 1,
           "isActive": 1,
-          "competition.isActive": 1,
-          "competition.completed": 1,
+          "competitionId": 1,
           "matchDateTime": {
             $cond: {
               if: { $eq: ["$matchTime", null] }, then: {
@@ -654,11 +652,20 @@ const getActiveEvent = async (req, res) => {
             $gte: new Date(startOfDay),
             $lt: new Date(endOfDay),
           },
-          completed: false, isActive: false, 'competition.isActive': true, 'competition.completed': false
+          completed: false, isActive: false
         },
       }
     ]);
-    const eventIds = findEvent.map((item) => item._id);
+    const eventIds = [];
+    const promise = [];
+    findEvent.forEach(element => {
+      eventIds.push(element._id);
+      promise.push(Competition.updateOne(
+        { _id: element.competitionId },
+        { $set: { isActive: true, completed: false, endDate: new Date(element.matchDateTime).setDate(new Date(element.matchDateTime).getDate() + 1) } }
+      ))
+    });
+    await Promise.all(promise);
     await Event.updateMany({ _id: { $in: eventIds } }, { isActive: true });
     console.log("Active event updated");
     // res.status(200).json({ message: "Active event updated." });
@@ -683,20 +690,6 @@ const completeCompetition = async (req, res) => {
   }
 }
 
-// Active competition event
-const activeCompetitionEvent = async (req, res) => {
-  try {
-    const findCompetition = await Competition.find({ endDate: { $gt: new Date() }, completed: false, isActive: true });
-    const competitionIds = findCompetition.map((item) => item._id);
-    await Event.updateMany({ competitionId: { $in: competitionIds } }, { isActive: true });
-
-    console.log("Active competition event");
-  }
-  catch (e) {
-    throw new Error(e);
-  }
-}
-
 export default {
   syncDetail,
   getLiveEvent,
@@ -704,6 +697,5 @@ export default {
   syncMarketBookmakers,
   syncMarketFancy,
   getActiveEvent,
-  completeCompetition,
-  activeCompetitionEvent
+  completeCompetition
 };
