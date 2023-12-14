@@ -607,13 +607,9 @@ const getActiveEvent = async (req, res) => {
       },
       {
         $project: {
-          "name": 1,
           "completed": 1,
           "isActive": 1,
           "competitionId": 1,
-          "competition.isActive": 1,
-          "competition.completed": 1,
-          "competition.endDate": 1,
           "matchDateTime": {
             $cond: {
               if: { $eq: ["$matchTime", null] }, then: {
