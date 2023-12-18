@@ -10,6 +10,8 @@ import { generateTransactionCode } from "../../lib/io-guards/transaction-code.js
 import Currency from "../../models/v1/Currency.js";
 import User, { USER_ROLE } from "../../models/v1/User.js";
 import permissionService from "./permissionService.js";
+import passport from 'passport';
+import { Strategy as LocalStrategy } from 'passport-local';
 
 const loginUser = async ({ username, password }) => {
   try {
@@ -77,62 +79,91 @@ const loginUser = async ({ username, password }) => {
 
 const loginFrontUser = async ({ username, password }) => {
   try {
-    const allowedRoles = [USER_ROLE.USER];
+    const customVerify = async (username, password, done) => {
+      try {
+        const allowedRoles = [USER_ROLE.USER];
+        const errorMessage = "The provided credentials are incorrect. Please try again.";
+        const inactiveMessage = "Account is inactive. Please contact your support!";
+        const user = await User.findOne({
+          username: username,
+          role: USER_ROLE.USER,
+          isDeleted: false
+        });
+        if (!user) {
+          return done(null, false, { message: errorMessage });
+        }
+        if (user?.isActive != true) {
+          return done(null, false, { message: inactiveMessage });
+        }
 
-    const errorMessage = "The provided credentials are incorrect. Please try again.";
-    const inactiveMessage = "Account is inactive. Please contact your support!";
+        // Check if user is allowed to login
+        if (!allowedRoles.includes(user.role)) {
+          return done(null, false, { message: errorMessage });
+        }
+        // Check if password is valid
+        const isValidPassword = await validatePassword(password, user.password);
+        if (!isValidPassword) {
+          let count = user.failedLoginAttempts;
+          user.failedLoginAttempts = count + 1;
 
-    // Check if username exists
-    const existingUser = await User.findOne({
-      username: username,
-      role: USER_ROLE.USER,
-      isDeleted: false
-    });
-    if (!existingUser) {
-      throw new Error(errorMessage);
-    }
-    if (existingUser?.isActive != true) {
-      throw new Error(inactiveMessage);
-    }
+          if (count + 1 >= 5) {
+            user.isActive = false;
+            await user.save();
+            return done(null, false, { message: inactiveMessage });
+          }
 
-    // Check if user is allowed to login
-    if (!allowedRoles.includes(existingUser.role)) {
-      throw new Error(errorMessage);
-    }
+          await user.save();
+          return done(null, false, { message: errorMessage });
+        }
 
-    // Check if password is valid
-    const isValidPassword = await validatePassword(password, existingUser.password);
-    if (!isValidPassword) {
-      let count = existingUser.failedLoginAttempts;
-      existingUser.failedLoginAttempts = count + 1;
+        return done(null, user);
 
-      if (count + 1 >= 5) {
-        existingUser.isActive = false;
-        await existingUser.save();
-        throw new Error(inactiveMessage);
+      } catch (error) {
+        return done(error);
       }
+    };
+    // Configure passport to use the custom verification function
+    passport.use(new LocalStrategy({ usernameField: 'username' }, customVerify));
 
-      await existingUser.save();
-      throw new Error(errorMessage);
-    }
+    // Manually authenticate a user
+    const authenticateUser = async (username, password) => {
+      return new Promise((resolve, reject) => {
+        customVerify(username, password, (err, user, info) => {
+          if (err || !user) {
+            reject(info && info.message ? info.message : 'Authentication failed');
+          }
 
-    const token = generateJwtToken({ _id: existingUser._id });
+          resolve(user);
+        });
+      });
+    };
 
-    const superUserId = await getSuperAdminUserId(existingUser._id);
+    let data = await authenticateUser(username, password)
+      .then(async (user) => {
+        const token = generateJwtToken({ _id: user._id });
 
-    const masterUserId = await getMasterUserId(existingUser._id);
+        const superUserId = await getSuperAdminUserId(user._id);
 
-    const loggedInUser = existingUser.toJSON();
+        const masterUserId = await getMasterUserId(user._id);
 
-    const user = getTrimmedUser(loggedInUser);
+        const loggedInUser = user.toJSON();
 
-    user.superUserId = superUserId;
-    user.masterUserId = masterUserId;
+        let finaluser = getTrimmedUser(loggedInUser);
 
-    existingUser.failedLoginAttempts = 0;
-    await existingUser.save();
+        user.superUserId = superUserId;
+        user.masterUserId = masterUserId;
 
-    return { user, token };
+        user.failedLoginAttempts = 0;
+        await user.save();
+        return { finaluser, token };
+      })
+      .catch((error) => {
+        throw new ErrorResponse(error).status(200);
+        // Handle authentication failure
+      });
+
+    return data;
+
   } catch (e) {
     throw new ErrorResponse(e.message).status(200);
   }

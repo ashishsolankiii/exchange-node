@@ -39,9 +39,50 @@ const userlogin = async (req, res) => {
   const { user, body } = await authRequest.userLoginRequest(req);
 
   const userWithToken = await authService.loginFrontUser({ user, ...body });
+  // if (req.session.user === userWithToken.finaluser._id) {
+  //   // If session exists, update the expiry time
+  //   req.session.cookie.expires = new Date(Date.now() + req.session.cookie.maxAge);
+  // } else {
+  //   // If session doesn't exist, create a new one
+  //   req.session.user = userWithToken.finaluser._id;
+  // }
+  const userId = userWithToken.finaluser._id;
+
+  // Ensure that req.session.users is an object to store user sessions
+  if (!req.session.users || typeof req.session.users !== 'object') {
+    req.session.users = {};
+  }
+
+  // Check if a session for the user already exists
+  if (req.session.users[userId]) {
+    // If session exists, update the expiry time
+    req.session.users[userId].expires = new Date(Date.now() + req.session.cookie.maxAge);
+
+  } else {
+    // If session doesn't exist, create a new one
+    req.session.users[userId] = {
+      sessionId: req.session.id,
+      expires: new Date(Date.now() + req.session.cookie.maxAge)
+    };
+
+  }
+  // const users = JSON.parse(req.cookies.users || '[]');
+
+  // const findUserInCookie = users.filter(user => user.id == userWithToken.finaluser._id);
+
+  // if (findUserInCookie.length == 0) {
+  //   // Add the new user to the array with its own maxAge setting
+  //   users.push({ id: userWithToken.finaluser._id, maxAge: 30 * 60 * 1000, timestamp: Date.now() }); // Expires in 30 minutes
+  // }
+  // else {
+  //   findUserInCookie[0].timestamp = Date.now();
+  // }
+  // // Set the updated cookie with the new array
+  // res.cookie('users', JSON.stringify(users), { maxAge: 30 * 60 * 1000 }); // Expires in 30 minutes
+
 
   await userActivityService.createUserActivity({
-    userId: userWithToken.user._id,
+    userId: userWithToken.finaluser._id,
     event: USER_ACTIVITY_EVENT.LOGIN,
     ipAddress: body.ipAddress,
     description: body.description,
