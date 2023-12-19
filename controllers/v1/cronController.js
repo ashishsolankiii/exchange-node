@@ -38,7 +38,9 @@ const syncDetail = async (req, res) => {
   console.log("All Markets Fancy has been synced");
 
   // Respond with a 200 status code and success message
-  // res.status(200).json({ message: "All data has been synced!" });
+  if (res) {
+    res.status(200).json({ success: true, message: "All data has been synced!" });
+  }
   // } catch (e) {
   //   // Handle any errors that occurred during the sync process
   //   res.status(500).json({ error: "An error occurred" });
@@ -668,8 +670,9 @@ const getActiveEvent = async (req, res) => {
     await Promise.all(promise);
     await Event.updateMany({ _id: { $in: eventIds } }, { isActive: true });
     console.log("Active event updated");
-    // res.status(200).json({ message: "Active event updated." });
-
+    if (res) {
+      res.status(200).json({ success: true, message: "Active event updated." });
+    }
   } catch (e) {
     throw new Error(e);
   }
