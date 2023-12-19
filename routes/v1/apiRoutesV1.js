@@ -28,6 +28,7 @@ import promotionRoutes from "./routes/promotionRoutes.js";
 import externalApiRoutes from "./routes/externalApiRoutes.js";
 import favouriteApiRoutes from "./routes/favouriteRoutes.js";
 import depositRequestRoutes from "./routes/depositRequestRoutes.js";
+import apiProviderRoutes from "./routes/apiProviderRoutes.js";
 
 const app = express();
 
@@ -60,5 +61,6 @@ app.use("/promotion", promotionRoutes);
 app.use("/external", externalApiRoutes);
 app.use("/favourite", favouriteApiRoutes);
 app.use("/depositRequest", depositRequestRoutes);
+app.use("/apiProvider", apiProviderRoutes);
 
 export default app;
