@@ -18,7 +18,6 @@ export const CASINO_GAME_IMAGE_SIZES = {
 }
 
 const casinoGameSchema = new mongoose.Schema({
-  casinoId: { type: mongoose.Schema.Types.ObjectId, ref: "casino", required: [true, "Casino is Required"] },
   name: {
     type: String,
     required: true,
@@ -28,9 +27,24 @@ const casinoGameSchema = new mongoose.Schema({
     type: Boolean,
     default: true,
   },
+  apiDistributorId: { type: mongoose.Schema.Types.ObjectId, ref: "api_provider", required: [true, "Api Distribution is Required"] },
+  casinoId: { type: mongoose.Schema.Types.ObjectId, ref: "casino", required: [true, "Casino is Required"] },
+  providerId: {
+    type: String,
+    default: null
+  },
+  providerImageUrl: {
+    type: String,
+    default: null
+  },
   isFavourite: {
     type: Boolean,
     default: false,
+  },
+  orderIndex: { type: Number, default: null },
+  metaData: {
+    type: Object,
+    default: null,
   },
 });
 
