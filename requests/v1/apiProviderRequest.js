@@ -37,7 +37,7 @@ async function apiProviderListingRequest(req) {
 async function createApiProviderRequest(req) {
   const validationSchema = Yup.object().shape({
     name: Yup.string().required(),
-    metaData: Yup.string().nullable('true'),
+    metaData: Yup.object().nullable('true'),
   });
 
   await validationSchema.validate(req.body);

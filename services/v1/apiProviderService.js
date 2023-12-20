@@ -79,16 +79,14 @@ const fetchApiProviderId = async (_id) => {
 /**
  * Create apiProvider in the database
  */
-const addCometition = async ({ ...reqBody }) => {
+const addApiProvider = async ({ ...reqBody }) => {
   const {
     name,
-    isActive,
     metaData
   } = reqBody;
 
   try {
     const existingApiProvider = await ApiProvider.findOne({ name: name });
-
     if (existingApiProvider) {
       throw new Error("ApiProvider already exists!");
     }
@@ -156,7 +154,7 @@ const apiProviderStatusModify = async ({ _id, fieldName, status }) => {
 export default {
   fetchAllApiProvider,
   fetchApiProviderId,
-  addCometition,
+  addApiProvider,
   modifyApiProvider,
   removeApiProvider,
   apiProviderStatusModify,

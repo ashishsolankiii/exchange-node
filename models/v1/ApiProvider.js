@@ -8,7 +8,7 @@ const apiProvidersSchema = new mongoose.Schema({
   isActive: { type: Boolean, default: true, index: true },
 
   metaData: {
-    type: String,
+    type: Object,
     default: null,
   },
 });

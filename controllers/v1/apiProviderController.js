@@ -29,7 +29,7 @@ const getApiProviderById = async (req, res) => {
 const createApiProvider = async (req, res) => {
   const { body } = await apiProviderRequest.createApiProviderRequest(req);
 
-  const newApiProvider = await apiProviderService.addCometition({ ...body });
+  const newApiProvider = await apiProviderService.addApiProvider({ ...body });
 
   res.status(201).json({ success: true, data: { details: newApiProvider } });
 };
