@@ -49,7 +49,7 @@ async function updateApiProviderRequest(req) {
   const validationSchema = Yup.object().shape({
     _id: Yup.string().required().test("_id", "Given _id is not valid!", isValidObjectId),
     name: Yup.string().required(),
-    metaData: Yup.string().nullable('true'),
+    metaData: Yup.object().nullable('true'),
   });
 
   await validationSchema.validate(req.body);
