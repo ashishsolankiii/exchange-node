@@ -27,7 +27,7 @@ const casinoGameSchema = new mongoose.Schema({
     type: Boolean,
     default: true,
   },
-  apiDistributorId: { type: mongoose.Schema.Types.ObjectId, ref: "api_provider", required: [true, "Api Distribution is Required"] },
+  apiDistributorId: { type: mongoose.Schema.Types.ObjectId, ref: "api_provider", default: null },
   casinoId: { type: mongoose.Schema.Types.ObjectId, ref: "casino", required: [true, "Casino is Required"] },
   providerId: {
     type: String,
