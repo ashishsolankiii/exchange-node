@@ -1,9 +1,12 @@
 import bodyParser from "body-parser";
+import cookieParser from "cookie-parser";
 import express from "express";
 import fileUpload from "express-fileupload";
 import { createServer } from "http";
 import moment from "moment";
 import cron from "node-cron";
+import passport from "passport";
+import { ExtractJwt, Strategy as JwtStrategy } from "passport-jwt";
 import { appConfig } from "./config/app.js";
 import cronController from "./controllers/v1/cronController.js";
 import dbConnection from "./database/connect.js";
@@ -15,9 +18,11 @@ import apiRoutes from "./routes/apiRoutes.js";
 import { initSocket } from "./socket/index.js";
 
 const app = express();
+
 const server = createServer(app);
 
 app.use(bodyParser.json());
+
 app.use(bodyParser.urlencoded({ extended: true }));
 
 app.use(
@@ -28,7 +33,22 @@ app.use(
   })
 );
 
+app.use(cookieParser());
+
+passport.use(
+  new JwtStrategy(
+    {
+      jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
+      secretOrKey: appConfig.JWT_SECRET,
+    },
+    (jwtPayload, done) => {
+      return done(null, jwtPayload);
+    }
+  )
+);
+
 app.use(corsMiddleware);
+
 app.use(loggerMiddleware);
 
 app.use("/handshake", settleHandshake);
@@ -52,10 +72,11 @@ initSocket(server);
 // Cron Job for sync market
 cron.schedule("0 2 * * *", async function () {
   // For market sync data
-
-  await Promise.all([cronController.syncDetail(),
-  cronController.getActiveEvent(),
-  cronController.completeCompetition()]);
+  await Promise.all([
+    cronController.syncDetail(),
+    cronController.getActiveEvent(),
+    cronController.completeCompetition(),
+  ]);
 });
 
 // Cron Job for live event
