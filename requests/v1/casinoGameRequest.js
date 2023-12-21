@@ -40,7 +40,7 @@ async function createCasinoGameRequest(req) {
   const validationSchema = Yup.object().shape({
     name: Yup.string().required(),
     casinoId: Yup.string().required().test("casinoId", "Invalid casinoId!", isValidObjectId),
-    apiDistributorId: Yup.string().required().test("apiDistributorId", "Invalid apiDistributorId!", isValidObjectId),
+    apiDistributorId: Yup.string().nullable(true),
     providerId: Yup.string().nullable(true),
     providerImageUrl: Yup.string().nullable(true),
     orderIndex: Yup.number().nullable(true),
@@ -57,7 +57,7 @@ async function updateCasinoGameRequest(req) {
     _id: Yup.string().required().test("_id", "Given _id is not valid!", isValidObjectId),
     name: Yup.string().required(),
     casinoId: Yup.string().required().test("casinoId", "Invalid casinoId!", isValidObjectId),
-    apiDistributorId: Yup.string().required().test("apiDistributorId", "Invalid apiDistributorId!", isValidObjectId),
+    apiDistributorId: Yup.string().nullable(true),
     providerId: Yup.string().nullable(true),
     providerImageUrl: Yup.string().nullable(true),
     orderIndex: Yup.number().nullable(true),
