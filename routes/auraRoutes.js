@@ -60,7 +60,7 @@ const authenticateOperator = async (req, res, next) => {
 };
 
 // Gets the user data.
-const getUserDate = async (req, res) => {
+const getUserData = async (req, res) => {
   const reqUserId = req.user._id;
   const operatorId = req.body.operatorId;
   const token = req.body.token;
@@ -93,6 +93,6 @@ const getUserDate = async (req, res) => {
 
 const middlewares = [authenticateToken, authenticateOperator];
 
-router.post("/auth", middlewares, getUserDate);
+router.post("/auth", middlewares, getUserData);
 
 export default router;
