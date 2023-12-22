@@ -50,6 +50,9 @@ const userlogin = async (req, res) => {
     platform: body.platform,
   });
 
+  // Set the token in a cookie
+  res.cookie('jwt', userWithToken.token, { httpOnly: true });
+
   return res.status(200).json({ success: true, data: userWithToken });
 };
 
@@ -102,9 +105,22 @@ const resetPassword = async (req, res) => {
   return res.status(200).json({ success: true, data: resetPasswordUser });
 };
 
+const logout = async (req, res) => {
+  const { userId } = req.body;
+
+  if (!userId) {
+    throw new Error("userId is required!");
+  }
+
+  const deletedLoggedInUser = await authService.logout(userId);
+
+  res.status(200).json({ success: true, data: { details: deletedLoggedInUser } });
+};
+
 export default {
   login,
   userlogin,
   register,
   resetPassword,
+  logout
 };

@@ -4,9 +4,7 @@ import express from "express";
 import fileUpload from "express-fileupload";
 import { createServer } from "http";
 import moment from "moment";
-import cron from "node-cron";
-import passport from "passport";
-import { ExtractJwt, Strategy as JwtStrategy } from "passport-jwt";
+import cron from "node-cron"
 import { appConfig } from "./config/app.js";
 import cronController from "./controllers/v1/cronController.js";
 import dbConnection from "./database/connect.js";
@@ -34,18 +32,6 @@ app.use(
 );
 
 app.use(cookieParser());
-
-passport.use(
-  new JwtStrategy(
-    {
-      jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
-      secretOrKey: appConfig.JWT_SECRET,
-    },
-    (jwtPayload, done) => {
-      return done(null, jwtPayload);
-    }
-  )
-);
 
 app.use(corsMiddleware);
 

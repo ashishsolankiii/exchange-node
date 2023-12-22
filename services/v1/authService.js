@@ -8,8 +8,10 @@ import {
 } from "../../lib/io-guards/auth.js";
 import { generateTransactionCode } from "../../lib/io-guards/transaction-code.js";
 import Currency from "../../models/v1/Currency.js";
+import LoggedInUser from "../../models/v1/LoggedInUser.js";
 import User, { USER_ROLE } from "../../models/v1/User.js";
 import permissionService from "./permissionService.js";
+import mongoose from "mongoose";
 
 const loginUser = async ({ username, password }) => {
   try {
@@ -75,7 +77,7 @@ const loginUser = async ({ username, password }) => {
   }
 };
 
-const loginFrontUser = async ({ username, password }) => {
+const loginFrontUser = async ({ username, password, platform, ipAddress }) => {
   try {
     const allowedRoles = [USER_ROLE.USER];
 
@@ -131,6 +133,22 @@ const loginFrontUser = async ({ username, password }) => {
 
     existingUser.failedLoginAttempts = 0;
     await existingUser.save();
+    const existingLoggedInUser = await LoggedInUser.findOne({ userId: new mongoose.Types.ObjectId(existingUser._id) });
+    if (existingLoggedInUser) {
+      existingLoggedInUser.createdAt = new Date();
+      existingLoggedInUser.token = token;
+      existingLoggedInUser.save();
+    }
+    else {
+      const newLoggedInUserObj = {
+        userId: existingUser._id,
+        parentId: existingUser.parentId,
+        token: token,
+        platform: platform,
+        ipAddress: ipAddress
+      };
+      await LoggedInUser.create(newLoggedInUserObj);
+    }
 
     return { user, token };
   } catch (e) {
@@ -266,11 +284,21 @@ const getMasterUserId = async (userId) => {
   }
 };
 
+const logout = async (userId) => {
+  try {
+    const deleteLoggedInUser = await LoggedInUser.deleteOne({ userId: userId });
+    return deleteLoggedInUser;
+  } catch (e) {
+    throw new ErrorResponse(e.message).status(200);
+  }
+};
+
 export default {
   loginUser,
   loginFrontUser,
   registerUser,
   resetPassword,
   getSuperAdminUserId,
-  getMasterUserId
+  getMasterUserId,
+  logout
 };
