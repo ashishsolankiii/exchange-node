@@ -1,5 +1,6 @@
 import bodyParser from "body-parser";
 import cookieParser from "cookie-parser";
+import cors from "cors";
 import express from "express";
 import fileUpload from "express-fileupload";
 import { createServer } from "http";
@@ -22,6 +23,8 @@ const server = createServer(app);
 app.use(bodyParser.json());
 
 app.use(bodyParser.urlencoded({ extended: true }));
+
+app.use(cors());
 
 app.use(
   fileUpload({
@@ -58,6 +61,7 @@ initSocket(server);
 // Cron Job for sync market
 cron.schedule("0 2 * * *", async function () {
   // For market sync data
+
   await Promise.all([
     cronController.syncDetail(),
     cronController.getActiveEvent(),
