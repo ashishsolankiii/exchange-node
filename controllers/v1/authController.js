@@ -51,7 +51,7 @@ const userlogin = async (req, res) => {
   });
 
   // Set the token in a cookie
-  res.cookie('jwt', userWithToken.token, { httpOnly: true });
+  res.cookie("jwt", userWithToken.token, { httpOnly: true });
 
   return res.status(200).json({ success: true, data: userWithToken });
 };
@@ -122,5 +122,5 @@ export default {
   userlogin,
   register,
   resetPassword,
-  logout
+  logout,
 };
