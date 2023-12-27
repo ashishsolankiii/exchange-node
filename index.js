@@ -5,7 +5,7 @@ import express from "express";
 import fileUpload from "express-fileupload";
 import { createServer } from "http";
 import moment from "moment";
-import cron from "node-cron"
+import cron from "node-cron";
 import { appConfig } from "./config/app.js";
 import cronController from "./controllers/v1/cronController.js";
 import dbConnection from "./database/connect.js";
@@ -24,7 +24,12 @@ app.use(bodyParser.json());
 
 app.use(bodyParser.urlencoded({ extended: true }));
 
-app.use(cors());
+app.use(
+  cors({
+    origin: appConfig.CORS_ALLOWED_ORIGINS,
+    credentials: true,
+  })
+);
 
 app.use(
   fileUpload({

@@ -10,7 +10,7 @@ import { validateJwtToken } from "../lib/io-guards/auth.js";
  * @param {Function} next - The next middleware function.
  * @returns {void}
  */
-export default async function authMiddleware(req, res, next) {
+export default async function jwtAuthMiddleware(req, res, next) {
   const token = await validateJwtToken(req);
 
   if (!token.isValid) {

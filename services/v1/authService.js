@@ -55,7 +55,7 @@ const loginUser = async ({ username, password }) => {
       }
     }
 
-    const token = generateJwtToken({ _id: existingUser._id });
+    const token = generateJwtToken({ _id: existingUser._id }, false);
 
     let loggedInUser = existingUser.toJSON();
     if (existingUser.cloneParentId) {
