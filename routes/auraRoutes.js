@@ -4,5 +4,7 @@ import { authenticateOperator, authenticateToken } from "../middlewares/auraCasi
 const router = express.Router();
 
 router.post("/auth", authenticateOperator, authenticateToken, auraCasinoController.getUserData);
+router.post("/exposure", auraCasinoController.getExposure);
+router.post("/results", auraCasinoController.getResult);
 
 export default router;
