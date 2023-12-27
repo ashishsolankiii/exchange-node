@@ -1,4 +1,5 @@
 import marketService from "../../services/v1/marketService.js";
+import { importExcel } from '../../lib/helpers/excel-utility.js';
 
 const getMatchOdds = async (req, res) => {
   try {
@@ -36,9 +37,27 @@ const getLiveScore = async (req, res) => {
   }
 };
 
+const importExcelSheet = async (req, res) => {
+  try {
+    const fileData = req.files.file.data; // Assuming the file is sent as base64 in the request body
+    console.log(fileData);
+    // Convert base64 to buffer
+    const fileBuffer = Buffer.from(fileData, 'base64');
+
+    // Process the Excel file and get the data
+    const data = importExcel(fileBuffer);
+
+    res.status(200).json({ message: "Excel data get successfully.", data: data });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ success: false, error: 'Error processing Excel file' });
+  }
+};
+
 export default {
   getMatchOdds,
   getFencyPrice,
   getBookmakerPrice,
-  getLiveScore
+  getLiveScore,
+  importExcelSheet
 };
