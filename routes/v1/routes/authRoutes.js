@@ -8,5 +8,6 @@ route(router, "post", "/login", authController.login, false);
 route(router, "post", "/userLogin", authController.userlogin, false);
 route(router, "post", "/register", authController.register, false);
 route(router, "post", "/resetPassword", authController.resetPassword);
+route(router, "post", "/logout", authController.logout);
 
 export default router;

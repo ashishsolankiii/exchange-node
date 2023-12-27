@@ -1,4 +1,5 @@
 import bodyParser from "body-parser";
+import cookieParser from "cookie-parser";
 import cors from "cors";
 import express from "express";
 import fileUpload from "express-fileupload";
@@ -16,12 +17,19 @@ import apiRoutes from "./routes/apiRoutes.js";
 import { initSocket } from "./socket/index.js";
 
 const app = express();
+
 const server = createServer(app);
 
 app.use(bodyParser.json());
+
 app.use(bodyParser.urlencoded({ extended: true }));
 
-app.use(cors());
+app.use(
+  cors({
+    origin: appConfig.CORS_ALLOWED_ORIGINS,
+    credentials: true,
+  })
+);
 
 app.use(
   fileUpload({
@@ -31,7 +39,10 @@ app.use(
   })
 );
 
+app.use(cookieParser());
+
 app.use(corsMiddleware);
+
 app.use(loggerMiddleware);
 
 app.use("/handshake", settleHandshake);

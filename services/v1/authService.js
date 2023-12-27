@@ -1,3 +1,4 @@
+import mongoose from "mongoose";
 import ErrorResponse from "../../lib/error-handling/error-response.js";
 import {
   encryptPassword,
@@ -8,6 +9,7 @@ import {
 } from "../../lib/io-guards/auth.js";
 import { generateTransactionCode } from "../../lib/io-guards/transaction-code.js";
 import Currency from "../../models/v1/Currency.js";
+import LoggedInUser from "../../models/v1/LoggedInUser.js";
 import User, { USER_ROLE } from "../../models/v1/User.js";
 import permissionService from "./permissionService.js";
 
@@ -51,10 +53,9 @@ const loginUser = async ({ username, password }) => {
         await existingUser.save();
         throw new Error(errorMessage);
       }
-
     }
 
-    const token = generateJwtToken({ _id: existingUser._id });
+    const token = generateJwtToken({ _id: existingUser._id }, false);
 
     let loggedInUser = existingUser.toJSON();
     if (existingUser.cloneParentId) {
@@ -75,7 +76,7 @@ const loginUser = async ({ username, password }) => {
   }
 };
 
-const loginFrontUser = async ({ username, password }) => {
+const loginFrontUser = async ({ username, password, platform, ipAddress }) => {
   try {
     const allowedRoles = [USER_ROLE.USER];
 
@@ -86,7 +87,7 @@ const loginFrontUser = async ({ username, password }) => {
     const existingUser = await User.findOne({
       username: username,
       role: USER_ROLE.USER,
-      isDeleted: false
+      isDeleted: false,
     });
     if (!existingUser) {
       throw new Error(errorMessage);
@@ -116,7 +117,7 @@ const loginFrontUser = async ({ username, password }) => {
       throw new Error(errorMessage);
     }
 
-    const token = generateJwtToken({ _id: existingUser._id });
+    const token = generateJwtToken({ _id: existingUser._id }, false);
 
     const superUserId = await getSuperAdminUserId(existingUser._id);
 
@@ -131,6 +132,21 @@ const loginFrontUser = async ({ username, password }) => {
 
     existingUser.failedLoginAttempts = 0;
     await existingUser.save();
+    const existingLoggedInUser = await LoggedInUser.findOne({ userId: new mongoose.Types.ObjectId(existingUser._id) });
+    if (existingLoggedInUser) {
+      existingLoggedInUser.createdAt = new Date();
+      existingLoggedInUser.token = token;
+      existingLoggedInUser.save();
+    } else {
+      const newLoggedInUserObj = {
+        userId: existingUser._id,
+        parentId: existingUser.parentId,
+        token: token,
+        platform: platform,
+        ipAddress: ipAddress,
+      };
+      await LoggedInUser.create(newLoggedInUserObj);
+    }
 
     return { user, token };
   } catch (e) {
@@ -143,7 +159,6 @@ const registerUser = async ({ username, password, fullName, currencyId, mobileNu
     // Check if currency exists
     const encryptedPassword = await encryptPassword(password);
     const encryptedTransactionCode = await generateTransactionCode();
-
 
     const currency = await Currency.findById(currencyId);
     if (!currency) {
@@ -162,7 +177,7 @@ const registerUser = async ({ username, password, fullName, currencyId, mobileNu
       currencyId,
       mobileNumber,
       transactionCode: encryptedTransactionCode,
-      parentId: superAdmin.defaultMasterUserId || null
+      parentId: superAdmin.defaultMasterUserId || null,
     };
 
     const createdUser = await User.create(newUser);
@@ -272,5 +287,5 @@ export default {
   registerUser,
   resetPassword,
   getSuperAdminUserId,
-  getMasterUserId
+  getMasterUserId,
 };

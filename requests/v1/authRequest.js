@@ -5,6 +5,11 @@ async function userLoginRequest(req) {
   const validationSchema = Yup.object().shape({
     username: Yup.string().required(),
     password: Yup.string().required(),
+    ipAddress: Yup.string().nullable(true),
+    description: Yup.string().nullable(true),
+    city: Yup.string().nullable(true),
+    country: Yup.string().nullable(true),
+    platform: Yup.string().nullable(true)
   });
 
   await validationSchema.validate(req.body);
