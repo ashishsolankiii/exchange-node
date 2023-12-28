@@ -281,6 +281,15 @@ const getMasterUserId = async (userId) => {
   }
 };
 
+const logout = async (userId) => {
+  try {
+    const deleteLoggedInUser = await LoggedInUser.deleteOne({ userId: userId });
+    return deleteLoggedInUser;
+  } catch (e) {
+    throw new ErrorResponse(e.message).status(200);
+  }
+};
+
 export default {
   loginUser,
   loginFrontUser,
@@ -288,4 +297,5 @@ export default {
   resetPassword,
   getSuperAdminUserId,
   getMasterUserId,
+  logout,
 };
