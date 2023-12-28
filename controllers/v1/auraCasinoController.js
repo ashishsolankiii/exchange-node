@@ -33,6 +33,429 @@ const getUserData = async (req, res) => {
   res.json(response);
 };
 
+const getExposure = async (req, res) => {
+  try {
+    // req.body = {
+    //   "token": "P7kAWwQSC7RuD8ef",
+    //   "gameId": "67564",
+    //   "matchName": "Poker",
+    //   "roundId": "356523",
+    //   "marketId": "5da469781a1728460775f391",
+    //   "marketType": "plain",
+    //   "userId": "5d96edcaa7c48200116f1c51",
+    //   "calculateExposure": -1220.0000000000002,
+    //   "betInfo": {
+    //     "gameId": "67564",
+    //     "marketId": "5da469781a1728460775f391",
+    //     "runnerId": "66776",
+    //     "runnerName": "Player A",
+    //     "reqStake": 2000,
+    //     "requestedOdds": "1.61",
+    //     "pnl": 1220.0000000000002,
+    //     "liability": 0,
+    //     "status": "OPEN",
+    //     "isBack": false,
+    //     "roundId": "356523",
+    //     "pl": 0,
+    //     "orderId": "5da469d41a1728460775f3c2"
+    //   },
+    //   "runners": [
+    //     {
+    //       "cards": [
+    //         "H13",
+    //         "D7"
+    //       ],
+    //       "type": "plain",
+    //       "back": [
+    //         {
+    //           "price": "1.57",
+    //           "size": "15000"
+    //         },
+    //         {
+    //           "price": "1.56",
+    //           "size": "15000"
+    //         },
+    //         {
+    //           "price": "1.55",
+    //           "size": "15000"
+    //         }
+    //       ],
+    //       "lay": [
+    //         {
+    //           "price": "1.61",
+    //           "size": "15000"
+    //         },
+    //         {
+    //           "price": "1.62",
+    //           "size": "15000"
+    //         },
+    //         {
+    //           "price": "1.63",
+    //           "size": "15000"
+    //         }
+    //       ],
+    //       "id": "66776",
+    //       "name": "Player A",
+    //       "sortPriority": 1,
+    //       "pl": -1220.0000000000002,
+    //       "status": "ACTIVE"
+    //     },
+    //     {
+    //       "cards": [
+    //         "C8",
+    //         "H5"
+    //       ],
+    //       "type": "plain",
+    //       "back": [
+    //         {
+    //           "price": "2.64",
+    //           "size": "15000"
+    //         },
+    //         {
+    //           "price": "2.62",
+    //           "size": "15000"
+    //         },
+    //         {
+    //           "price": "2.6",
+    //           "size": "15000"
+    //         }
+    //       ],
+    //       "lay": [
+    //         {
+    //           "price": "2.74",
+    //           "size": "15000"
+    //         },
+    //         {
+    //           "price": "2.76",
+    //           "size": "15000"
+    //         },
+    //         {
+    //           "price": "2.78",
+    //           "size": "15000"
+    //         }
+    //       ],
+    //       "id": "66777",
+    //       "name": "Player B",
+    //       "sortPriority": 2,
+    //       "pl": 2000,
+    //       "status": "ACTIVE"
+    //     }
+    //   ]
+    // }
+    const reqUserId = req.body.userId;
+
+    const user = await User.findById(reqUserId, {
+      username: 1,
+      balance: 1,
+      exposure: 1,
+    });
+
+    const response = {
+      "status": auraConfig.successCode,
+      "Message": "Exposure insert Successfully...",
+      "wallet": user.balance,
+      "exposure": user.exposure
+    }
+
+    res.json(response);
+  }
+  catch (e) {
+    const response = {
+      "status": auraConfig.errorCode, "message": e.message
+    }
+    res.json(response);
+  }
+}
+
+const getResult = async (req, res) => {
+  try {
+    // req.body = {
+    //   "result": [
+    //     {
+    //       "Type": "main",
+    //       "winnerId": 66778,
+    //       "remoteUpdate": false,
+    //       "flag": true,
+    //       "transactionId": "",
+    //       "_id": "5f1ebf5258908441f7afa188",
+    //       "marketId": "5f1ebf363aafa31ad9659875",
+    //       "userId": "yyyyyyyyyyyyyyyyyyyy",
+    //       "__v": 0,
+    //       "createdAt": "2020-07-27T11:49:38.119Z",
+    //       "downpl": 109.75999999999999,
+    //       "gameId": "98789",
+    //       "marketRunner": [
+    //         {
+    //           "cards": [
+
+    //           ],
+    //           "id": "66778",
+    //           "name": "7Up",
+    //           "sortPriority": 1,
+    //           "status": "WINNER"
+    //         },
+    //         {
+    //           "cards": [
+
+    //           ],
+    //           "id": "66779",
+    //           "name": "7",
+    //           "sortPriority": 2,
+    //           "status": "LOSER"
+    //         },
+    //         {
+    //           "cards": [
+
+    //           ],
+    //           "id": "66780",
+    //           "name": "7Down",
+    //           "sortPriority": 3,
+    //           "status": "LOSER"
+    //         }
+    //       ],
+    //       "operatorId": "xxxx",
+    //       "roundId": "3620822",
+    //       "systemUserId": "5f0af1edfa291f12ada1c825",
+    //       "updatedAt": "2020-07-27T11:49:38.119Z",
+    //       "userName": "yyyyyyyyyyyyyyyyyyyy",
+    //       "orders": [
+    //         {
+    //           "orderId": "5f1ebf47bd57fc2e50286b72",
+    //           "status": "WON",
+    //           "downPl": 109.75999999999999
+    //         }
+    //       ]
+    //     }
+    //   ],
+    //   "runners": [
+    //     {
+    //       "cards": [
+
+    //       ],
+    //       "type": "main",
+    //       "back": [
+    //         {
+    //           "price": "1.98",
+    //           "size": "15000"
+    //         },
+    //         {
+    //           "price": "1.98",
+    //           "size": "15000"
+    //         },
+    //         {
+    //           "price": "1.98",
+    //           "size": "15000"
+    //         }
+    //       ],
+    //       "lay": [
+
+    //       ],
+    //       "id": "66778",
+    //       "name": "7Up",
+    //       "sortPriority": 1,
+    //       "pl": 0,
+    //       "status": "WINNER"
+    //     },
+    //     {
+    //       "cards": [
+
+    //       ],
+    //       "type": "main",
+    //       "back": [
+    //         {
+    //           "price": "11.5",
+    //           "size": "15000"
+    //         },
+    //         {
+    //           "price": "11.5",
+    //           "size": "15000"
+    //         },
+    //         {
+    //           "price": "11.5",
+    //           "size": "15000"
+    //         }
+    //       ],
+    //       "lay": [
+
+    //       ],
+    //       "id": "66779",
+    //       "name": "7",
+    //       "sortPriority": 2,
+    //       "pl": 0,
+    //       "status": "LOSER"
+    //     },
+    //     {
+    //       "cards": [
+
+    //       ],
+    //       "type": "main",
+    //       "back": [
+    //         {
+    //           "price": "1.98",
+    //           "size": "15000"
+    //         },
+    //         {
+    //           "price": "1.98",
+    //           "size": "15000"
+    //         },
+    //         {
+    //           "price": "1.98",
+    //           "size": "15000"
+    //         }
+    //       ],
+    //       "lay": [
+
+    //       ],
+    //       "id": "66780",
+    //       "name": "7Down",
+    //       "sortPriority": 3,
+    //       "pl": 0,
+    //       "status": "LOSER"
+    //     }
+    //   ],
+    //   "betvoid": false,
+    //   "roundId": "3620822",
+    //   "market": {
+    //     "createdBy": "sevenud",
+    //     "marketHeader": "Match odds",
+    //     "roundId": "3620822",
+    //     "indexCard": [
+    //       "H12"
+    //     ],
+    //     "hash": "",
+    //     "salt": "",
+    //     "_id": "5f1ebf363aafa31ad9659875",
+    //     "gameId": "98789",
+    //     "marketRunner": [
+    //       {
+    //         "cards": [
+
+    //         ],
+    //         "type": "main",
+    //         "back": [
+    //           {
+    //             "price": "1.98",
+    //             "size": "15000"
+    //           },
+    //           {
+    //             "price": "1.98",
+    //             "size": "15000"
+    //           },
+    //           {
+    //             "price": "1.98",
+    //             "size": "15000"
+    //           }
+    //         ],
+    //         "lay": [
+
+    //         ],
+    //         "id": "66778",
+    //         "name": "7Up",
+    //         "sortPriority": 1,
+    //         "pl": 0,
+    //         "status": "WINNER"
+    //       },
+    //       {
+    //         "cards": [
+
+    //         ],
+    //         "type": "main",
+    //         "back": [
+    //           {
+    //             "price": "11.5",
+    //             "size": "15000"
+    //           },
+    //           {
+    //             "price": "11.5",
+    //             "size": "15000"
+    //           },
+    //           {
+    //             "price": "11.5",
+    //             "size": "15000"
+    //           }
+    //         ],
+    //         "lay": [
+
+    //         ],
+    //         "id": "66779",
+    //         "name": "7",
+    //         "sortPriority": 2,
+    //         "pl": 0,
+    //         "status": "LOSER"
+    //       },
+    //       {
+    //         "cards": [
+
+    //         ],
+    //         "type": "main",
+    //         "back": [
+    //           {
+    //             "price": "1.98",
+    //             "size": "15000"
+    //           },
+    //           {
+    //             "price": "1.98",
+    //             "size": "15000"
+    //           },
+    //           {
+    //             "price": "1.98",
+    //             "size": "15000"
+    //           }
+    //         ],
+    //         "lay": [
+
+    //         ],
+    //         "id": "66780",
+    //         "name": "7Down",
+    //         "sortPriority": 3,
+    //         "pl": 0,
+    //         "status": "LOSER"
+    //       }
+    //     ],
+    //     "gameType": "Dice",
+    //     "gameSubType": "Dice",
+    //     "runnerType": "main",
+    //     "stage": 0,
+    //     "timer": 0,
+    //     "createdAt": "2020-07-27T11:49:10.769Z",
+    //     "updatedAt": "2020-07-27T11:49:37.992Z",
+    //     "__v": 0,
+    //     "marketValidity": 1595850585,
+    //     "status": "CLOSED"
+    //   }
+    // }
+
+    const reqUserId = req.body.result[0]?.userId;
+
+    const user = await User.findById(reqUserId, {
+      username: 1,
+      balance: 1,
+      exposure: 1,
+    });
+
+    const response = {
+      "Error": auraConfig.successCode, "result": [
+        {
+          "wallet": user.balance,
+          "exposure": user.exposure,
+          "userId": user._id
+        }
+      ],
+      "message": "Users profit/loss updated.."
+    }
+
+    res.json(response);
+  }
+  catch (e) {
+    const response = {
+      "status": auraConfig.errorCode, "message": e.message
+    }
+    res.json(response);
+  }
+}
+
 export default {
-  getUserData
+  getUserData,
+  getExposure,
+  getResult
 };
