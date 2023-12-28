@@ -42,7 +42,8 @@ async function casinoListingRequest(req) {
 async function createCasinoRequest(req) {
   const validationSchema = Yup.object().shape({
     name: Yup.string().required(),
-    casinoType: Yup.string().required()
+    casinoType: Yup.string().required(),
+    apiDistributorId: Yup.string().nullable(true)
   });
 
   await validationSchema.validate(req.body);
@@ -54,7 +55,8 @@ async function updateCasinoRequest(req) {
   const validationSchema = Yup.object().shape({
     _id: Yup.string().required().test("_id", "Given _id is not valid!", isValidObjectId),
     name: Yup.string().required(),
-    casinoType: Yup.string().required()
+    casinoType: Yup.string().required(),
+    apiDistributorId: Yup.string().nullable(true)
   });
 
   await validationSchema.validate(req.body);

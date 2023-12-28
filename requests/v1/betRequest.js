@@ -21,6 +21,9 @@ async function createBetRequest(req) {
     runnerId: Yup.string()
       .required()
       .test("runnerId", "Invalid runnerId!", (v) => !v || isValidObjectId),
+    casinoGameId: Yup.string().nullable(true),
+    apiDistributorId: Yup.string().nullable(true),
+    metaData: Yup.object().nullable(true),
   });
 
   await validationSchema.validate(req.body);

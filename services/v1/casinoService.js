@@ -128,7 +128,7 @@ const fetchCasinoId = async (_id) => {
  * Create casino in the database
  */
 const addCasino = async ({ files, ...reqBody }) => {
-  const { name, casinoType } = reqBody;
+  const { name, casinoType, apiDistributorId } = reqBody;
 
   try {
     const existingName = await Casino.findOne({ name });
@@ -139,6 +139,7 @@ const addCasino = async ({ files, ...reqBody }) => {
     const newCasinoObj = {
       name,
       casinoType,
+      apiDistributorId
     };
 
     const newCasino = await Casino.create(newCasinoObj);
@@ -168,6 +169,7 @@ const modifyCasino = async ({ files, ...reqBody }) => {
 
     casino.name = reqBody.name;
     casino.casinoType = reqBody.casinoType;
+    casino.apiDistributorId = reqBody.apiDistributorId;
 
     await casino.save();
     await uploadCasinoImages(reqBody._id, files);
