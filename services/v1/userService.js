@@ -709,6 +709,7 @@ const fetchLoggedInUsers = async ({ user, ...reqBody }) => {
       perPage,
       sortBy,
       direction,
+      searchQuery
     } = reqBody;
 
     // Pagination and Sorting
@@ -718,12 +719,17 @@ const fetchLoggedInUsers = async ({ user, ...reqBody }) => {
 
     const fiveHoursAgo = new Date();
     fiveHoursAgo.setHours(fiveHoursAgo.getHours() - 5);
+
+    const filters = {
+      createdAt: { $gte: new Date(fiveHoursAgo) }
+    };
+
+    if (searchQuery) {
+      const fields = ["user.username", "user.fullName", "user.mobileNumber"];
+      filters.$or = generateSearchFilters(searchQuery, fields);
+    }
+
     const users = await LoggedInUser.aggregate([
-      {
-        $match: {
-          createdAt: { $gte: new Date(fiveHoursAgo) }
-        }
-      },
       {
         $lookup: {
           from: "users",
@@ -742,6 +748,9 @@ const fetchLoggedInUsers = async ({ user, ...reqBody }) => {
           path: "$user",
           preserveNullAndEmptyArrays: true,
         },
+      },
+      {
+        $match: filters
       },
       {
         $facet: {
