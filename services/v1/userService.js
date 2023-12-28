@@ -8,6 +8,7 @@ import User, { SETTLEMENT_DURATION, USER_ACCESSIBLE_ROLES, USER_ROLE } from "../
 import transactionActivityService from "../../services/v1/transactionActivityService.js";
 import permissionService from "./permissionService.js";
 import authService from "./authService.js";
+import LoggedInUser from "../../models/v1/LoggedInUser.js";
 
 // Fetch all users from the database
 const fetchAllUsers = async ({ user, ...reqBody }) => {
@@ -700,6 +701,76 @@ const fetchSuperAdminMasters = async (_id) => {
   }
 };
 
+// Fetch all users from the database
+const fetchLoggedInUsers = async ({ user, ...reqBody }) => {
+  try {
+    const {
+      page,
+      perPage,
+      sortBy,
+      direction,
+    } = reqBody;
+
+    // Pagination and Sorting
+    const sortDirection = direction === "asc" ? 1 : -1;
+
+    const paginationQueries = generatePaginationQueries(page, perPage);
+
+    const fiveHoursAgo = new Date();
+    fiveHoursAgo.setHours(fiveHoursAgo.getHours() - 5);
+    const users = await LoggedInUser.aggregate([
+      {
+        $match: {
+          createdAt: { $gte: new Date(fiveHoursAgo) }
+        }
+      },
+      {
+        $lookup: {
+          from: "users",
+          localField: "userId",
+          foreignField: "_id",
+          as: "user",
+          pipeline: [
+            {
+              $project: { username: 1, mobileNumber: 1, balance: 1, userPl: 1, exposure: 1, isActive: 1, createdAt: 1 },
+            },
+          ],
+        },
+      },
+      {
+        $unwind: {
+          path: "$user",
+          preserveNullAndEmptyArrays: true,
+        },
+      },
+      {
+        $facet: {
+          totalRecords: [{ $count: "count" }],
+          paginatedResults: [
+            {
+              $sort: { [sortBy]: sortDirection },
+            },
+            ...paginationQueries,
+          ],
+        },
+      },
+    ]);
+
+    const data = {
+      records: [],
+      totalRecords: 0,
+    };
+
+    if (users?.length) {
+      data.records = users[0]?.paginatedResults || [];
+      data.totalRecords = users[0]?.totalRecords?.length ? users[0]?.totalRecords[0].count : 0;
+    }
+    return data;
+  } catch (e) {
+    throw new ErrorResponse(e.message).status(200);
+  }
+};
+
 export default {
   fetchAllUsers,
   fetchUserId,
@@ -712,5 +783,6 @@ export default {
   fetchHydratedUser,
   changePassword,
   getAllChildUsers,
-  fetchSuperAdminMasters
+  fetchSuperAdminMasters,
+  fetchLoggedInUsers
 };

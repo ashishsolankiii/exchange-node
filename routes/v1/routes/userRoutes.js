@@ -28,4 +28,6 @@ route(router, "post", "/changePassword", userController.changePassword);
 
 route(router, "post", "/getSuperAdminMasters", userController.getSuperAdminMasters);
 
+route(router, "post", "/getLoggedInUsers", userController.getLoggedInUsers);
+
 export default router;

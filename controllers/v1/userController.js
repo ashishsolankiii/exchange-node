@@ -190,6 +190,13 @@ const getSuperAdminMasters = async (req, res) => {
   return res.status(200).json({ success: true, data: users });
 };
 
+const getLoggedInUsers = async (req, res) => {
+  const { user, body } = await userRequest.userListingRequest(req);
+  const users = await userService.fetchLoggedInUsers({ user, ...body });
+
+  return res.status(200).json({ success: true, data: users });
+};
+
 export default {
   getAllUser,
   getUserById,
@@ -205,5 +212,6 @@ export default {
   getUserActivity,
   getUserActivityTypes,
   changePassword,
-  getSuperAdminMasters
+  getSuperAdminMasters,
+  getLoggedInUsers
 };
