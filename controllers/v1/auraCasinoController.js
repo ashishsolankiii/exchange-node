@@ -1,4 +1,7 @@
+import { appConfig } from "../../config/app.js";
 import { auraConfig } from "../../config/aura.js";
+import ErrorResponse from "../../lib/error-handling/error-response.js";
+import LoggedInUser from "../../models/v1/LoggedInUser.js";
 import User from "../../models/v1/User.js";
 
 // Gets the user data.
@@ -151,21 +154,21 @@ const getExposure = async (req, res) => {
     });
 
     const response = {
-      "status": auraConfig.successCode,
-      "Message": "Exposure insert Successfully...",
-      "wallet": user.balance,
-      "exposure": user.exposure
-    }
+      status: auraConfig.successCode,
+      Message: "Exposure insert Successfully...",
+      wallet: user.balance,
+      exposure: user.exposure,
+    };
 
     res.json(response);
-  }
-  catch (e) {
+  } catch (e) {
     const response = {
-      "status": auraConfig.errorCode, "message": e.message
-    }
+      status: auraConfig.errorCode,
+      message: e.message,
+    };
     res.json(response);
   }
-}
+};
 
 const getResult = async (req, res) => {
   try {
@@ -434,28 +437,53 @@ const getResult = async (req, res) => {
     });
 
     const response = {
-      "Error": auraConfig.successCode, "result": [
+      Error: auraConfig.successCode,
+      result: [
         {
-          "wallet": user.balance,
-          "exposure": user.exposure,
-          "userId": user._id
-        }
+          wallet: user.balance,
+          exposure: user.exposure,
+          userId: user._id,
+        },
       ],
-      "message": "Users profit/loss updated.."
-    }
+      message: "Users profit/loss updated..",
+    };
 
     res.json(response);
-  }
-  catch (e) {
+  } catch (e) {
     const response = {
-      "status": auraConfig.errorCode, "message": e.message
-    }
+      status: auraConfig.errorCode,
+      message: e.message,
+    };
     res.json(response);
   }
-}
+};
+
+const getLaunchUrl = async (req, res) => {
+  try {
+    const loggedInUser = await LoggedInUser.findOne({ userId: req.user._id });
+
+    if (!loggedInUser) {
+      throw new Error("User not found!");
+    }
+
+    const domain = appConfig.AURA_WHITELISTED_DOMAIN;
+    const mobileUrl = `https://m2.fawk.app/#/splash-screen/${loggedInUser.token}|${domain}/${appConfig.AURA_OPERATOR_ID}|${domain}`;
+    const desktopUrl = `https://d2.fawk.app/#/splash-screen/${loggedInUser.token}|${domain}/${appConfig.AURA_OPERATOR_ID}|${domain}`;
+
+    const data = {
+      mobileUrl,
+      desktopUrl,
+    };
+
+    res.status(200).json({ success: true, data });
+  } catch (e) {
+    throw new ErrorResponse(e.message).status(200);
+  }
+};
 
 export default {
   getUserData,
   getExposure,
-  getResult
+  getResult,
+  getLaunchUrl,
 };

@@ -19,7 +19,7 @@ const { env } = process;
  * @property {string} USER_CLIENT_URL - The user client URL.
  * @property {string} THEME_PANEL_CLIENT_URL - The theme panel client URL.
  * @property {string} TRANSACTION_PANEL_CLIENT_URL - The transaction panel client URL.
- * @property {string} CORS_ALLOWED_ORIGINS - The CORS allowed origins.
+ * @property {array} CORS_ALLOWED_ORIGINS - The CORS allowed origins.
  * @property {number} SALT_ROUNDS - The salt rounds for password hashing.
  * @property {string} JWT_TOKEN_PREFIX - The JWT token prefix.
  * @property {string} JWT_SECRET - The JWT secret.
@@ -37,6 +37,8 @@ const { env } = process;
  * @property {number} LOG_MAX_FILE_SIZE - The log max file size.
  * @property {number} LOG_MAX_HISTORY - The log max history.
  * @property {string} LOG_DATE_FORMAT - The log date format.
+ * @property {string} AURA_OPERATOR_ID - Operater ID for Aura.
+ * @property {string} AURA_WHITELISTED_DOMAIN - Whitelisted domain for Aura.
  */
 export const appConfig = {
   NODE_ENV: env.NODE_ENV,
@@ -85,4 +87,5 @@ export const appConfig = {
   LOG_DATE_FORMAT: env.LOG_DATE_FORMAT,
 
   AURA_OPERATOR_ID: env.AURA_OPERATOR_ID,
+  AURA_WHITELISTED_DOMAIN: env.AURA_WHITELISTED_DOMAIN,
 };
