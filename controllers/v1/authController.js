@@ -106,13 +106,9 @@ const resetPassword = async (req, res) => {
 };
 
 const logout = async (req, res) => {
-  const { userId } = req.body;
+  const { user } = req;
 
-  if (!userId) {
-    throw new Error("userId is required!");
-  }
-
-  const deletedLoggedInUser = await authService.logout(userId);
+  const deletedLoggedInUser = await authService.logout(user._id);
 
   res.status(200).json({ success: true, data: { details: deletedLoggedInUser } });
 };
