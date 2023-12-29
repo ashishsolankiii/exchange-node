@@ -34,6 +34,11 @@ const marketRunnerSchema = new mongoose.Schema({
   betDelay: { type: Number, default: 1 },
 
   winScore: { type: Number, default: null },
+
+  metaData: {
+    type: Object,
+    default: null,
+  },
 });
 
 marketRunnerSchema.plugin(timestampPlugin);

@@ -56,6 +56,15 @@ const betSchema = new mongoose.Schema({
   ipAddress: { type: String, required: true },
 
   runnerScore: { type: Number, required: false },
+
+  casinoGameId: { type: mongoose.Schema.Types.ObjectId, ref: "casino_game", default: null },
+
+  apiDistributorId: { type: mongoose.Schema.Types.ObjectId, ref: "api_provider", default: null },
+
+  metaData: {
+    type: Object,
+    default: null,
+  },
 });
 
 betSchema.plugin(timestampPlugin);

@@ -298,6 +298,9 @@ async function createBet({ user: loggedInUser, ...reqBody }) {
     betOrderType,
     deviceInfo,
     ipAddress,
+    casinoGameId,
+    apiDistributorId,
+    metaData
   } = processedReq;
 
   const { potentialWin, potentialLoss, newExposure } = await marketTypeFns[marketType.name].calculatePl(processedReq);
@@ -324,6 +327,9 @@ async function createBet({ user: loggedInUser, ...reqBody }) {
     runnerId: runner._id,
     potentialWin,
     potentialLoss,
+    casinoGameId,
+    apiDistributorId,
+    metaData
   };
 
   user.exposure = newExposure < 0 ? 0 : newExposure;
