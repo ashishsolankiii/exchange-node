@@ -17,4 +17,10 @@ export const auraConfig = {
   successMessage: "ok",
   errorCode: 1,
   errorMessage: "Authentication failed!",
+  minBetINR: 500,
+  maxBetINR: 200000,
+  maxMarketPlINR: 600000,
+  minBetHKD: 10,
+  maxBetHKD: 2000,
+  maxMarketPlHKD: 6000
 };

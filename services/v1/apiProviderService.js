@@ -82,6 +82,7 @@ const fetchApiProviderId = async (_id) => {
 const addApiProvider = async ({ ...reqBody }) => {
   const {
     name,
+    type,
     metaData
   } = reqBody;
 
@@ -93,6 +94,7 @@ const addApiProvider = async ({ ...reqBody }) => {
 
     const newApiProviderObj = {
       name,
+      type,
       metaData
     };
 
@@ -115,6 +117,7 @@ const modifyApiProvider = async ({ ...reqBody }) => {
       throw new Error("ApiProvider not found.");
     }
     apiProvider.name = reqBody.name;
+    apiProvider.type = reqBody.type;
     apiProvider.metaData = reqBody.metaData;
     await apiProvider.save();
 
