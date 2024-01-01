@@ -466,9 +466,9 @@ const getLaunchUrl = async (req, res) => {
       throw new Error("User not found!");
     }
 
-    const domain = appConfig.AURA_WHITELISTED_DOMAIN;
-    const mobileUrl = `https://m2.fawk.app/#/splash-screen/${loggedInUser.token}|${domain}/${appConfig.AURA_OPERATOR_ID}|${domain}`;
-    const desktopUrl = `https://d2.fawk.app/#/splash-screen/${loggedInUser.token}|${domain}/${appConfig.AURA_OPERATOR_ID}|${domain}`;
+    // const domain = appConfig.AURA_WHITELISTED_DOMAIN;
+    const mobileUrl = `https://m2.fawk.app/#/splash-screen/${loggedInUser.token}/${appConfig.AURA_OPERATOR_ID}`;
+    const desktopUrl = `https://d2.fawk.app/#/splash-screen/${loggedInUser.token}/${appConfig.AURA_OPERATOR_ID}`;
 
     const data = {
       mobileUrl,
