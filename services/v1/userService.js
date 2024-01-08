@@ -1,14 +1,19 @@
 import mongoose, { isValidObjectId } from "mongoose";
 import ErrorResponse from "../../lib/error-handling/error-response.js";
 import { generatePaginationQueries, generateSearchFilters } from "../../lib/helpers/pipeline.js";
-import { encryptPassword, getTrimmedUser, transferCloneParentFields, validatePassword } from "../../lib/io-guards/auth.js";
+import {
+  encryptPassword,
+  getTrimmedUser,
+  transferCloneParentFields,
+  validatePassword,
+} from "../../lib/io-guards/auth.js";
 import { generateTransactionCode, validateTransactionCode } from "../../lib/io-guards/transaction-code.js";
 import AppModule from "../../models/v1/AppModule.js";
+import LoggedInUser from "../../models/v1/LoggedInUser.js";
 import User, { SETTLEMENT_DURATION, USER_ACCESSIBLE_ROLES, USER_ROLE } from "../../models/v1/User.js";
 import transactionActivityService from "../../services/v1/transactionActivityService.js";
-import permissionService from "./permissionService.js";
 import authService from "./authService.js";
-import LoggedInUser from "../../models/v1/LoggedInUser.js";
+import permissionService from "./permissionService.js";
 
 // Fetch all users from the database
 const fetchAllUsers = async ({ user, ...reqBody }) => {
@@ -189,7 +194,7 @@ const addUser = async ({ user, ...reqBody }) => {
     isAutoSettlement,
     transactionCode,
     defaultMasterUserId,
-    businessType
+    businessType,
   } = reqBody;
 
   try {
@@ -233,7 +238,7 @@ const addUser = async ({ user, ...reqBody }) => {
       countryCode,
       forcePasswordChange,
       defaultMasterUserId,
-      businessType
+      businessType,
     };
 
     // For Role = User add other params
@@ -495,12 +500,11 @@ const removeUser = async (_id) => {
 
 const statusModify = async ({ _id, fieldName, status }) => {
   try {
-    let updateColumn =
-    {
-      [fieldName]: status
-    }
-    if (fieldName == 'isActive' && status == "true") {
-      updateColumn.failedLoginAttempts = 0
+    let updateColumn = {
+      [fieldName]: status,
+    };
+    if (fieldName == "isActive" && status == "true") {
+      updateColumn.failedLoginAttempts = 0;
     }
     const user = await User.findByIdAndUpdate(_id, updateColumn, { new: true });
 
@@ -622,7 +626,7 @@ const fetchHydratedUser = async (_id) => {
     let superUser = await User.findById(superUserId).select("businessType");
     user.superUserId = superUserId;
     user.masterUserId = masterUserId;
-    user.businessType = superUser.businessType;
+    user.businessType = superUser?.businessType;
     user.scKey = await permissionService.fetchUserActivePermissions({ userId: user._id });
 
     return user;
@@ -693,8 +697,8 @@ const fetchSuperAdminMasters = async (_id) => {
     }
     await getChidUsers(findUser, userIds);
     const data = {
-      records: userIds
-    }
+      records: userIds,
+    };
     return data;
   } catch (e) {
     throw new ErrorResponse(e.message).status(200);
@@ -704,13 +708,7 @@ const fetchSuperAdminMasters = async (_id) => {
 // Fetch all users from the database
 const fetchLoggedInUsers = async ({ user, ...reqBody }) => {
   try {
-    const {
-      page,
-      perPage,
-      sortBy,
-      direction,
-      searchQuery
-    } = reqBody;
+    const { page, perPage, sortBy, direction, searchQuery } = reqBody;
 
     // Pagination and Sorting
     const sortDirection = direction === "asc" ? 1 : -1;
@@ -721,7 +719,7 @@ const fetchLoggedInUsers = async ({ user, ...reqBody }) => {
     fiveHoursAgo.setHours(fiveHoursAgo.getHours() - 5);
 
     const filters = {
-      createdAt: { $gte: new Date(fiveHoursAgo) }
+      createdAt: { $gte: new Date(fiveHoursAgo) },
     };
 
     if (searchQuery) {
@@ -750,7 +748,7 @@ const fetchLoggedInUsers = async ({ user, ...reqBody }) => {
         },
       },
       {
-        $match: filters
+        $match: filters,
       },
       {
         $facet: {
@@ -793,5 +791,5 @@ export default {
   changePassword,
   getAllChildUsers,
   fetchSuperAdminMasters,
-  fetchLoggedInUsers
+  fetchLoggedInUsers,
 };
