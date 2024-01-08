@@ -87,5 +87,14 @@ export const appConfig = {
   LOG_DATE_FORMAT: env.LOG_DATE_FORMAT,
 
   AURA_OPERATOR_ID: env.AURA_OPERATOR_ID,
+
+  AWS_EC2_CONFIG: {
+    region: env.AWS_EC2_REGION,
+    credentials: {
+      accessKeyId: env.AWS_EC2_ACCESS_KEY,
+      secretAccessKey: env.AWS_EC2_SECRET,
+    },
+  },
+  
   AURA_WHITELISTED_DOMAIN: env.AURA_WHITELISTED_DOMAIN,
 };
