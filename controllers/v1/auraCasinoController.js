@@ -9,7 +9,7 @@ const getUserData = async (req, res) => {
   const reqUserId = req.user._id;
   const operatorId = req.body.operatorId;
   const token = req.body.token;
-
+  const domain = appConfig.AURA_WHITELISTED_DOMAIN;
   const user = await User.findById(reqUserId, {
     username: 1,
     balance: 1,
@@ -18,7 +18,7 @@ const getUserData = async (req, res) => {
 
   const response = {
     operatorId: operatorId,
-    userId: user._id,
+    userId: `${user._id}|${domain}`,
     username: user.username,
     playerAuthTokenLaunch: token,
     token: token,
@@ -467,8 +467,8 @@ const getLaunchUrl = async (req, res) => {
     }
 
     const domain = appConfig.AURA_WHITELISTED_DOMAIN;
-    const mobileUrl = `https://m2.fawk.app/#/splash-screen/${loggedInUser.token}|${domain}/${appConfig.AURA_OPERATOR_ID}|${domain}`;
-    const desktopUrl = `https://d2.fawk.app/#/splash-screen/${loggedInUser.token}|${domain}/${appConfig.AURA_OPERATOR_ID}|${domain}`;
+    const mobileUrl = `https://m2.fawk.app/#/splash-screen/${loggedInUser.token}|${domain}/${appConfig.AURA_OPERATOR_ID}`;
+    const desktopUrl = `https://d2.fawk.app/#/splash-screen/${loggedInUser.token}|${domain}/${appConfig.AURA_OPERATOR_ID}`;
 
     const data = {
       mobileUrl,
