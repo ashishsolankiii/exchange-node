@@ -25,6 +25,9 @@ const login = async (req, res) => {
     platform: body.platform,
   });
 
+  // Set the token in a cookie
+  res.cookie("jwt", userWithToken.token, { httpOnly: true });
+
   return res.status(200).json({ success: true, data: userWithToken });
 };
 
