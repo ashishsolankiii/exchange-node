@@ -155,6 +155,15 @@ const getAllUserBetsAndPls = async (req, res) => {
   res.status(200).json({ success: true, data: { details: userBetPls } });
 };
 
+// Get list bet casino
+const getAllBetCasino = async (req, res) => {
+  const { body } = await betRequest.getAllBetCasinoRequest(req);
+
+  const newBet = await runningBetService.fetchAllBetsCasino({ ...body });
+
+  res.status(201).json({ success: true, data: { details: newBet } });
+};
+
 export default {
   createBet,
   getAllBet,
@@ -170,5 +179,6 @@ export default {
   revertResult,
   getRunAmount,
   getUserExposureList,
-  getAllUserBetsAndPls
+  getAllUserBetsAndPls,
+  getAllBetCasino
 };

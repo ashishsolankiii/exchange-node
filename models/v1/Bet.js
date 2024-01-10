@@ -20,6 +20,11 @@ export const BET_RESULT_STATUS = {
   CASH_OUT: "cash_out",
 };
 
+export const BET_TYPE = {
+  CASINO: "casino",
+  SPORTS: "sports"
+};
+
 const betSchema = new mongoose.Schema({
   userId: { type: mongoose.Schema.Types.ObjectId, ref: "user", required: true, index: true },
 
@@ -65,6 +70,8 @@ const betSchema = new mongoose.Schema({
     type: Object,
     default: null,
   },
+
+  betType: { type: String, enum: Object.values(BET_TYPE), default: BET_TYPE.SPORTS },
 });
 
 betSchema.plugin(timestampPlugin);

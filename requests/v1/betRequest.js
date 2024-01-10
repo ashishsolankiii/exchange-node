@@ -220,6 +220,38 @@ async function getUserExposureListRequest(req) {
   return req;
 }
 
+async function getAllBetCasinoRequest(req) {
+  req.body.page = req.body?.page ? Number(req.body.page) : null;
+  req.body.perPage = req.body?.perPage ? Number(req.body.perPage) : 10;
+  req.body.sortBy = req.body?.sortBy ? req.body.sortBy : "createdAt";
+  req.body.direction = req.body?.direction ? req.body.direction : "desc";
+  req.body.searchQuery = req.body?.searchQuery ? req.body.searchQuery?.trim() : null;
+  req.body.apiProviderId = req.body.apiProviderId || null;
+  req.body.status = req.body.status || null;
+
+  const validationSchema = Yup.object().shape({
+    page: Yup.number().nullable(true),
+
+    perPage: Yup.number(),
+
+    sortBy: Yup.string().oneOf(Object.keys(Bet.schema.paths), "Invalid sortBy key."),
+
+    direction: Yup.string().oneOf(["asc", "desc", null], "Invalid direction use 'asc' or 'desc'.").nullable(true),
+
+    searchQuery: Yup.string().nullable(true),
+
+    apiProviderId: Yup.string()
+      .nullable(true)
+      .test("apiProviderId", "Invalid apiProviderId!", (v) => !v || isValidObjectId),
+
+    status: Yup.string().nullable(true),
+  });
+
+  await validationSchema.validate(req.body);
+
+  return req;
+}
+
 export default {
   createBetRequest,
   getAllBetRequest,
@@ -232,4 +264,5 @@ export default {
   reverResultRequest,
   getRunAmountRequest,
   getUserExposureListRequest,
+  getAllBetCasinoRequest
 };

@@ -1,5 +1,6 @@
 import marketService from "../../services/v1/marketService.js";
 import { importExcel } from '../../lib/helpers/excel-utility.js';
+import Bet, { BET_TYPE } from "../../models/v1/Bet.js";
 
 const getMatchOdds = async (req, res) => {
   try {
@@ -54,10 +55,22 @@ const importExcelSheet = async (req, res) => {
   }
 };
 
+const updateBetType = async (req, res) => {
+  try {
+    let allBet = await Bet.find();
+    let allBetIds = allBet.map((item) => item._id);
+    await Bet.updateMany({ _id: { $in: allBetIds } }, { betType: BET_TYPE.SPORTS });
+    res.status(200).json({ message: "Bet type update in bet module." });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
 export default {
   getMatchOdds,
   getFencyPrice,
   getBookmakerPrice,
   getLiveScore,
-  importExcelSheet
+  importExcelSheet,
+  updateBetType
 };
