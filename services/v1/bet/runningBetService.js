@@ -1,6 +1,6 @@
 import mongoose from "mongoose";
 import { generatePaginationQueries, generateSearchFilters } from "../../../lib/helpers/pipeline.js";
-import Bet, { BET_ORDER_STATUS, BET_RESULT_STATUS } from "../../../models/v1/Bet.js";
+import Bet, { BET_ORDER_STATUS, BET_RESULT_STATUS, BET_TYPE } from "../../../models/v1/Bet.js";
 import { BET_CATEGORIES } from "../../../models/v1/BetCategory.js";
 import betPlService from "./betPlService.js";
 import userService from "../userService.js";
@@ -522,9 +522,131 @@ async function fetchAllUserBetsAndPls({ eventId, userId }) {
   return { marketBets, marketPls };
 }
 
+// Fetch all bets casino for listing page
+async function fetchAllBetsCasino(reqBody) {
+  const { page, perPage, sortBy, direction, searchQuery, status, apiProviderId } = reqBody;
+
+  // Pagination and Sorting
+  const sortDirection = direction === "asc" ? 1 : -1;
+  const paginationQueries = generatePaginationQueries(page, perPage);
+
+  let filters = {
+    betType: BET_TYPE.CASINO
+  };
+
+  if (apiProviderId) {
+    filters.apiDistributorId = new mongoose.Types.ObjectId(apiProviderId);
+  }
+
+  if (status) {
+    filters.betResultStatus = status;
+  }
+
+  if (searchQuery) {
+    const fields = ["userId", "ipAddress"];
+    filters.$or = generateSearchFilters(searchQuery, fields);
+  }
+
+  const bet = await Bet.aggregate([
+    {
+      $lookup: {
+        from: "users",
+        localField: "userId",
+        foreignField: "_id",
+        as: "user",
+        pipeline: [
+          {
+            $project: { username: 1 },
+          },
+        ],
+      },
+    },
+    {
+      $unwind: {
+        path: "$user",
+        preserveNullAndEmptyArrays: true,
+      },
+    },
+    {
+      $lookup: {
+        from: "market_runners",
+        localField: "runnerId",
+        foreignField: "_id",
+        as: "marketRunner",
+        pipeline: [
+          {
+            $project: { runnerName: 1 },
+          },
+        ],
+      },
+    },
+    {
+      $unwind: "$marketRunner",
+    },
+    {
+      $lookup: {
+        from: "markets",
+        localField: "marketId",
+        foreignField: "_id",
+        as: "market",
+        pipeline: [
+          {
+            $project: { name: 1 },
+          },
+        ],
+      },
+    },
+    {
+      $unwind: {
+        path: "$market",
+        preserveNullAndEmptyArrays: true,
+      },
+    },
+    {
+      $match: filters,
+    },
+    {
+      $set: {
+        userName: "$user.username",
+        // marketName: "$market.name",
+        // runnerName: "$marketRunner.runnerName",
+      },
+    },
+    {
+      $unset: ["user", "market", "marketRunner"],
+    },
+    {
+      $facet: {
+        totalRecords: [{ $count: "count" }],
+        paginatedResults: [
+          {
+            $sort: {
+              [sortBy]: sortDirection,
+            },
+          },
+          ...paginationQueries,
+        ],
+      },
+    },
+  ]);
+
+  const data = {
+    records: [],
+    totalRecords: 0,
+  };
+
+  if (bet?.length) {
+    data.records = bet[0]?.paginatedResults || [];
+    data.totalRecords = bet[0]?.totalRecords?.length ? bet[0]?.totalRecords[0].count : 0;
+  }
+
+  return data;
+}
+
 export default {
   fetchAllBets,
   fetchUserBetHistory,
   fetchUserEventBets,
   fetchAllUserBetsAndPls,
+  fetchAllBetsCasino
 };
