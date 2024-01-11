@@ -31,7 +31,7 @@ const getUserData = async (req, res) => {
     currency: auraConfig.currency,
     language: auraConfig.language,
     timestamp: Date.now(),
-    clientIP: req.headers["x-forwarded-for"] || req.connection.remoteAddress,
+    clientIP: ["1"],
     VIP: auraConfig.vip,
     errorCode: auraConfig.successCode,
     errorDescription: auraConfig.successMessage,
