@@ -11,7 +11,6 @@ import cronController from "./controllers/v1/cronController.js";
 import dbConnection from "./database/connect.js";
 import { settleHandshake } from "./lib/io-guards/encryption.js";
 import corsMiddleware from "./middlewares/corsMiddleware.js";
-import encryptResponseInterceptor from "./middlewares/encryptionMiddleware.js";
 import loggerMiddleware from "./middlewares/loggerMiddleware.js";
 import apiRoutes from "./routes/apiRoutes.js";
 import { initSocket } from "./socket/index.js";
@@ -47,7 +46,7 @@ app.use(loggerMiddleware);
 
 app.use("/handshake", settleHandshake);
 
-app.use("/api", encryptResponseInterceptor, apiRoutes);
+app.use("/api", apiRoutes);
 
 app.get("/", (req, res) => {
   res.json({
