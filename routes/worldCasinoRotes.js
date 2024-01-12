@@ -1,11 +1,12 @@
 import express from "express";
 import worldCasinoController from "../controllers/v1/worldCasinoController.js";
+import encryptResponseInterceptor from "../middlewares/encryptionMiddleware.js";
+import passportJwtMiddleware from "../middlewares/passportJwtMiddleware.js";
 const router = express.Router();
-import { route } from "../lib/error-handling/routes-error-boundary.js";
 
 router.post("/Balance", worldCasinoController.balance);
 router.post("/Credit", worldCasinoController.credit);
 router.post("/debit", worldCasinoController.debit);
-route(router, "post", "/getLaunchUrl", worldCasinoController.getLaunchUrl);
+router.post("/getLaunchUrl", [encryptResponseInterceptor, passportJwtMiddleware], worldCasinoController.getLaunchUrl);
 
 export default router;
