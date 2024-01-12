@@ -1,7 +1,7 @@
+import axios from "axios";
 import { appConfig } from "../../config/app.js";
 import ErrorResponse from "../../lib/error-handling/error-response.js";
 import LoggedInUser from "../../models/v1/LoggedInUser.js";
-import axios from 'axios';
 
 // Balance
 const balance = async (req, res) => {
@@ -13,14 +13,14 @@ const balance = async (req, res) => {
   const { partnerKey, userId, timestamp } = req.body;
 
   const response = {
-    "partnerKey": partnerKey,
-    "timestamp": timestamp,
-    "userId": userId,
-    "balance": 9815.18,
-    "status": {
-      "code": "SUCCESS",
-      "message": "Balance get successfully."
-    }
+    partnerKey: partnerKey,
+    timestamp: timestamp,
+    userId: userId,
+    balance: 9815.18,
+    status: {
+      code: "SUCCESS",
+      message: "Balance get successfully.",
+    },
   };
 
   res.json(response);
@@ -28,7 +28,7 @@ const balance = async (req, res) => {
 
 // Debit
 const debit = async (req, res) => {
-  // req.body = 
+  // req.body =
   // {
   //   "partnerKey": "6yhUl8mtfTZQcyhfIY22nXVRVHGKz21G2sBXfUmDv+nPy9S5N9n5MEy9honjNzP/xFQ+XXXXXXX=",
   //   "user": {
@@ -52,22 +52,22 @@ const debit = async (req, res) => {
   const { partnerKey, user, gameData, transactionData, timestamp } = req.body;
 
   const response = {
-    "partnerKey": partnerKey,
-    "timestamp": timestamp,
-    "userId": user.id,
-    "balance": 9100.18,
-    "status": {
-      "code": "SUCCESS",
-      "message": "Debit Successfully,"
-    }
-  }
+    partnerKey: partnerKey,
+    timestamp: timestamp,
+    userId: user.id,
+    balance: 9100.18,
+    status: {
+      code: "SUCCESS",
+      message: "Debit Successfully,",
+    },
+  };
 
   res.json(response);
 };
 
 // Credit
 const credit = async (req, res) => {
-  // req.body = 
+  // req.body =
   // {
   //     "partnerKey": "6yhUl8mtfTZQcyhfIY22nXVRVHGKz21G2sBXfUmDv+nPy9S5N9n5MEy9honjNzP/xFQ+XXXXXXX=",
   //     "timestamp": "1628521562165",
@@ -91,15 +91,15 @@ const credit = async (req, res) => {
   const { partnerKey, user, gameData, transactionData, timestamp } = req.body;
 
   const response = {
-    "partnerKey": partnerKey,
-    "timestamp": timestamp,
-    "userId": user.id,
-    "balance": 9815.18,
-    "status": {
-      "code": "SUCCESS",
-      "message": "Credit Successfully."
-    }
-  }
+    partnerKey: partnerKey,
+    timestamp: timestamp,
+    userId: user.id,
+    balance: 9815.18,
+    status: {
+      code: "SUCCESS",
+      message: "Credit Successfully.",
+    },
+  };
 
   res.json(response);
 };
@@ -113,43 +113,44 @@ const getLaunchUrl = async (req, res) => {
       throw new Error("User not found!");
     }
 
-    const url = 'https://stageapiauth.worldcasinoonline.com/api/auth/userauthentication';
+    const url = "https://stageapiauth.worldcasinoonline.com/api/auth/userauthentication";
     const data = {
-      "partnerKey": appConfig.WCO_PARTNER_KEY,
-      "game": {
-        "gameCode": "TP",
-        "providerCode": "SN"
+      partnerKey: appConfig.WCO_PARTNER_KEY,
+      game: {
+        gameCode: "TP",
+        providerCode: "SN",
       },
-      "timestamp": "1624862458",
-      "user": {
-        "id": loggedInUser._id,
-        "currency": "INR",
-        "displayName": "",
-        "backUrl": "redirection_URL"
-      }
+      timestamp: "1624862458",
+      user: {
+        id: loggedInUser._id,
+        currency: "INR",
+        displayName: "",
+        backUrl: "redirection_URL",
+      },
     };
 
-    axios.post(url, data, {
-      headers: {
-        'Content-Type': 'application/json',
-      },
-    })
-      .then(response => {
-        console.log('Response:', response.data);
+    axios
+      .post(url, data, {
+        headers: {
+          "Content-Type": "application/json",
+        },
       })
-      .catch(error => {
-        console.error('Error:', error.message);
+      .then((response) => {
+        console.log("Response:", response.data);
+        res.status(200).json(response.data);
+      })
+      .catch((error) => {
+        console.error("Error:", error.message);
+        res.status(200).json(error.message);
       });
-
   } catch (e) {
     throw new ErrorResponse(e.message).status(200);
   }
 };
 
-
 export default {
   balance,
   debit,
   credit,
-  getLaunchUrl
+  getLaunchUrl,
 };
