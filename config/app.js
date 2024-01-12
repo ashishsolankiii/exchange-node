@@ -95,6 +95,8 @@ export const appConfig = {
       secretAccessKey: env.AWS_EC2_SECRET,
     },
   },
-  
+
   AURA_WHITELISTED_DOMAIN: env.AURA_WHITELISTED_DOMAIN,
+  WCO_PARTNER_NAME: env.WCO_PARTNER_NAME,
+  WCO_PARTNER_KEY: env.WCO_PARTNER_KEY,
 };
