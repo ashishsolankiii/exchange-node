@@ -114,7 +114,7 @@ const getLaunchUrl = async (req, res) => {
     }
 
     const url = 'https://stageapiauth.worldcasinoonline.com/api/auth/userauthentication';
-    const data = JSON.stringify({
+    const data = {
       "partnerKey": appConfig.WCO_PARTNER_KEY,
       "game": {
         "gameCode": "TP",
@@ -127,9 +127,13 @@ const getLaunchUrl = async (req, res) => {
         "displayName": "",
         "backUrl": "redirection_URL"
       }
-    });
+    };
 
-    axios.post(url, data)
+    axios.post(url, data, {
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    })
       .then(response => {
         console.log('Response:', response.data);
       })
